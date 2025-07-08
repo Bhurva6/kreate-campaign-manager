@@ -1,0 +1,192 @@
+"use client";
+
+import { useImageStore, type ImageData } from "@/store/imageStore";
+import { useState } from "react";
+import Image from "next/image";
+
+interface ImageGalleryProps {
+  category?: string;
+  showUploadInfo?: boolean;
+}
+
+export default function ImageGallery({ category, showUploadInfo = false }: ImageGalleryProps) {
+  const { images, selectedImage, setSelectedImage, removeImage, getImagesByCategory } = useImageStore();
+  const [showDetails, setShowDetails] = useState<string | null>(null);
+
+  const displayImages = category ? getImagesByCategory(category) : images;
+
+  const handleImageClick = (image: ImageData) => {
+    setSelectedImage(image);
+  };
+
+  const handleRemoveImage = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    removeImage(id);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  if (displayImages.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        No images found {category && `in ${category} category`}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {displayImages.map((image) => (
+          <div
+            key={image.id}
+            className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
+              selectedImage?.id === image.id 
+                ? "border-blue-500 shadow-lg" 
+                : "border-gray-200 hover:border-gray-300"
+            }`}
+            onClick={() => handleImageClick(image)}
+          >
+            <div className="aspect-square relative">
+              <Image
+                src={image.dataUrl || image.url}
+                alt={image.prompt || "Generated image"}
+                fill
+                className="object-cover"
+                onError={(e) => {
+                  // Fallback to R2 URL if dataUrl fails
+                  const target = e.target as HTMLImageElement;
+                  if (target.src !== image.url && image.url) {
+                    target.src = image.url;
+                  }
+                }}
+              />
+              
+              {/* Overlay with actions */}
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowDetails(showDetails === image.id ? null : image.id);
+                    }}
+                    className="bg-white text-black px-3 py-1 rounded text-sm hover:bg-gray-100"
+                  >
+                    Info
+                  </button>
+                  <button
+                    onClick={(e) => handleRemoveImage(image.id, e)}
+                    className="bg-red-500 text-white px-3 py-1 rounded text-sm hover:bg-red-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Image details */}
+            {showDetails === image.id && (
+              <div className="absolute inset-0 bg-black bg-opacity-90 text-white p-4 text-xs overflow-y-auto">
+                <div className="space-y-2">
+                  <div>
+                    <strong>Prompt:</strong> {image.prompt || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Category:</strong> {image.category || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Uploaded:</strong> {
+                      image.uploadedAt 
+                        ? new Date(image.uploadedAt).toLocaleString() 
+                        : "N/A"
+                    }
+                  </div>
+                  {showUploadInfo && (
+                    <>
+                      <div>
+                        <strong>R2 Key:</strong>
+                        <div 
+                          className="text-blue-300 cursor-pointer hover:text-blue-200 break-all"
+                          onClick={() => copyToClipboard(image.r2Key || "")}
+                        >
+                          {image.r2Key || "N/A"}
+                        </div>
+                      </div>
+                      <div>
+                        <strong>Public URL:</strong>
+                        <div 
+                          className="text-blue-300 cursor-pointer hover:text-blue-200 break-all"
+                          onClick={() => copyToClipboard(image.url)}
+                        >
+                          {image.url}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDetails(null);
+                  }}
+                  className="mt-4 bg-gray-600 hover:bg-gray-700 px-2 py-1 rounded"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Selected image preview */}
+      {selectedImage && (
+        <div className="mt-8 p-4 border rounded-lg bg-gray-50">
+          <h3 className="text-lg font-semibold mb-2">Selected Image</h3>
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="md:w-1/3">
+              <Image
+                src={selectedImage.dataUrl || selectedImage.url}
+                alt={selectedImage.prompt || "Selected image"}
+                width={300}
+                height={300}
+                className="rounded-lg object-cover w-full"
+              />
+            </div>
+            <div className="md:w-2/3 space-y-2">
+              <div>
+                <strong>Prompt:</strong> {selectedImage.prompt || "N/A"}
+              </div>
+              <div>
+                <strong>Category:</strong> {selectedImage.category || "N/A"}
+              </div>
+              <div>
+                <strong>Upload Date:</strong> {
+                  selectedImage.uploadedAt 
+                    ? new Date(selectedImage.uploadedAt).toLocaleString() 
+                    : "N/A"
+                }
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button
+                  onClick={() => copyToClipboard(selectedImage.url)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Copy URL
+                </button>
+                <button
+                  onClick={() => window.open(selectedImage.url, "_blank")}
+                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                >
+                  Open in New Tab
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

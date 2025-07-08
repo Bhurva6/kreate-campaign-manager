@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { uploadImageToR2, base64ToBuffer, getMimeTypeFromDataUrl } from "@/lib/r2-upload";
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, input_image } = await req.json();
+    const { prompt, input_image, userId } = await req.json();
     if (!prompt || !input_image) {
       return NextResponse.json({ error: "Prompt and input_image are required." }, { status: 400 });
     }
