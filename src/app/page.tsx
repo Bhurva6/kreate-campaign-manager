@@ -86,12 +86,16 @@ export default function Home() {
         {/* Category Boxes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 w-full mb-8 justify-center lg:flex lg:flex-row lg:gap-12 lg:space-x-12 lg:space-y-0">
           {categories.map(cat => {
+            const isBrandKit = cat.name === "Brand kit";
             return (
               <div
                 key={cat.link}
-                className="bg-[#181818] rounded-2xl shadow-lg p-6 flex items-center justify-center border border-[#222] hover:bg-[#222] transition cursor-pointer min-w-[120px]"
+                className="relative bg-[#181818] rounded-2xl shadow-lg p-6 flex items-center justify-center border border-[#222] hover:bg-[#222] transition cursor-pointer min-w-[120px]"
                 onClick={() => router.push(cat.link)}
               >
+                {isBrandKit && (
+                  <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-[10px] font-bold px-2 py-0.5 rounded-full shadow z-10 select-none">BETA</span>
+                )}
                 <span className="text-white text-lg font-medium">{cat.name}</span>
               </div>
             );

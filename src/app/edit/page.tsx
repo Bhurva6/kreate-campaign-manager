@@ -86,21 +86,25 @@ export default function EditImagePage() {
             </div>
           )}
         </div>
-        <input
-          type="text"
-          placeholder="Enter edit instructions..."
-          className="w-full bg-[#222] text-white text-lg rounded-xl px-5 py-4 outline-none border-none placeholder:text-gray-400 mb-4 mt-8"
-          value={prompt}
-          onChange={e => setPrompt(e.target.value)}
-          disabled={loading}
-        />
-        <button
-          className="bg-blue-600 text-white font-semibold px-8 py-3 rounded-xl shadow hover:bg-blue-700 transition disabled:opacity-50"
-          onClick={handleEdit}
-          disabled={loading || !prompt}
-        >
-          {loading ? "Editing..." : "Submit"}
-        </button>
+        {/* Edit Input with Button inside */}
+        <div className="relative w-full max-w-xl mt-8 mb-4">
+          <input
+            type="text"
+            placeholder="how do you want to edit this image"
+            className="w-full bg-[#222] text-white text-lg rounded-xl px-5 py-4 pr-32 outline-none border-none placeholder:text-gray-400"
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            disabled={loading}
+          />
+          <button
+            className="absolute top-1/2 right-2 -translate-y-1/2 bg-blue-600 text-white font-semibold px-6 py-2 rounded-xl shadow hover:bg-blue-700 transition disabled:opacity-50"
+            onClick={handleEdit}
+            disabled={loading || !prompt}
+            style={{ minWidth: 90 }}
+          >
+            {loading ? "Editing..." : "Submit"}
+          </button>
+        </div>
         {error && <div className="text-red-400 mt-4">{error}</div>}
         {pollingUrl && !finalImage && (
           <div className="text-gray-400 mt-4">Waiting for edited image...</div>
