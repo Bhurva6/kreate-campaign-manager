@@ -13,10 +13,10 @@ export interface ImageData {
 }
 
 interface ImageStore {
-  selectedImage: ImageData | null;
+  selectedImage: string | ImageData | null;
   images: ImageData[];
-  setSelectedImage: (img: ImageData | null) => void;
-  addImage: (img: ImageData) => void;
+  setSelectedImage: (img: string | ImageData | null) => void;
+    addImage: (img: ImageData) => void;
   addImages: (imgs: ImageData[]) => void;
   removeImage: (id: string) => void;
   clearImages: () => void;
@@ -39,7 +39,13 @@ export const useImageStore = create<ImageStore>((set, get) => ({
   
   removeImage: (id) => set((state) => ({
     images: state.images.filter(img => img.id !== id),
-    selectedImage: state.selectedImage?.id === id ? null : state.selectedImage
+    selectedImage:
+  typeof state.selectedImage === "object" &&
+  state.selectedImage !== null &&
+  "id" in state.selectedImage &&
+  state.selectedImage.id === id
+    ? null
+    : state.selectedImage
   })),
   
   clearImages: () => set({ images: [], selectedImage: null }),

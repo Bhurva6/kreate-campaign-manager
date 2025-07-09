@@ -1,9 +1,10 @@
 "use client";
 import { useImageStore } from "../../store/imageStore";
 import { useState } from "react";
+import Image from "next/image";
 
 export default function EditImagePage() {
-  const img = useImageStore((s) => s.selectedImage);
+  const img = useImageStore((s) => s.selectedImage) as string | ImageData | { data: Uint8ClampedArray | number[]; width: number; height: number } | null;
   const [prompt, setPrompt] = useState("");
   const [pollingUrl, setPollingUrl] = useState<string | null>(null);
   const [finalImage, setFinalImage] = useState<string | null>(null);
@@ -20,13 +21,14 @@ export default function EditImagePage() {
     setError(null);
     setFinalImage(null);
     try {
-      for (let i = 0; i < 30; i++) { // poll up to 30 times (~30s)
+      for (let i = 0; i < 30; i++) {
+        // poll up to 30 times (~30s)
         const res = await fetch("/api/poll-edit-result", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ polling_url: url }),
         });
-        const data = await res.json();
+        const data: { status: string; result?: { sample?: string } } = await res.json();
         if (data.status === "Ready" && data.result?.sample) {
           setFinalImage(data.result.sample);
           setLoading(false);
@@ -35,12 +37,49 @@ export default function EditImagePage() {
         await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 1s
       }
       setError("Timed out waiting for image result.");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
   };
+
+  function isNativeImageData(obj: any): obj is ImageData {
+    return (
+      typeof window !== "undefined" &&
+      typeof obj === "object" &&
+      obj !== null &&
+      typeof window.ImageData !== "undefined" &&
+      obj instanceof window.ImageData
+    );
+  }
+
+  function imageLikeToDataURL(
+    image: string | { data: Uint8ClampedArray | number[]; width: number; height: number } | ImageData
+  ): string {
+    if (typeof image === "string") return image;
+    if (isNativeImageData(image)) {
+      // Convert native ImageData to data URL
+      const canvas = document.createElement("canvas");
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return "";
+      ctx.putImageData(image, 0, 0);
+      return canvas.toDataURL();
+    }
+    // If it's a custom object, reconstruct native ImageData
+    const { data, width, height } = image;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "";
+    const arr = data instanceof Uint8ClampedArray ? data : new Uint8ClampedArray(data);
+    const nativeImageData = new window.ImageData(arr, width, height);
+    ctx.putImageData(nativeImageData, 0, 0);
+    return canvas.toDataURL();
+  }
 
   const handleEdit = async () => {
     setLoading(true);
@@ -63,8 +102,8 @@ export default function EditImagePage() {
       } else {
         setError("No image or polling URL returned.");
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
       setLoading(false);
     }
   };
@@ -75,13 +114,33 @@ export default function EditImagePage() {
         <div className="flex flex-col md:flex-row gap-8 items-center w-full">
           {/* Original Image */}
           <div className="flex flex-col items-center">
-            <img src={img} alt="To edit" className="rounded-xl max-h-96 mb-2" />
+            <div className="relative w-72 h-72">
+              {img && (
+                <Image
+                  src={imageLikeToDataURL(img)}
+                  alt="To edit"
+                  className="rounded-xl object-contain"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 384px"
+                  priority
+                />
+              )}
+            </div>
             <span className="text-xs text-gray-400 mt-2">Original Image</span>
           </div>
           {/* Final Edited Image */}
           {finalImage && (
             <div className="flex flex-col items-center">
-              <img src={finalImage} alt="Edited" className="rounded-xl max-h-96 mb-2" />
+              <div className="relative w-72 h-72">
+                <Image
+                  src={finalImage}
+                  alt="Edited"
+                  className="rounded-xl object-contain"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 384px"
+                  priority
+                />
+              </div>
               <span className="text-xs text-gray-400 mt-2">Edited Image</span>
             </div>
           )}
@@ -93,7 +152,7 @@ export default function EditImagePage() {
             placeholder="how do you want to edit this image"
             className="w-full bg-[#222] text-white text-lg rounded-xl px-5 py-4 pr-32 outline-none border-none placeholder:text-gray-400"
             value={prompt}
-            onChange={e => setPrompt(e.target.value)}
+            onChange={(e) => setPrompt(e.target.value)}
             disabled={loading}
           />
           <button
@@ -112,4 +171,4 @@ export default function EditImagePage() {
       </div>
     </div>
   );
-} 
+}

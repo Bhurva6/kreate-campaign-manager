@@ -9,8 +9,17 @@ interface ImageGalleryProps {
   showUploadInfo?: boolean;
 }
 
-export default function ImageGallery({ category, showUploadInfo = false }: ImageGalleryProps) {
-  const { images, selectedImage, setSelectedImage, removeImage, getImagesByCategory } = useImageStore();
+export default function ImageGallery({
+  category,
+  showUploadInfo = false,
+}: ImageGalleryProps) {
+  const {
+    images,
+    selectedImage,
+    setSelectedImage,
+    removeImage,
+    getImagesByCategory,
+  } = useImageStore();
   const [showDetails, setShowDetails] = useState<string | null>(null);
 
   const displayImages = category ? getImagesByCategory(category) : images;
@@ -19,7 +28,7 @@ export default function ImageGallery({ category, showUploadInfo = false }: Image
     setSelectedImage(image);
   };
 
-  const handleRemoveImage = (id: string, e: React.MouseEvent) => {
+  const handleRemoveImage = (id: string, e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     removeImage(id);
   };
@@ -27,6 +36,16 @@ export default function ImageGallery({ category, showUploadInfo = false }: Image
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
   };
+
+  function isNativeImageData(obj: unknown): obj is ImageData {
+    return (
+      typeof window !== "undefined" &&
+      typeof obj === "object" &&
+      obj !== null &&
+      typeof window.ImageData !== "undefined" &&
+      obj instanceof window.ImageData
+    );
+  }
 
   if (displayImages.length === 0) {
     return (
@@ -43,8 +62,11 @@ export default function ImageGallery({ category, showUploadInfo = false }: Image
           <div
             key={image.id}
             className={`relative group cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
-              selectedImage?.id === image.id 
-                ? "border-blue-500 shadow-lg" 
+              typeof selectedImage === "object" &&
+              selectedImage !== null &&
+              "id" in selectedImage &&
+              selectedImage.id === image.id
+                ? "border-blue-500 shadow-lg"
                 : "border-gray-200 hover:border-gray-300"
             }`}
             onClick={() => handleImageClick(image)}
@@ -63,14 +85,16 @@ export default function ImageGallery({ category, showUploadInfo = false }: Image
                   }
                 }}
               />
-              
+
               {/* Overlay with actions */}
               <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all flex items-center justify-center">
                 <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setShowDetails(showDetails === image.id ? null : image.id);
+                      setShowDetails(
+                        showDetails === image.id ? null : image.id
+                      );
                     }}
                     className="bg-white text-black px-3 py-1 rounded text-sm hover:bg-gray-100"
                   >
@@ -97,17 +121,16 @@ export default function ImageGallery({ category, showUploadInfo = false }: Image
                     <strong>Category:</strong> {image.category || "N/A"}
                   </div>
                   <div>
-                    <strong>Uploaded:</strong> {
-                      image.uploadedAt 
-                        ? new Date(image.uploadedAt).toLocaleString() 
-                        : "N/A"
-                    }
+                    <strong>Uploaded:</strong>{" "}
+                    {image.uploadedAt
+                      ? new Date(image.uploadedAt).toLocaleString()
+                      : "N/A"}
                   </div>
                   {showUploadInfo && (
                     <>
                       <div>
                         <strong>R2 Key:</strong>
-                        <div 
+                        <div
                           className="text-blue-300 cursor-pointer hover:text-blue-200 break-all"
                           onClick={() => copyToClipboard(image.r2Key || "")}
                         >
@@ -116,7 +139,7 @@ export default function ImageGallery({ category, showUploadInfo = false }: Image
                       </div>
                       <div>
                         <strong>Public URL:</strong>
-                        <div 
+                        <div
                           className="text-blue-300 cursor-pointer hover:text-blue-200 break-all"
                           onClick={() => copyToClipboard(image.url)}
                         >
@@ -147,37 +170,62 @@ export default function ImageGallery({ category, showUploadInfo = false }: Image
           <h3 className="text-lg font-semibold mb-2">Selected Image</h3>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="md:w-1/3">
-              <Image
-                src={selectedImage.dataUrl || selectedImage.url}
-                alt={selectedImage.prompt || "Selected image"}
-                width={300}
-                height={300}
-                className="rounded-lg object-cover w-full"
-              />
+              {selectedImage && (
+                <Image
+                  src={
+                    typeof selectedImage === "string"
+                      ? selectedImage
+                      : selectedImage.dataUrl || selectedImage.url
+                  }
+                  alt={
+                    typeof selectedImage === "string"
+                      ? "Selected image"
+                      : selectedImage.prompt || "Selected image"
+                  }
+                  width={300}
+                  height={300}
+                  className="rounded-lg object-cover w-full"
+                />
+              )}
             </div>
             <div className="md:w-2/3 space-y-2">
               <div>
-                <strong>Prompt:</strong> {selectedImage.prompt || "N/A"}
+                <strong>Prompt:</strong>{" "}
+                {typeof selectedImage === "string"
+                  ? "N/A"
+                  : selectedImage.prompt || "N/A"}
               </div>
               <div>
-                <strong>Category:</strong> {selectedImage.category || "N/A"}
+                <strong>Category:</strong>{" "}
+                {typeof selectedImage === "string"
+                  ? "N/A"
+                  : selectedImage.category || "N/A"}
               </div>
               <div>
-                <strong>Upload Date:</strong> {
-                  selectedImage.uploadedAt 
-                    ? new Date(selectedImage.uploadedAt).toLocaleString() 
-                    : "N/A"
-                }
+                <strong>Upload Date:</strong>{" "}
+                {typeof selectedImage === "string"
+                  ? "N/A"
+                  : selectedImage.uploadedAt
+                  ? new Date(selectedImage.uploadedAt).toLocaleString()
+                  : "N/A"}
               </div>
               <div className="flex gap-2 mt-4">
                 <button
-                  onClick={() => copyToClipboard(selectedImage.url)}
+                  onClick={() =>
+                    typeof selectedImage === "string"
+                      ? copyToClipboard(selectedImage)
+                      : copyToClipboard(selectedImage.url)
+                  }
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
                   Copy URL
                 </button>
                 <button
-                  onClick={() => window.open(selectedImage.url, "_blank")}
+                  onClick={() =>
+                    typeof selectedImage === "string"
+                      ? window.open(selectedImage, "_blank")
+                      : window.open(selectedImage.url, "_blank")
+                  }
                   className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                 >
                   Open in New Tab
