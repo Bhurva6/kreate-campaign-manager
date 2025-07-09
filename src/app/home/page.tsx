@@ -38,12 +38,12 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, sampleCount, aspectRatio }),
       });
-      const data = await res.json();
+      const data: { images: GeneratedImage[]; error?: string } = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to generate images");
       setImages(data.images);
       setGallery(prev => [...data.images, ...prev]); // prepend new images to gallery
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export default function Home() {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = (e: ProgressEvent<FileReader>) => {
         const result = e.target?.result as string;
         setUploadedImage(result);
         setShowUploadModal(true);
@@ -202,11 +202,16 @@ export default function Home() {
                 >
                   +
                 </button>
-                <img
-                  src={img.url}
-                  alt={img.prompt || `Generated ${i + 1}`}
-                  className="rounded-lg max-h-48 object-contain mb-2"
-                />
+                <div className="relative w-full h-48">
+                  <Image
+                    src={img.url}
+                    alt={img.prompt || `Generated ${i + 1}`}
+                    className="rounded-lg object-contain"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 192px"
+                    priority={i === 0}
+                  />
+                </div>
                 {img.prompt && (
                   <span className="text-xs text-gray-400 text-center break-words">{img.prompt}</span>
                 )}
@@ -222,11 +227,16 @@ export default function Home() {
           <div className="bg-[#181818] rounded-2xl p-6 max-w-md w-full">
             <h3 className="text-xl font-bold text-white mb-4 text-center">What would you like to do?</h3>
             <div className="mb-4">
-              <img 
-                src={uploadedImage} 
-                alt="Uploaded" 
-                className="w-full h-48 object-cover rounded-lg mb-4"
-              />
+              <div className="relative w-full h-48 mb-4">
+                <Image
+                  src={uploadedImage}
+                  alt="Uploaded"
+                  className="object-cover rounded-lg"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 384px"
+                  priority
+                />
+              </div>
             </div>
             <div className="flex gap-3">
               <button

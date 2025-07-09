@@ -55,7 +55,8 @@ export default function LandingPage() {
   // Typing animation logic
   const fullText1 =
     'a box of cereal called "super crunch" is placed on a table near a window';
-  const fullText2 = "now make it look like its in night time with blue cereal and blue box";
+  const fullText2 =
+    "now make it look like its in night time with blue cereal and blue box";
   const [typedText1, setTypedText1] = useState("");
   const [showArrow1, setShowArrow1] = useState(false);
   const [showImage1, setShowImage1] = useState(false);
@@ -146,7 +147,9 @@ export default function LandingPage() {
     inputDelay = 0,
   }: HowItWorksStepProps) {
     const texts = Array.isArray(text) ? text : [text];
-    const [typedArr, setTypedArr] = useState<string[]>(Array(texts.length).fill(""));
+    const [typedArr, setTypedArr] = useState<string[]>(
+      Array(texts.length).fill("")
+    );
     const [started, setStarted] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
     useEffect(() => {
@@ -431,7 +434,10 @@ export default function LandingPage() {
         </h2>
         {/* Step 1: Typing input and image */}
         <HowItWorksStep
-          text={["create an image of an astronaut labubu on mars", "now the labubu is a baker"]}
+          text={[
+            "create an image of an astronaut labubu on mars",
+            "now the labubu is a baker",
+          ]}
           image={["/labubuastro.jpeg", "/baker.jpeg"]}
           inputDelay={0}
         />

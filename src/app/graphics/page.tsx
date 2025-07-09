@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useImageStore } from "../../store/imageStore";
+import Image from "next/image";
 
 export default function GraphicsPage() {
   const router = useRouter();
@@ -27,8 +28,8 @@ export default function GraphicsPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to generate images");
       setImages(data.images);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -48,15 +49,21 @@ export default function GraphicsPage() {
         <div className="w-full flex flex-wrap justify-center gap-4 mb-8">
           {images.map((img, i) => (
             <div key={i} className="relative flex flex-col items-center group">
-              <img
-                src={img.url}
-                alt={img.prompt || `Generated ${i + 1}`}
-                className="rounded-xl max-h-64 mb-2 cursor-pointer"
-                onClick={() => {
-                  setSelectedImage(img.url);
-                  router.push("/edit");
-                }}
-              />
+              <div className="relative w-64 h-64">
+                <Image
+                  src={img.url}
+                  alt={img.prompt || `Generated ${i + 1}`}
+                  className="rounded-xl object-contain"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 256px"
+                  priority={i === 0}
+                  onClick={() => {
+                    setSelectedImage(img.url);
+                    router.push("/edit");
+                  }}
+                  style={{ cursor: "pointer" }}
+                />
+              </div>
               {/* Download Button */}
               <a
                 href={img.url}
