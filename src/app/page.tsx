@@ -235,11 +235,40 @@ export default function LandingPage() {
     );
   }
 
+  // GIF overlay state
+  const [activeGif, setActiveGif] = useState<number | null>(null);
+  // Close GIF on outside click
+  useEffect(() => {
+    if (activeGif === null) return;
+    const handle = (e: MouseEvent) => {
+      // Only close if clicking the overlay, not the GIF itself
+      if ((e.target as HTMLElement)?.id === "gif-overlay-bg") {
+        setActiveGif(null);
+      }
+    };
+    window.addEventListener("mousedown", handle);
+    return () => window.removeEventListener("mousedown", handle);
+  }, [activeGif]);
+
   return (
     <div className="min-h-screen bg-[#111] flex flex-col relative overflow-x-hidden">
-      {/* Logo Top Left */}
-      <div className="p-6">
-        <Image src="/logo.svg" alt="Juicebox Logo" width={48} height={48} />
+      {/* Logo Top Left and Auth Buttons Top Right */}
+      <div className="flex flex-row justify-between items-center w-full p-6">
+        <Image src="/logo.png" alt="Juicebox Logo" width={48} height={48} />
+        <div className="flex gap-4">
+          <button
+            className="px-6 py-2 rounded-lg bg-white/20 text-white font-semibold hover:bg-white/30 transition"
+            onClick={() => window.location.href = "/signin"}
+          >
+            Sign In
+          </button>
+          <button
+            className="px-6 py-2 rounded-lg bg-lime-400 text-black font-semibold hover:bg-lime-300 transition"
+            onClick={() => window.location.href = "/signup"}
+          >
+            Sign Up
+          </button>
+        </div>
       </div>
       {/* Centered Content */}
       <div className="flex-1 flex flex-col items-center justify-center">
@@ -377,54 +406,169 @@ export default function LandingPage() {
       </div>
       {/* Feature Cards Section */}
       <div className="w-full flex flex-col items-center gap-12 pb-24 mt-56">
-        <div className="flex flex-col md:flex-row gap-16 justify-center items-stretch w-full max-w-6xl px-4 mx-auto">
+        {/* GIF Overlay */}
+        {activeGif !== null && (
+          <div
+            id="gif-overlay-bg"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 transition-opacity duration-300 animate-fade-in"
+            style={{ backdropFilter: "blur(2px)" }}
+          >
+            <div
+              className="relative flex items-center justify-center"
+              style={{
+                animation: "gif-pop-in 0.5s cubic-bezier(0.4,0,0.2,1)",
+              }}
+            >
+              <img
+                src={`/gifs/feature-${activeGif + 1}.gif`}
+                alt="Feature demo GIF"
+                className="rounded-2xl shadow-2xl max-w-[480px] w-full h-auto object-contain border-4 border-white/20 bg-black/40"
+                style={{ pointerEvents: "auto" }}
+              />
+            </div>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-10 justify-center items-stretch w-full max-w-7xl px-4 mx-auto">
           {[
             {
-              img: "/images.jpeg",
               title: "Text-to-Image",
-              subtitle: "Describe it, see it—your imagination, visualized.",
+              tagline: "Pour Your Thoughts, Watch Them Bloom",
+              copy:
+                "Type a few words, and Juicebox whirls them into dazzling visuals. From wild unicorns to sleek product shots, your ideas become art—no paintbrush required.",
+              gif: "/feature1.gif",
             },
             {
-              img: "/unnamed.png",
               title: "Text-to-Edit",
-              subtitle:
-                "Tweak any image in seconds—just say what you want changed.",
+              tagline: "Remix Reality, One Sentence at a Time",
+              copy:
+                "Don't just make images—reshape them! Want a blue sky or a bigger smile? Just say it. Juicebox listens, edits, and delivers. No pixels harmed in the process.",
+              gif: "/feature2.mp4",
             },
             {
-              img: "/ChatGpt-art-styleITG-1743494812804.avif",
-              title: "Creative Templates & Styles",
-              subtitle: "Pick a style, get inspired—templates for every mood.",
+              title: "Background Remover",
+              tagline: "Bye-Bye, Boring Backdrops!",
+              copy:
+                "One click, and your subject pops. Swap the mundane for the magical—whether it's a tropical beach or a cosmic nebula, the world is your new background.",
+              gif: "/feature3.mp4",
+            },
+            {
+              title: "Generative Fill & Image Extender",
+              tagline: "Stretch the Canvas, Stretch the Imagination",
+              copy:
+                "Out of frame? Out of ideas? Not here. Juicebox fills, extends, and completes your images with a creative twist—no cropping, just more wow.",
+              gif: "/feature4.mp4",
+            },
+            {
+              title: "AI Object & Shadow Remover",
+              tagline: "Erase the Unwanted, Keep the Wow",
+              copy:
+                "Unwanted photobombers? Shadows that steal the show? Zap them away and let your vision shine—clean, crisp, and totally you.",
+              gif: "/feature5.mp4",
+            },
+            {
+              title: "AI Image Vectorizer",
+              tagline: "From Pixels to Pop Art",
+              copy:
+                "Watch your images transform into bold, scalable vectors—perfect for logos, merch, or wherever your brand wants to stand tall.",
+              gif: "/feature6.mp4",
+            },
+            {
+              title: "Text Effects & AI Tattoo Generator",
+              tagline: "Words That Pop, Ink That Inspires",
+              copy:
+                "Make your text shimmer, swirl, or roar. Dreaming of tattoo art? Describe it, and Juicebox sketches your next masterpiece.",
+              gif: "/feature7.mp4",
+            },
+            {
+              title: "AI Stock Images & Reverse Prompts",
+              tagline: "Never Settle for Stock Again",
+              copy:
+                "Need the perfect image? Describe it, and Juicebox invents it. Or, upload a photo and get instant inspiration with AI-powered prompt suggestions.",
+              gif: "/feature8.mp4",
+            },
+            {
+              title: "Photo Enhancer & Upscaler",
+              tagline: "Old Photos, New Vibes",
+              copy:
+                "Bring faded memories back to life, sharpen the details, and upscale images for crystal-clear impact—nostalgia never looked so fresh.",
+              gif: "/feature10.mp4",
+            },
+            {
+              title: "Brand Kit Integration",
+              tagline: "Your Brand, Bottled and Poured",
+              copy:
+                "Every image, every edit—always on-brand. Juicebox remembers your colors, fonts, and style, so your story stays consistent, campaign after campaign.",
+              gif: "/feature9.mp4",
+            },
+            {
+              title: "Gallery & Collaboration",
+              tagline: "Showcase, Share, and Shine",
+              copy:
+                "Curate your creations, collaborate with your crew, and build a gallery that's as vibrant as your imagination.",
+              gif: "/feature11.mp4",
+            },
+            {
+              title: "Campaign Automation & Scheduling",
+              tagline: "Set It, Forget It, Celebrate It",
+              copy:
+                "Plan, generate, and launch brand campaigns across socials—automatically. Juicebox handles the heavy lifting, you take the spotlight.",
+              gif: "/feature12.mp4",
             },
           ].map((card, i) => (
             <div
               key={card.title}
-              className="flex flex-col items-center bg-white/10 rounded-3xl p-8 w-full max-w-sm mx-auto shadow-lg transition-all duration-300"
+              className="flex flex-col md:flex-row items-stretch bg-white/10 rounded-3xl p-10 w-full max-w-3xl mx-auto shadow-lg transition-all duration-300 min-h-[320px] mb-12"
               style={{
-                boxShadow: "0 0 24px 0 #B2FF59, 0 2px 8px 0 #76FF03",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow =
-                  "0 0 48px 8px #B2FF59, 0 4px 16px 0 #76FF03";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow =
-                  "0 0 24px 0 #B2FF59, 0 2px 8px 0 #76FF03";
+                boxShadow: "0 0 32px 0 #B2FF59, 0 2px 12px 0 #76FF03",
               }}
             >
-              <img
-                src={card.img}
-                alt={card.title}
-                className="w-20 h-20 object-contain rounded-full mb-6 shadow"
-                style={{ background: "rgba(198,255,0,0.08)" }}
-              />
-              <h3 className="text-2xl font-bold text-white text-center mb-2">
-                {card.title}
-              </h3>
-              <p className="text-gray-200 text-center text-base opacity-90">
-                {card.subtitle}
-              </p>
+              {/* Text content */}
+              <div className="flex-1 flex flex-col justify-center md:pr-8 mb-6 md:mb-0">
+                <h3 className="text-2xl font-bold text-white mb-2">
+                  {card.title}
+                </h3>
+                <div className="text-lime-300 font-semibold mb-4 text-lg">
+                  {card.tagline}
+                </div>
+                <p className="text-gray-200 text-lg opacity-90">
+                  {card.copy}
+                </p>
+              </div>
+              {/* GIF/Video on the right, larger */}
+              <div className="flex items-center justify-center w-full md:w-56 min-w-[12rem]">
+                {card.gif.match(/\.(mp4|webm)$/i) ? (
+                  <video
+                    src={card.gif}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="rounded-xl shadow-md w-full h-auto object-contain bg-black/20 border border-white/10"
+                    style={{ maxHeight: '220px' }}
+                  />
+                ) : (
+                  <img
+                    src={card.gif}
+                    alt="Feature demo GIF"
+                    className="rounded-xl shadow-md w-full h-auto object-contain bg-black/20 border border-white/10"
+                    style={{ maxHeight: '220px' }}
+                  />
+                )}
+              </div>
             </div>
           ))}
+        </div>
+        {/* Call to Action below feature cards */}
+        <div className="w-full flex flex-col items-center mt-16">
+          <div className="text-2xl md:text-3xl font-bold text-white text-center mb-6 max-w-2xl">
+            Ready to squeeze more out of your creativity? Dive into Juicebox and let your ideas flow!
+          </div>
+          <button
+            className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg bg-gradient-to-r from-lime-400 to-lime-500 text-black hover:from-lime-300 hover:to-lime-400"
+            onClick={() => window.location.href = "/home"}
+          >
+            Get started
+          </button>
         </div>
       </div>
       {/* How it works section */}
@@ -432,16 +576,30 @@ export default function LandingPage() {
         <h2 className="text-4xl font-bold text-white text-center mb-16">
           How it works
         </h2>
-        {/* Step 1: Typing input and image */}
-        <HowItWorksStep
-          text={[
-            "create an image of an astronaut labubu on mars",
-            "now the labubu is a baker",
-          ]}
-          image={["/labubuastro.jpeg", "/baker.jpeg"]}
-          inputDelay={0}
-        />
-        {/* Step 2: Typing input and image */}
+        <div className="w-full flex flex-row items-center justify-center gap-8 min-h-[220px] mb-8 overflow-x-auto whitespace-nowrap">
+          <div className="flex flex-col items-center w-full max-w-md">
+            <img
+              src="/labubuastro.jpeg"
+              alt="Astronaut Labubu on Mars"
+              className="rounded-2xl shadow-lg w-full max-w-md object-contain"
+              style={{ background: "rgba(255,255,255,0.05)" }}
+            />
+            <div className="text-white text-lg font-mono opacity-90 text-center mt-4">
+              create an image of an astronaut labubu on mars
+            </div>
+          </div>
+          <div className="flex flex-col items-center w-full max-w-md">
+            <img
+              src="/baker.jpeg"
+              alt="Labubu is a baker"
+              className="rounded-2xl shadow-lg w-full max-w-md object-contain"
+              style={{ background: "rgba(255,255,255,0.05)" }}
+            />
+            <div className="text-white text-lg font-mono opacity-90 text-center mt-4">
+              now the labubu is a baker
+            </div>
+          </div>
+        </div>
       </div>
       {/* Try Juicebox Live Section */}
       <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
@@ -489,6 +647,12 @@ export default function LandingPage() {
 
 /* Add to your global CSS:
 .animate-blink-input::placeholder { animation: blink 1s steps(2, start) infinite; }
+*/
+
+/* Add to your global CSS:
+@keyframes gif-pop-in { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.animate-fade-in { animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 */
 
 // LiveDemoWithApi component

@@ -81,6 +81,13 @@ export default function Home() {
         {/* Icon and Title */}
         <div className="flex flex-col items-center mb-8 pt-12">    
           <h1 className="text-3xl font-bold text-white mb-2">Get started</h1>
+          {/* Start Campaign Button */}
+          <button
+            className="mt-4 bg-blue-600 text-white font-semibold px-8 py-3 rounded-xl shadow hover:bg-blue-700 transition"
+            onClick={() => router.push("/campaign")}
+          >
+            Start Campaign
+          </button>
         </div>
 
         {/* Category Boxes */}
