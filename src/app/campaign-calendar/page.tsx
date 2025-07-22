@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
-export default function CampaignCalendarPage() {
+function CampaignCalendarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentDate] = useState(new Date());
@@ -393,6 +393,7 @@ export default function CampaignCalendarPage() {
               Modify Campaign
             </button>
           </div>
+
         </div>
       </div>
 
@@ -532,5 +533,24 @@ export default function CampaignCalendarPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Loading component for Suspense fallback
+function CampaignCalendarLoading() {
+  return (
+    <div className="min-h-screen bg-[#111] flex flex-col items-center justify-center">
+      <div className="text-white text-xl">Loading campaign calendar...</div>
+      <div className="mt-4 animate-spin rounded-full h-8 w-8 border-b-2 border-lime-400"></div>
+    </div>
+  );
+}
+
+// Main component with Suspense boundary
+export default function CampaignCalendarPage() {
+  return (
+    <Suspense fallback={<CampaignCalendarLoading />}>
+      <CampaignCalendarContent />
+    </Suspense>
   );
 }
