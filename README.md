@@ -1,4 +1,22 @@
+# Kreate New - AI-Powered Marketing Campaign Platform
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## Features
+
+- 🎨 AI-powered image generation and editing
+- 📅 Campaign calendar with scheduling
+- 🏢 Brand case studies and management
+- 📱 Multi-platform social media campaigns
+- 🌱 Focus on sustainable building materials (Panache Greens)
+
+## Pages
+
+- **Landing Page** (`/`) - Main landing with live demo
+- **Demo Page** (`/demo`) - Interactive demo with brand showcase
+- **Panache Greens** (`/panache-greens`) - Brand campaign manager
+- **Create Campaign** (`/create-campaign`) - Multi-platform campaign setup
+- **Campaign Calendar** (`/campaign-calendar`) - Visual campaign schedule
 
 ## Getting Started
 
@@ -34,3 +52,8 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Deployment
+
+Live URL: https://juice-box-3wrq.vercel.app/
+Last updated: July 22, 2025
