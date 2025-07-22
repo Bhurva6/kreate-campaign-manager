@@ -279,28 +279,36 @@ export default function LandingPage() {
           Juicebox lets you generate stunning images and edit them with just a
           sentence. No skills needed—just your imagination
         </p>
-        <button
-          className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg"
-          style={{
-            background: "linear-gradient(90deg, #C6FF00 0%, #76FF03 100%)",
-            color: "#111",
-            boxShadow: "0 0 16px 2px #B2FF59, 0 2px 8px 0 #76FF03",
-            textShadow: "0 0 8px #B2FF59",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow =
-              "0 0 32px 8px #B2FF59, 0 4px 16px 0 #76FF03";
-            e.currentTarget.style.textShadow = "0 0 16px #B2FF59";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow =
-              "0 0 16px 2px #B2FF59, 0 2px 8px 0 #76FF03";
-            e.currentTarget.style.textShadow = "0 0 8px #B2FF59";
-          }}
-          onClick={() => router.push("/home")}
-        >
-          Try it instantly
-        </button>
+        <div className="flex gap-4 items-center">
+          <button
+            className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg"
+            style={{
+              background: "linear-gradient(90deg, #C6FF00 0%, #76FF03 100%)",
+              color: "#111",
+              boxShadow: "0 0 16px 2px #B2FF59, 0 2px 8px 0 #76FF03",
+              textShadow: "0 0 8px #B2FF59",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 0 32px 8px #B2FF59, 0 4px 16px 0 #76FF03";
+              e.currentTarget.style.textShadow = "0 0 16px #B2FF59";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.boxShadow =
+                "0 0 16px 2px #B2FF59, 0 2px 8px 0 #76FF03";
+              e.currentTarget.style.textShadow = "0 0 8px #B2FF59";
+            }}
+            onClick={() => router.push("/home")}
+          >
+            Try it instantly
+          </button>
+          <button
+            className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg bg-white/20 text-white border border-white/30 hover:bg-white/30 hover:border-white/50"
+            onClick={() => router.push("/demo")}
+          >
+            Live Demo
+          </button>
+        </div>
         <div className="mt-4 text-sm text-gray-400 text-center">
           Trusted by creators worldwide
         </div>
