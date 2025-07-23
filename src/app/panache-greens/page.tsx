@@ -142,7 +142,7 @@ export default function PanacheGreensPage() {
               </button>
               <button
                 className="bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-4 rounded-xl transition border border-white/20 hover:border-white/40"
-                onClick={() => router.push("/demo")}
+                onClick={() => router.push("/campaign-calendar")}
               >
                 View posting schedule 
               </button>
