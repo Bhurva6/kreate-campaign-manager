@@ -51,7 +51,7 @@ export default function PanacheGreensPage() {
               </h2>
               <p className="text-lg text-gray-300 mb-6 leading-relaxed">
                 Panache Greens is revolutionizing the construction industry with eco-friendly, 
-                sustainable building materials that don't compromise on quality or aesthetics. 
+                sustainable building materials that don&apos;t compromise on quality or aesthetics. 
                 Our AI-powered visual campaigns showcase the beauty and sustainability of green construction.
               </p>
             </div>
@@ -81,7 +81,7 @@ export default function PanacheGreensPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10">
                   <img 
-                    src="/images.jpeg" 
+                    src="/panache-white-text-5/post_3+local+1753258357+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg" 
                     alt="Sustainable Building Materials Showcase"
                     className="w-full h-48 object-cover rounded-lg mb-4"
                   />
@@ -90,7 +90,8 @@ export default function PanacheGreensPage() {
                 </div>
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10">
                   <img 
-                    src="/ChatGpt-art-styleITG-1743494812804.avif" 
+                    src="/panache-white-text-5/post_3+local+1753258341+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg
+                    " 
                     alt="Green Construction Process"
                     className="w-full h-48 object-cover rounded-lg mb-4"
                   />

@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
-function CampaignCalendarContent() {
+function ApprovedCampaignCalendarContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentDate] = useState(new Date());
@@ -52,13 +52,12 @@ function CampaignCalendarContent() {
     "⚡ Innovation in every product - Panache Greens leads the way in sustainable building solutions! #Innovation #GreenTech"
   ];
 
-  // Generate random approval status
+  // Generate approval status (all approved for this page)
   const getApprovalInfo = () => {
     const approvers = ["Sarah Johnson (Marketing Director)", "Mike Chen (Brand Manager)", "Lisa Patel (Campaign Lead)", "David Kumar (Creative Director)"];
-    const statuses = ["Approved", "Pending Review", "Auto-Approved"];
     return {
       approver: approvers[Math.floor(Math.random() * approvers.length)],
-      status: statuses[Math.floor(Math.random() * statuses.length)],
+      status: "Approved",
       approvedAt: "2 hours ago"
     };
   };
@@ -239,7 +238,7 @@ function CampaignCalendarContent() {
       <div className="flex flex-row justify-between items-center w-full p-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push("/create-campaign")}
+            onClick={() => router.push("/campaign-calendar")}
             className="text-white hover:text-lime-400 transition"
           >
             ← Back to Campaign Setup
@@ -266,10 +265,10 @@ function CampaignCalendarContent() {
       <div className="flex-1 px-4 py-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl md:text-5xl font-bold text-white text-center mb-4">
-            Campaign Calendar
+            Approved Campaign Calendar
           </h1>
           <p className="text-lg text-gray-300 text-center mb-8">
-            Your Panache Greens content schedule
+            Your approved Panache Greens content schedule
           </p>
 
           {/* Campaign Summary */}
@@ -375,6 +374,7 @@ function CampaignCalendarContent() {
                             <div className="text-xs text-white text-center">
                               <div className="font-semibold">{post.platform}</div>
                               <div className="text-lime-400">{post.timeSlot}</div>
+                              <div className="text-green-400 text-xs">✅ Approved</div>
                             </div>
                           </div>
                         </div>
@@ -389,33 +389,18 @@ function CampaignCalendarContent() {
           {/* Action Buttons */}
           <div className="flex justify-center gap-4 mt-8">
             <button
-              className="bg-gradient-to-r from-lime-400 to-green-500 hover:from-lime-300 hover:to-green-400 text-black font-semibold px-8 py-3 rounded-xl shadow-lg transition"
+              className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-semibold px-8 py-3 rounded-xl shadow-lg transition"
               onClick={() => {
-                // Navigate to approved campaign calendar
-                const urlParams = new URLSearchParams();
-                if (platforms.length > 0) urlParams.set('platforms', platforms.join(','));
-                if (frequency) urlParams.set('frequency', frequency);
-                if (focusAreas.length > 0) urlParams.set('focusAreas', focusAreas.join(','));
-                router.push(`/approved-campaign-calendar?${urlParams.toString()}`);
+                alert("Campaign is now live and scheduled for posting!");
               }}
             >
-              Approve Schedule
+              Go Live
             </button>
             <button
               className="bg-white/10 hover:bg-white/20 text-white font-semibold px-8 py-3 rounded-xl transition border border-white/20 hover:border-white/40"
-              onClick={() => router.push("/create-campaign")}
+              onClick={() => router.push("/campaign-calendar")}
             >
-              Modify Campaign
-            </button>
-            <button
-              className="bg-red-500/20 hover:bg-red-500/30 text-red-400 font-semibold px-8 py-3 rounded-xl transition border border-red-400/20 hover:border-red-400/40"
-              onClick={() => {
-                if (confirm("Are you sure you want to delete this campaign? This action cannot be undone.")) {
-                  router.push("/");
-                }
-              }}
-            >
-              Delete Campaign
+              Back to Review
             </button>
           </div>
 
@@ -428,7 +413,7 @@ function CampaignCalendarContent() {
           <div className="bg-[#111] border border-white/20 rounded-2xl p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-white">Post Details</h3>
+              <h3 className="text-2xl font-bold text-white">Approved Post Details</h3>
               <button
                 onClick={closeModal}
                 className="text-gray-400 hover:text-white transition text-2xl"
@@ -501,6 +486,24 @@ function CampaignCalendarContent() {
                   <h4 className="text-lg font-semibold text-white mb-3">✏️ Caption</h4>
                   <p className="text-gray-300 leading-relaxed">{selectedPost.caption}</p>
                 </div>
+
+                {/* Approval Status */}
+                <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                  <h4 className="text-lg font-semibold text-white mb-3">✅ Approval Status</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400">
+                        {selectedPost.approval.status}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      <span className="text-lime-400 font-semibold">Approved by:</span> {selectedPost.approval.approver}
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      <span className="text-lime-400 font-semibold">Approved:</span> {selectedPost.approval.approvedAt}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -538,20 +541,20 @@ function CampaignCalendarContent() {
 }
 
 // Loading component for Suspense fallback
-function CampaignCalendarLoading() {
+function ApprovedCampaignCalendarLoading() {
   return (
     <div className="min-h-screen bg-[#111] flex flex-col items-center justify-center">
-      <div className="text-white text-xl">Loading campaign calendar...</div>
+      <div className="text-white text-xl">Loading approved campaign calendar...</div>
       <div className="mt-4 animate-spin rounded-full h-8 w-8 border-b-2 border-lime-400"></div>
     </div>
   );
 }
 
 // Main component with Suspense boundary
-export default function CampaignCalendarPage() {
+export default function ApprovedCampaignCalendarPage() {
   return (
-    <Suspense fallback={<CampaignCalendarLoading />}>
-      <CampaignCalendarContent />
+    <Suspense fallback={<ApprovedCampaignCalendarLoading />}>
+      <ApprovedCampaignCalendarContent />
     </Suspense>
   );
 }

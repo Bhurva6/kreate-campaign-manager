@@ -265,7 +265,7 @@ export default function DemoPage() {
               {
                 name: "Panache Greens",
                 category: "Sustainable Building Materials",
-                image: "/images.jpeg",
+                image: "/panache_green_logo.jpeg",
                 description: "Eco-friendly building materials and green construction campaigns"
               },
               {

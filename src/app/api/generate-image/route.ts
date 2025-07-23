@@ -24,9 +24,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Google Cloud/Vertex AI config
-    const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT!;
+    const PROJECT_ID = process.env.GOOGLE_CLOUD_PROJECT || '';
     const LOCATION = process.env.GOOGLE_CLOUD_LOCATION || "us-central1";
     const MODEL_VERSION = "imagen-4.0-generate-preview-06-06";
+
+    if (!PROJECT_ID) {
+      return NextResponse.json({ error: "Google Cloud project not configured" }, { status: 500 });
+    }
 
     const url = `https://${LOCATION}-aiplatform.googleapis.com/v1/projects/${PROJECT_ID}/locations/${LOCATION}/publishers/google/models/${MODEL_VERSION}:predict`;
 

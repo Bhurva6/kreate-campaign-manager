@@ -3,10 +3,10 @@ import { S3Client } from "@aws-sdk/client-s3";
 // Cloudflare R2 configuration
 export const r2Client = new S3Client({
   region: "auto", // R2 uses "auto" as region
-  endpoint: process.env.CLOUDFLARE_R2_ENDPOINT!, // Your R2 endpoint
+  endpoint: process.env.CLOUDFLARE_R2_ENDPOINT || '', // Your R2 endpoint
   credentials: {
-    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY || '',
   },
 });
 
