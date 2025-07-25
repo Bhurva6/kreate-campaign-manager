@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
-export default function CreateCampaignPage() {
+function CreateCampaignContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
@@ -267,5 +267,17 @@ export default function CreateCampaignPage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function CreateCampaignPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#111] flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    }>
+      <CreateCampaignContent />
+    </Suspense>
   );
 }
