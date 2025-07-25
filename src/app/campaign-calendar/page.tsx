@@ -15,42 +15,99 @@ function CampaignCalendarContent() {
   const platforms = searchParams.get('platforms')?.split(',') || [];
   const frequency = searchParams.get('frequency') || '';
   const focusAreas = searchParams.get('focusAreas')?.split(',') || [];
+  const brand = searchParams.get('brand') || 'panache-greens';
 
-  // Sample images for the calendar posts - Using images from panache-white-text-5 folder
-  const sampleImages = [
-    "/panache-white-text-5/post_3+local+1753258339+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258340+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258341+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258342+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258343+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258344+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258346+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258347+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258348+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258349+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258350+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258351+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258352+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258353+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258354+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258355+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258356+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258357+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258358+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
-    "/panache-white-text-5/post_3+local+1753258359+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg"
-  ];
+  // Sample images for the calendar posts - Different images based on brand
+  const brandImages = {
+    'panache-greens': [
+      "/panache-white-text-5/post_3+local+1753258339+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258340+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258341+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258342+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258343+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258344+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258346+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258347+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258348+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258349+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258350+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258351+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258352+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258353+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258354+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258355+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258356+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258357+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258358+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg",
+      "/panache-white-text-5/post_3+local+1753258359+3565d538-fc7a-4283-87d6-de848eb75aaf.jpg"
+    ],
+    'evolv': [
+      "/evolv-white-text-1/evolv_1+local+1753433925+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433926+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433927+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433928+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433929+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433930+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433931+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433932+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433933+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433934+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433935+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433936+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433937+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433939+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433940+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433941+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433942+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433943+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433944+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg",
+      "/evolv-white-text-1/evolv_1+local+1753433945+dad57e39-1f6b-4f08-8308-251cf17def3d.jpg"
+    ]
+  };
 
-  // Sample captions for posts
-  const sampleCaptions = [
-    "🌱 Building a sustainable future with Panache Greens! Our eco-friendly materials are revolutionizing construction. #SustainableBuilding #EcoFriendly",
-    "✨ Quality meets sustainability in every Panache Greens product. Experience the difference green building materials make! #GreenConstruction #Innovation",
-    "🏗️ Transform your projects with our premium sustainable building materials. Better for you, better for the planet! #EcoConstruction #QualityFirst",
-    "🌍 At Panache Greens, we believe in creating homes that care for the environment. Join the green revolution! #SustainableLiving #PanacheGreens",
-    "💚 Discover the beauty of sustainable architecture with Panache Greens materials. Building tomorrow, today! #Architecture #Sustainability",
-    "🔧 Professional builders trust Panache Greens for quality and sustainability. Make the smart choice for your next project! #ProfessionalGrade #EcoBuilding",
-    "🏡 Every sustainable home starts with the right materials. Choose Panache Greens for a greener future! #SustainableHomes #EcoMaterials",
-    "⚡ Innovation in every product - Panache Greens leads the way in sustainable building solutions! #Innovation #GreenTech"
-  ];
+  const sampleImages = brandImages[brand as keyof typeof brandImages] || brandImages['panache-greens'];
+
+  // Sample captions for posts - Different captions based on brand
+  const brandCaptions = {
+    'panache-greens': [
+      "🌱 Building a sustainable future with Panache Greens! Our eco-friendly materials are revolutionizing construction. #SustainableBuilding #EcoFriendly",
+      "✨ Quality meets sustainability in every Panache Greens product. Experience the difference green building materials make! #GreenConstruction #Innovation",
+      "🏗️ Transform your projects with our premium sustainable building materials. Better for you, better for the planet! #EcoConstruction #QualityFirst",
+      "🌍 At Panache Greens, we believe in creating homes that care for the environment. Join the green revolution! #SustainableLiving #PanacheGreens",
+      "💚 Discover the beauty of sustainable architecture with Panache Greens materials. Building tomorrow, today! #Architecture #Sustainability",
+      "🔧 Professional builders trust Panache Greens for quality and sustainability. Make the smart choice for your next project! #ProfessionalGrade #EcoBuilding",
+      "🏡 Every sustainable home starts with the right materials. Choose Panache Greens for a greener future! #SustainableHomes #EcoMaterials",
+      "⚡ Innovation in every product - Panache Greens leads the way in sustainable building solutions! #Innovation #GreenTech"
+    ],
+    'evolv': [
+      "⚡ Powering the future with Evolv's electric fleet solutions! Clean energy, smarter logistics. #ElectricFleet #CleanEnergy #Evolv",
+      "🚐 Experience the revolution in mobility with Evolv's intelligent EV fleet management. #SmartLogistics #ElectricVehicles #Innovation",
+      "🌍 Driving towards a sustainable tomorrow with Evolv's zero-emission fleet solutions. #Sustainability #EVs #GreenLogistics",
+      "🔋 Charged up for the future! Evolv delivers efficient, eco-friendly transportation solutions. #ElectricMobility #CleanTransport #TechInnovation",
+      "🚛 Transform your logistics with Evolv's cutting-edge electric fleet technology. Better for business, better for the planet! #FleetManagement #ElectricFleet",
+      "⚡ Smart. Sustainable. Scalable. Evolv's EV solutions are reshaping the transportation industry. #ElectricRevolution #SmartFleet #Evolv",
+      "🌱 Every mile matters. Choose Evolv for carbon-neutral fleet operations that drive your business forward! #CarbonNeutral #ElectricFleet #GreenBusiness",
+      "🔌 Plug into the future of mobility with Evolv's advanced electric vehicle fleet solutions! #ElectricFuture #Innovation #CleanTech"
+    ]
+  };
+
+  const sampleCaptions = brandCaptions[brand as keyof typeof brandCaptions] || brandCaptions['panache-greens'];
+
+  // Brand configuration
+  const brandConfig = {
+    'panache-greens': {
+      name: 'Panache Greens',
+      backLink: '/create-campaign?brand=panache-greens',
+      title: 'Your Panache Greens content schedule'
+    },
+    'evolv': {
+      name: 'Evolv',
+      backLink: '/create-campaign?brand=evolv',
+      title: 'Your Evolv content schedule'
+    }
+  };
+  
+  const currentBrand = brandConfig[brand as keyof typeof brandConfig] || brandConfig['panache-greens'];
 
   // Generate random approval status
   const getApprovalInfo = () => {
@@ -239,7 +296,7 @@ function CampaignCalendarContent() {
       <div className="flex flex-row justify-between items-center w-full p-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push("/create-campaign")}
+            onClick={() => router.push(currentBrand.backLink)}
             className="text-white hover:text-lime-400 transition"
           >
             ← Back to Campaign Setup
@@ -269,7 +326,7 @@ function CampaignCalendarContent() {
             Campaign Calendar
           </h1>
           <p className="text-lg text-gray-300 text-center mb-8">
-            Your Panache Greens content schedule
+            {currentBrand.title}
           </p>
 
           {/* Campaign Summary */}

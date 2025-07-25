@@ -1,13 +1,35 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 export default function CreateCampaignPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [frequency, setFrequency] = useState("");
   const [selectedFocusAreas, setSelectedFocusAreas] = useState<string[]>([]);
+  
+  // Get brand from URL params or default to panache-greens
+  const brand = searchParams.get('brand') || 'panache-greens';
+  
+  // Brand configuration
+  const brandConfig = {
+    'panache-greens': {
+      name: 'Panache Greens',
+      backLink: '/panache-greens',
+      color: 'lime',
+      title: 'Configure your Panache Greens marketing campaign across multiple platforms'
+    },
+    'evolv': {
+      name: 'Evolv',
+      backLink: '/evolv',
+      color: 'blue',
+      title: 'Configure your Evolv marketing campaign across multiple platforms'
+    }
+  };
+  
+  const currentBrand = brandConfig[brand as keyof typeof brandConfig] || brandConfig['panache-greens'];
 
   const platforms = [
     { name: "Instagram", icon: "📷", color: "bg-gradient-to-r from-purple-500 to-pink-500" },
@@ -64,7 +86,8 @@ export default function CreateCampaignPage() {
     const params = new URLSearchParams({
       platforms: selectedPlatforms.join(','),
       frequency: frequency,
-      focusAreas: selectedFocusAreas.join(',')
+      focusAreas: selectedFocusAreas.join(','),
+      brand: brand
     });
     
     // Redirect to campaign calendar with campaign data
@@ -77,10 +100,10 @@ export default function CreateCampaignPage() {
       <div className="flex flex-row justify-between items-center w-full p-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push("/panache-greens")}
+            onClick={() => router.push(currentBrand.backLink)}
             className="text-white hover:text-lime-400 transition"
           >
-            ← Back to Panache Greens
+            ← Back to {currentBrand.name}
           </button>
           <Image src="/logo.png" alt="Juicebox Logo" width={48} height={48} />
         </div>
@@ -107,7 +130,7 @@ export default function CreateCampaignPage() {
             Create New Campaign
           </h1>
           <p className="text-lg text-gray-300 text-center mb-12 max-w-2xl mx-auto">
-            Configure your Panache Greens marketing campaign across multiple platforms
+            {currentBrand.title}
           </p>
 
           <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 md:p-12 shadow-2xl">

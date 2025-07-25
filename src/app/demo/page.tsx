@@ -269,10 +269,10 @@ export default function DemoPage() {
                 description: "Eco-friendly building materials and green construction campaigns"
               },
               {
-                name: "TechFlow Solutions",
-                category: "Technology",
-                image: "/ChatGpt-art-styleITG-1743494812804.avif",
-                description: "AI-powered product demos and tech illustrations"
+                name: "Evolv",
+                category: "Mobility & Logistics",
+                image: "/evolvlogo.png",
+                description: "EV fleet provider"
               },
               {
                 name: "Urban Café",
@@ -317,6 +317,8 @@ export default function DemoPage() {
                 onClick={() => {
                   if (brand.name === "Panache Greens") {
                     router.push("/panache-greens");
+                  } else if (brand.name === "Evolv") {
+                    router.push("/evolv");
                   } else {
                     // You can add navigation to individual case study pages here
                     console.log(`Clicked on ${brand.name} case study`);
