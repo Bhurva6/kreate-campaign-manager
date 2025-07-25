@@ -275,12 +275,6 @@ export default function DemoPage() {
                 description: "EV fleet provider"
               },
               {
-                name: "Urban Café",
-                category: "Food & Beverage",
-                image: "/bright-cereal.png",
-                description: "Social media content and menu visualization"
-              },
-              {
                 name: "EcoStyle Fashion",
                 category: "Fashion",
                 image: "/girl1.jpeg",
