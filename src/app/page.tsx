@@ -258,13 +258,13 @@ export default function LandingPage() {
         <div className="flex gap-4">
           <button
             className="px-6 py-2 rounded-lg bg-white/20 text-white font-semibold hover:bg-white/30 transition"
-            onClick={() => window.location.href = "/signin"}
+            onClick={() => router.push("/signin")}
           >
             Sign In
           </button>
           <button
             className="px-6 py-2 rounded-lg bg-lime-400 text-black font-semibold hover:bg-lime-300 transition"
-            onClick={() => window.location.href = "/signup"}
+            onClick={() => router.push("/signup")}
           >
             Sign Up
           </button>
@@ -573,42 +573,13 @@ export default function LandingPage() {
           </div>
           <button
             className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg bg-gradient-to-r from-lime-400 to-lime-500 text-black hover:from-lime-300 hover:to-lime-400"
-            onClick={() => window.location.href = "/home"}
+            onClick={() => router.push("/home")}
           >
             Get started
           </button>
         </div>
       </div>
-      {/* How it works section */}
-      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
-        <h2 className="text-4xl font-bold text-white text-center mb-16">
-          How it works
-        </h2>
-        <div className="w-full flex flex-row items-center justify-center gap-8 min-h-[220px] mb-8 overflow-x-auto whitespace-nowrap">
-          <div className="flex flex-col items-center w-full max-w-md">
-            <img
-              src="/labubuastro.jpeg"
-              alt="Astronaut Labubu on Mars"
-              className="rounded-2xl shadow-lg w-full max-w-md object-contain"
-              style={{ background: "rgba(255,255,255,0.05)" }}
-            />
-            <div className="text-white text-lg font-mono opacity-90 text-center mt-4">
-              create an image of an astronaut labubu on mars
-            </div>
-          </div>
-          <div className="flex flex-col items-center w-full max-w-md">
-            <img
-              src="/baker.jpeg"
-              alt="Labubu is a baker"
-              className="rounded-2xl shadow-lg w-full max-w-md object-contain"
-              style={{ background: "rgba(255,255,255,0.05)" }}
-            />
-            <div className="text-white text-lg font-mono opacity-90 text-center mt-4">
-              now the labubu is a baker
-            </div>
-          </div>
-        </div>
-      </div>
+      
       {/* Try Juicebox Live Section */}
       <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
         <h2 className="text-4xl font-bold text-white text-center mb-16">
