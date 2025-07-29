@@ -3,11 +3,16 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import { FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
+import OpenRoute from "@/components/OpenRoute";
 
 export default function SignInPage() {
   const router = useRouter();
+  const { login, googleLogin } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -17,16 +22,18 @@ export default function SignInPage() {
     setError("");
 
     try {
-      // TODO: Implement actual authentication logic here
-      console.log("Sign in attempt:", { email, password });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // On successful sign in, redirect to home
-      router.push("/home");
-    } catch (err) {
-      setError("Invalid email or password. Please try again.");
+      const result = await login(email, password);
+      if (result.success) {
+        // AuthContext handles the redirect automatically after successful login
+        router.push("/home");
+      }
+    } catch (err: any) {
+      if (err.message.startsWith('EMAIL_VERIFICATION_REQUIRED:')) {
+        const emailFromError = err.message.split(':')[1];
+        router.push(`/verify-email?email=${encodeURIComponent(emailFromError)}`);
+      } else {
+        setError(err.message || "Invalid email or password. Please try again.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -34,23 +41,24 @@ export default function SignInPage() {
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
+    setError("");
+    
     try {
-      // TODO: Implement Google OAuth logic here
-      console.log("Google sign in attempt");
-      
-      // Simulate Google auth
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      router.push("/home");
-    } catch (err) {
-      setError("Google sign-in failed. Please try again.");
+      const result = await googleLogin();
+      if (result.success) {
+        // AuthContext handles the redirect automatically after successful Google login
+        router.push("/home");
+      }
+    } catch (err: any) {
+      setError(err.message || "Google sign-in failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#111] flex flex-col">
+    <OpenRoute>
+      <div className="min-h-screen bg-[#111] flex flex-col">
       {/* Header */}
       <div className="flex flex-row justify-between items-center w-full p-6">
         <Link href="/">
@@ -101,16 +109,26 @@ export default function SignInPage() {
                 <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                   Password
                 </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full bg-[#222] text-white rounded-xl px-4 py-3 outline-none border border-white/20 focus:border-lime-400 transition placeholder:text-gray-400"
-                  placeholder="Enter your password"
-                  disabled={isLoading}
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="w-full bg-[#222] text-white rounded-xl px-4 py-3 pr-12 outline-none border border-white/20 focus:border-lime-400 transition placeholder:text-gray-400"
+                    placeholder="Enter your password"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition"
+                    disabled={isLoading}
+                  >
+                    {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                  </button>
+                </div>
               </div>
 
               <div className="flex items-center justify-between">
@@ -170,6 +188,7 @@ export default function SignInPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </OpenRoute>
   );
 } 

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function BrandKitPage() {
   const router = useRouter();
@@ -121,7 +122,8 @@ export default function BrandKitPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#111] relative">
+    <ProtectedRoute>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#111] relative">
       <button
         className="absolute top-8 left-8 bg-[#222] text-white px-4 py-2 rounded-lg hover:bg-[#333] transition"
         onClick={() => router.push("/")}
@@ -239,7 +241,8 @@ export default function BrandKitPage() {
             <span className="text-xs text-gray-400 mt-2">Generated Image</span>
           </div>
         )}
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 } 

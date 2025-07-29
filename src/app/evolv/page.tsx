@@ -1,12 +1,14 @@
 "use client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function EvolvPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-[#111] flex flex-col">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-[#111] flex flex-col">
       {/* Header */}
       <div className="flex flex-row justify-between items-center w-full p-6">
         <div className="flex items-center gap-4">
@@ -157,6 +159,7 @@ export default function EvolvPage() {
           <span>&copy; {new Date().getFullYear()}</span>
         </div>
       </footer>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

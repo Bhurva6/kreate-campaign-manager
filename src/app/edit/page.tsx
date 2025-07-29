@@ -2,6 +2,7 @@
 import { useImageStore } from "../../store/imageStore";
 import { useState } from "react";
 import Image from "next/image";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function EditImagePage() {
   const img = useImageStore((s) => s.selectedImage) as string | ImageData | { data: Uint8ClampedArray | number[]; width: number; height: number } | null;
@@ -109,7 +110,8 @@ export default function EditImagePage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#111] px-4">
+    <ProtectedRoute>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#111] px-4">
       <div className="max-w-3xl w-full flex flex-col items-center">
         <div className="flex flex-col md:flex-row gap-8 items-center w-full">
           {/* Original Image */}
@@ -169,6 +171,7 @@ export default function EditImagePage() {
           <div className="text-gray-400 mt-4">Waiting for edited image...</div>
         )}
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

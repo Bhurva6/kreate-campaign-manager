@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 function CreateCampaignContent() {
   const router = useRouter();
@@ -272,12 +273,14 @@ function CreateCampaignContent() {
 
 export default function CreateCampaignPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#111] flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    }>
-      <CreateCampaignContent />
-    </Suspense>
+    <ProtectedRoute>
+      <Suspense fallback={
+        <div className="min-h-screen bg-[#111] flex items-center justify-center">
+          <div className="text-white text-xl">Loading...</div>
+        </div>
+      }>
+        <CreateCampaignContent />
+      </Suspense>
+    </ProtectedRoute>
   );
 }

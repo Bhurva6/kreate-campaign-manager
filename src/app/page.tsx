@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useImageStore } from "../store/imageStore";
 import Image from "next/image";
 import React from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 type GeneratedImage = { url: string; prompt?: string };
 
@@ -52,6 +53,7 @@ async function callEditImage(prompt: string, input_image: string) {
 
 export default function LandingPage() {
   const router = useRouter();
+  const { user, loading, logout } = useAuth();
   // Typing animation logic
   const fullText1 =
     'a box of cereal called "super crunch" is placed on a table near a window';
@@ -266,18 +268,39 @@ export default function LandingPage() {
           <span className="text-white font-bold text-xl">Juicebox</span>
         </div>
         <div className="flex gap-4">
-          <button
-            className="px-6 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold hover:bg-white/20 hover:border-white/30 transition-all duration-300 hover:scale-105"
-            onClick={() => router.push("/signin")}
-          >
-            Sign In
-          </button>
-          <button
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-lime-400 to-lime-500 text-black font-semibold hover:from-lime-300 hover:to-lime-400 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-lime-400/25"
-            onClick={() => router.push("/signup")}
-          >
-            Sign Up
-          </button>
+          {user ? (
+            // Show user menu when logged in
+            <>
+              <button
+                className="px-6 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold hover:bg-white/20 hover:border-white/30 transition-all duration-300 hover:scale-105"
+                onClick={() => router.push("/home")}
+              >
+                Dashboard
+              </button>
+              <button
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold hover:from-red-400 hover:to-red-500 transition-all duration-300 hover:scale-105 shadow-lg"
+                onClick={logout}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            // Show sign in/up buttons when not logged in
+            <>
+              <button
+                className="px-6 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold hover:bg-white/20 hover:border-white/30 transition-all duration-300 hover:scale-105"
+                onClick={() => router.push("/signin")}
+              >
+                Sign In
+              </button>
+              <button
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-lime-400 to-lime-500 text-black font-semibold hover:from-lime-300 hover:to-lime-400 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-lime-400/25"
+                onClick={() => router.push("/signup")}
+              >
+                Sign Up
+              </button>
+            </>
+          )}
         </div>
       </div>
       {/* Centered Content */}
@@ -670,9 +693,9 @@ export default function LandingPage() {
           </div>
           <button
             className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg bg-gradient-to-r from-lime-400 to-lime-500 text-black hover:from-lime-300 hover:to-lime-400"
-            onClick={() => router.push("/home")}
+            onClick={() => router.push(user ? "/home" : "/signup")}
           >
-            Get started
+            {user ? "Go to Dashboard" : "Get started"}
           </button>
         </div>
       </div>
@@ -690,8 +713,11 @@ export default function LandingPage() {
         <h2 className="text-4xl font-bold text-white text-center mb-8">
           Ready for more
         </h2>
-        <button className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg bg-gradient-to-r from-lime-400 to-lime-500 text-black hover:from-lime-300 hover:to-lime-400">
-          Get started free
+        <button 
+          className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg bg-gradient-to-r from-lime-400 to-lime-500 text-black hover:from-lime-300 hover:to-lime-400"
+          onClick={() => router.push(user ? "/home" : "/signup")}
+        >
+          {user ? "Go to Dashboard" : "Get started free"}
         </button>
       </div>
       {/* Footer */}

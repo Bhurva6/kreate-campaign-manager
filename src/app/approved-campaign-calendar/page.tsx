@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 function ApprovedCampaignCalendarContent() {
   const router = useRouter();
@@ -553,8 +554,10 @@ function ApprovedCampaignCalendarLoading() {
 // Main component with Suspense boundary
 export default function ApprovedCampaignCalendarPage() {
   return (
-    <Suspense fallback={<ApprovedCampaignCalendarLoading />}>
-      <ApprovedCampaignCalendarContent />
-    </Suspense>
+    <ProtectedRoute>
+      <Suspense fallback={<ApprovedCampaignCalendarLoading />}>
+        <ApprovedCampaignCalendarContent />
+      </Suspense>
+    </ProtectedRoute>
   );
 }
