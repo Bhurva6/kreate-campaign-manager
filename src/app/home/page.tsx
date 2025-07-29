@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function Home() {
   const router = useRouter();
@@ -39,7 +40,8 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#111] via-[#0f0f0f] to-[#1a1a1a] flex flex-col items-center justify-center relative overflow-hidden">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gradient-to-br from-[#111] via-[#0f0f0f] to-[#1a1a1a] flex flex-col items-center justify-center relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-20 left-20 w-64 h-64 bg-lime-400/10 rounded-full blur-3xl animate-pulse"></div>
@@ -192,6 +194,7 @@ export default function Home() {
           background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
         }
       `}</style>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Placeholder scheduled posts data
 const scheduledPosts = [
@@ -70,7 +71,8 @@ export default function CampaignSchedulePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#111] flex flex-col items-center py-12 px-2">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-[#111] flex flex-col items-center py-12 px-2">
       <div className="w-full max-w-3xl bg-[#181818] rounded-2xl shadow-lg p-8 flex flex-col items-center">
         <h1 className="text-3xl font-bold text-white mb-6 text-center">Campaign Schedule</h1>
         {/* Month Navigation */}
@@ -163,6 +165,7 @@ export default function CampaignSchedulePage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 } 

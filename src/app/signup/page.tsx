@@ -3,9 +3,12 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import OpenRoute from "@/components/OpenRoute";
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { register, googleLogin } = useAuth();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,16 +42,11 @@ export default function SignUpPage() {
     }
 
     try {
-      // TODO: Implement actual authentication logic here
-      console.log("Sign up attempt:", { username, email, password });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // On successful sign up, redirect to home
-      router.push("/home");
-    } catch (err) {
-      setError("Failed to create account. Please try again.");
+      await register(username, email, password);
+      // Redirect to email verification page
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+    } catch (err: any) {
+      setError(err.message || "Failed to create account. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -56,23 +54,21 @@ export default function SignUpPage() {
 
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
+    setError("");
+    
     try {
-      // TODO: Implement Google OAuth logic here
-      console.log("Google sign up attempt");
-      
-      // Simulate Google auth
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      router.push("/home");
-    } catch (err) {
-      setError("Google sign-up failed. Please try again.");
+      await googleLogin();
+      // Google login handles authentication and redirect automatically
+    } catch (err: any) {
+      setError(err.message || "Google sign-up failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#111] flex flex-col">
+    <OpenRoute>
+      <div className="min-h-screen bg-[#111] flex flex-col">
       {/* Header */}
       <div className="flex flex-row justify-between items-center w-full p-6">
         <Link href="/">
@@ -226,6 +222,7 @@ export default function SignUpPage() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </OpenRoute>
   );
 } 

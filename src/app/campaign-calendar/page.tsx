@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 function CampaignCalendarContent() {
   const router = useRouter();
@@ -291,6 +292,7 @@ function CampaignCalendarContent() {
   };
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-[#111] flex flex-col">
       {/* Header */}
       <div className="flex flex-row justify-between items-center w-full p-6">
@@ -591,6 +593,7 @@ function CampaignCalendarContent() {
         </div>
       </footer>
     </div>
+    </ProtectedRoute>
   );
 }
 

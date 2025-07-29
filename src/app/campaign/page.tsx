@@ -2,6 +2,7 @@
 import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaLinkedin, FaInstagram } from "react-icons/fa";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 const platforms = [
   {

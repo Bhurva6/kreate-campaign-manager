@@ -3,6 +3,7 @@
 import { useImageStore } from "@/store/imageStore";
 import ImageGallery from "@/components/ImageGallery";
 import { useState } from "react";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function AdminPage() {
   const { images, clearImages } = useImageStore();
@@ -23,7 +24,8 @@ export default function AdminPage() {
   const stats = getImageStats();
 
   return (
-    <div className="container mx-auto p-6">
+    <ProtectedRoute>
+      <div className="container mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-4">R2 Image Management</h1>
         
@@ -106,6 +108,7 @@ export default function AdminPage() {
         category={selectedCategory === "all" ? undefined : selectedCategory}
         showUploadInfo={true}
       />
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }

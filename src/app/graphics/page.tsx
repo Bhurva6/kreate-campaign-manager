@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useImageStore } from "../../store/imageStore";
 import Image from "next/image";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 export default function GraphicsPage() {
   const router = useRouter();
@@ -93,7 +94,8 @@ export default function GraphicsPage() {
   };
 
   return (
-    <div className="min-h-screen relative bg-[#111] overflow-hidden">      
+    <ProtectedRoute>
+      <div className="min-h-screen relative bg-[#111] overflow-hidden">      
       {/* Animated Background Grid */}
       <div className="fixed inset-0 z-0">
         <div className="grid grid-cols-4 md:grid-cols-6 gap-1 md:gap-2 p-1 md:p-2 h-screen opacity-40">
@@ -289,6 +291,7 @@ export default function GraphicsPage() {
           }
         }
       `}</style>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 } 
