@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import PostingManager from "@/components/PostingManager";
 
 function ApprovedCampaignCalendarContent() {
   const router = useRouter();
@@ -10,11 +11,44 @@ function ApprovedCampaignCalendarContent() {
   const [viewingMonth, setViewingMonth] = useState(new Date());
   const [selectedPost, setSelectedPost] = useState<any>(null);
   const [editText, setEditText] = useState("");
+  const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
+  const [postingStatus, setPostingStatus] = useState<{ [key: string]: { status: 'success' | 'error', message?: string } }>({});
   
   // Get campaign data from URL params (if available)
   const platforms = searchParams.get('platforms')?.split(',') || [];
   const frequency = searchParams.get('frequency') || '';
   const focusAreas = searchParams.get('focusAreas')?.split(',') || [];
+
+  // Load connected accounts on component mount
+  useEffect(() => {
+    loadConnectedAccounts();
+  }, []);
+
+  const loadConnectedAccounts = async () => {
+    try {
+      const response = await fetch('/api/social-accounts?userId=demo-user');
+      if (response.ok) {
+        const data = await response.json();
+        setConnectedAccounts(data.accounts);
+      }
+    } catch (error) {
+      console.error('Failed to load accounts:', error);
+    }
+  };
+
+  const getAccountForPlatform = (platformName: string) => {
+    const accounts = connectedAccounts.filter(account => 
+      account.platform.toLowerCase() === platformName.toLowerCase()
+    );
+    return accounts.length > 0 ? accounts[0] : null; // Return first account for platform
+  };
+
+  const handlePostingUpdate = (postId: string, status: 'success' | 'error', message?: string) => {
+    setPostingStatus(prev => ({
+      ...prev,
+      [postId]: { status, message }
+    }));
+  };
 
   // Sample images for the calendar posts - Using images from panache-white-text-5 folder
   const sampleImages = [
@@ -105,12 +139,15 @@ function ApprovedCampaignCalendarContent() {
           const approval = getApprovalInfo();
           const postTime = i === 0 ? "09:00 AM" : "06:00 PM";
           const timeSlot = i === 0 ? "Morning" : "Evening";
+          const selectedPlatform = platforms[Math.floor(Math.random() * platforms.length)] || "Instagram";
+          const account = getAccountForPlatform(selectedPlatform);
           
           posts.push({
             id: `${date.getTime()}-${i}`,
             date: new Date(date),
             image: sampleImages[imageIndex % sampleImages.length],
-            platform: platforms[Math.floor(Math.random() * platforms.length)] || "Instagram",
+            platform: selectedPlatform,
+            account: account,
             focusArea: focusAreas[Math.floor(Math.random() * focusAreas.length)] || "Brand awareness",
             timeSlot: timeSlot,
             postTime: postTime,
@@ -298,6 +335,9 @@ function ApprovedCampaignCalendarContent() {
             </div>
           )}
 
+          {/* Posting Manager */}
+          <PostingManager posts={posts} onPostingUpdate={handlePostingUpdate} />
+
           {/* Calendar Navigation */}
           <div className="flex justify-between items-center mb-8">
             <button
@@ -472,7 +512,14 @@ function ApprovedCampaignCalendarContent() {
                     </div>
                     <div>
                       <span className="text-lime-400 font-semibold">Platform:</span>
-                      <div className="text-gray-300">{getPlatformIcon(selectedPost.platform)} {selectedPost.platform}</div>
+                      <div className="text-gray-300 flex items-center gap-2">
+                        {getPlatformIcon(selectedPost.platform)} {selectedPost.platform}
+                        {selectedPost.account && (
+                          <span className="text-xs bg-white/10 px-2 py-1 rounded">
+                            @{selectedPost.account.username}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div>
                       <span className="text-lime-400 font-semibold">Focus Area:</span>
@@ -480,6 +527,39 @@ function ApprovedCampaignCalendarContent() {
                     </div>
                   </div>
                 </div>
+
+                {/* Account & Permissions */}
+                {selectedPost.account && (
+                  <div className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <h4 className="text-lg font-semibold text-white mb-3">🔗 Connected Account</h4>
+                    <div className="flex items-center gap-3 mb-3">
+                      {selectedPost.account.profileImage ? (
+                        <img 
+                          src={selectedPost.account.profileImage} 
+                          alt={selectedPost.account.username}
+                          className="w-10 h-10 rounded-full"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-white font-semibold">
+                          {selectedPost.account.username.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-white font-semibold">@{selectedPost.account.username}</div>
+                        <div className="text-gray-400 text-sm">{selectedPost.account.displayName}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                        selectedPost.account.hasValidToken 
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-red-500/20 text-red-400'
+                      }`}>
+                        {selectedPost.account.hasValidToken ? 'Ready to Post' : 'Needs Reconnection'}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 {/* Caption */}
                 <div className="bg-white/5 rounded-xl p-4 border border-white/10">

@@ -9,6 +9,8 @@ function CreateCampaignContent() {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [frequency, setFrequency] = useState("");
   const [selectedFocusAreas, setSelectedFocusAreas] = useState<string[]>([]);
+  const [connectedAccounts, setConnectedAccounts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Get brand from URL params or default to panache-greens
   const brand = searchParams.get('brand') || 'panache-greens';
@@ -40,6 +42,35 @@ function CreateCampaignContent() {
     { name: "Facebook", icon: "📘", color: "bg-gradient-to-r from-blue-500 to-blue-700" }
   ];
 
+  // Load connected accounts on component mount
+  useEffect(() => {
+    loadConnectedAccounts();
+  }, []);
+
+  const loadConnectedAccounts = async () => {
+    try {
+      const response = await fetch('/api/social-accounts?userId=demo-user');
+      if (response.ok) {
+        const data = await response.json();
+        setConnectedAccounts(data.accounts);
+      }
+    } catch (error) {
+      console.error('Failed to load accounts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getConnectedAccountsForPlatform = (platformName: string) => {
+    return connectedAccounts.filter(account => 
+      account.platform.toLowerCase() === platformName.toLowerCase()
+    );
+  };
+
+  const hasConnectedAccount = (platformName: string) => {
+    return getConnectedAccountsForPlatform(platformName).length > 0;
+  };
+
   const frequencies = [
     "Once a day",
     "Twice a day",
@@ -61,6 +92,17 @@ function CreateCampaignContent() {
   ];
 
   const togglePlatform = (platform: string) => {
+    const platformAccounts = getConnectedAccountsForPlatform(platform);
+    
+    // Check if platform needs social media connection (not Emailer or Offline Hoarding)
+    const needsConnection = !['Emailer', 'Offline Hoarding'].includes(platform) && platformAccounts.length === 0;
+    
+    if (needsConnection) {
+      // Redirect to social connect page for this platform
+      router.push(`/social-connect?platform=${platform.toLowerCase()}`);
+      return;
+    }
+    
     setSelectedPlatforms(prev => 
       prev.includes(platform) 
         ? prev.filter(p => p !== platform)
@@ -137,25 +179,72 @@ function CreateCampaignContent() {
             
             {/* Social Media Platform Selection */}
             <div className="mb-12">
-              <h2 className="text-2xl font-bold text-white mb-6">
-                Select Social Media Platforms
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {platforms.map((platform) => (
-                  <button
-                    key={platform.name}
-                    onClick={() => togglePlatform(platform.name)}
-                    className={`p-6 rounded-xl border-2 transition-all duration-300 ${
-                      selectedPlatforms.includes(platform.name)
-                        ? `${platform.color} border-white/50 shadow-lg scale-105`
-                        : "bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30"
-                    }`}
-                  >
-                    <div className="text-3xl mb-2">{platform.icon}</div>
-                    <div className="text-white font-semibold">{platform.name}</div>
-                  </button>
-                ))}
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-white">
+                  Select Social Media Platforms
+                </h2>
+                <button
+                  onClick={() => router.push('/social-connect')}
+                  className="text-lime-400 hover:text-lime-300 transition text-sm font-semibold"
+                >
+                  Manage Connections →
+                </button>
               </div>
+              
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lime-400"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {platforms.map((platform) => {
+                    const isSelected = selectedPlatforms.includes(platform.name);
+                    const needsConnection = !['Emailer', 'Offline Hoarding'].includes(platform.name);
+                    const hasConnection = hasConnectedAccount(platform.name);
+                    const connectedAccounts = getConnectedAccountsForPlatform(platform.name);
+                    
+                    return (
+                      <div key={platform.name} className="relative">
+                        <button
+                          onClick={() => togglePlatform(platform.name)}
+                          className={`w-full p-6 rounded-xl border-2 transition-all duration-300 ${
+                            isSelected
+                              ? `${platform.color} border-white/50 shadow-lg scale-105`
+                              : "bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30"
+                          }`}
+                        >
+                          <div className="text-3xl mb-2">{platform.icon}</div>
+                          <div className="text-white font-semibold">{platform.name}</div>
+                          
+                          {/* Connection Status */}
+                          {needsConnection && (
+                            <div className="mt-2">
+                              {hasConnection ? (
+                                <div className="flex items-center justify-center gap-1 text-xs">
+                                  <span className="text-green-400">✓</span>
+                                  <span className="text-green-400">{connectedAccounts.length} account{connectedAccounts.length > 1 ? 's' : ''}</span>
+                                </div>
+                              ) : (
+                                <div className="text-xs text-yellow-400">
+                                  Click to connect
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </button>
+                        
+                        {/* Connected Accounts Tooltip */}
+                        {needsConnection && hasConnection && (
+                          <div className="absolute top-2 right-2 bg-green-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
+                            {connectedAccounts.length}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              
               {selectedPlatforms.length > 0 && (
                 <div className="mt-4 text-lime-400 text-sm">
                   Selected: {selectedPlatforms.join(", ")}
