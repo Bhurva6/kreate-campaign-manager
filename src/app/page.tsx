@@ -110,6 +110,7 @@ export default function LandingPage() {
   const [editCount, setEditCount] = useState(0);
   const [showPricingPopup, setShowPricingPopup] = useState(false);
   const [editingProgress, setEditingProgress] = useState("");
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Typing animation logic
@@ -319,8 +320,50 @@ export default function LandingPage() {
         setFunZoneImage(e.target?.result as string);
         setEditCount(0);
         setFunZoneError(null);
+        setFunZoneSuccess("Image uploaded successfully! ✨");
+        
+        // Clear success message after 3 seconds
+        setTimeout(() => setFunZoneSuccess(null), 3000);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          setFunZoneImage(e.target?.result as string);
+          setEditCount(0);
+          setFunZoneError(null);
+          setFunZoneSuccess("Image uploaded successfully! ✨");
+          
+          // Clear success message after 3 seconds
+          setTimeout(() => setFunZoneSuccess(null), 3000);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        setFunZoneError("Please upload a valid image file");
+      }
     }
   };
 
@@ -406,6 +449,7 @@ export default function LandingPage() {
     setFunZoneError(null);
     setFunZoneSuccess(null);
     setEditingProgress("");
+    setIsDragOver(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -829,11 +873,15 @@ export default function LandingPage() {
           Get 2 free edits to experience the magic ✨
         </p>
         
-        <div className={`w-full max-w-4xl mx-auto rounded-3xl p-8 border-2 transition-colors duration-300 ${
-          isDarkMode 
-            ? 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20' 
-            : 'bg-gradient-to-br from-[#F3752A]/5 to-[#F53057]/5 border-[#F3752A]/20'
-        }`}>
+        <div 
+          className={`w-full max-w-4xl mx-auto rounded-3xl p-8 border-2 transition-colors duration-300 ${
+            isDarkMode 
+              ? 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20' 
+              : 'bg-gradient-to-br from-[#F3752A]/5 to-[#F53057]/5 border-[#F3752A]/20'
+          }`}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => e.preventDefault()}
+        >
           {/* Image Display Area */}
           {funZoneImage ? (
             <div className="flex justify-center mb-8">
@@ -964,7 +1012,19 @@ export default function LandingPage() {
             {/* Upload Image */}
             <div className="space-y-4">
               <h3 className="text-xl font-bold text-[#F53057] text-center">Upload Image</h3>
-              <div className="flex justify-center">
+              <div 
+                className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 cursor-pointer group ${
+                  isDragOver 
+                    ? 'border-[#F53057] bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 scale-105 shadow-lg shadow-[#F53057]/20' 
+                    : isDarkMode 
+                      ? 'border-[#F53057]/30 hover:border-[#F53057] hover:bg-[#F53057]/5 hover:scale-102' 
+                      : 'border-[#F53057]/30 hover:border-[#F53057] hover:bg-[#F53057]/5 hover:scale-102'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -972,13 +1032,42 @@ export default function LandingPage() {
                   onChange={handleImageUpload}
                   className="hidden"
                 />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-8 py-3 rounded-xl bg-[#F53057] text-white font-semibold hover:bg-[#A20222] transition flex items-center gap-2"
-                >
-                  <span>📁</span>
-                  Upload Image
-                </button>
+                
+                <div className={`transition-all duration-300 ${isDragOver ? 'animate-bounce' : 'group-hover:scale-110'}`}>
+                  <div className={`text-5xl mb-4 transition-all duration-300 ${
+                    isDragOver ? 'animate-pulse text-6xl' : ''
+                  }`}>
+                    {isDragOver ? '🎯' : '📁'}
+                  </div>
+                  <p className={`font-bold text-lg mb-2 transition-colors duration-300 ${
+                    isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                  } ${isDragOver ? 'text-[#F53057]' : ''}`}>
+                    {isDragOver ? 'Perfect! Drop it here!' : 'Upload Your Image'}
+                  </p>
+                  <p className={`text-sm mb-3 transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                  }`}>
+                    {isDragOver ? 'Release to upload and start editing' : 'Drag & drop your image here or click to browse'}
+                  </p>
+                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all duration-300 ${
+                    isDragOver 
+                      ? 'bg-[#F53057] text-white' 
+                      : isDarkMode 
+                        ? 'bg-[#333] text-white opacity-70' 
+                        : 'bg-[#F2F2F2] text-[#1E1E1E] opacity-70'
+                  }`}>
+                    <span>✨</span>
+                    <span>Supports JPG, PNG, GIF, WebP</span>
+                  </div>
+                </div>
+                
+                {/* Animated border effect when dragging */}
+                {isDragOver && (
+                  <div className="absolute inset-0 rounded-xl pointer-events-none">
+                    <div className="absolute inset-0 rounded-xl border-2 border-[#F53057] animate-pulse"></div>
+                    <div className="absolute inset-2 rounded-lg border-2 border-[#F53057]/50 animate-ping"></div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
