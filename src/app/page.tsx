@@ -32,11 +32,16 @@ async function callGenerateImage(prompt: string) {
   const res = await fetch("/api/generate-image", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
+    body: JSON.stringify({ prompt, sampleCount: 1, aspectRatio: "1:1" }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to generate image");
-  return data.images && data.images[0]?.url;
+  
+  // Return the public URL from R2 if available, otherwise use the original URL
+  if (data.images && data.images.length > 0) {
+    return data.images[0].r2?.publicUrl || data.images[0].url;
+  }
+  throw new Error("No image generated");
 }
 
 async function callEditImage(prompt: string, input_image: string) {
@@ -47,7 +52,45 @@ async function callEditImage(prompt: string, input_image: string) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || "Failed to edit image");
+  
+  // If we get a polling_url, we need to poll for results
+  if (data.polling_url) {
+    return await pollEditResult(data.polling_url, prompt);
+  }
+  
+  // If we get a direct result
   return data.image || (data.result && data.result.sample);
+}
+
+async function pollEditResult(polling_url: string, prompt: string): Promise<string> {
+  const maxAttempts = 30; // 30 seconds max
+  let attempts = 0;
+  
+  while (attempts < maxAttempts) {
+    const res = await fetch("/api/poll-edit-result", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ polling_url, prompt }),
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to poll edit result");
+    
+    if (data.status === "Ready" && data.result?.sample) {
+      // Return R2 URL if available, otherwise the original URL
+      return data.r2?.publicUrl || data.result.sample;
+    }
+    
+    if (data.status === "Error") {
+      throw new Error("Image editing failed");
+    }
+    
+    // Wait 1 second before polling again
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    attempts++;
+  }
+  
+  throw new Error("Image editing timed out");
 }
 
 export default function LandingPage() {
@@ -63,8 +106,10 @@ export default function LandingPage() {
   const [funZoneGenerating, setFunZoneGenerating] = useState(false);
   const [funZoneEditing, setFunZoneEditing] = useState(false);
   const [funZoneError, setFunZoneError] = useState<string | null>(null);
+  const [funZoneSuccess, setFunZoneSuccess] = useState<string | null>(null);
   const [editCount, setEditCount] = useState(0);
   const [showPricingPopup, setShowPricingPopup] = useState(false);
+  const [editingProgress, setEditingProgress] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Typing animation logic
@@ -284,10 +329,16 @@ export default function LandingPage() {
     
     setFunZoneGenerating(true);
     setFunZoneError(null);
+    setFunZoneSuccess(null);
+    
     try {
       const url = await callGenerateImage(funZonePrompt);
       setFunZoneImage(url);
       setEditCount(0);
+      setFunZoneSuccess("Image generated successfully! ✨");
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setFunZoneSuccess(null), 3000);
     } catch (err: any) {
       setFunZoneError(err.message);
     } finally {
@@ -305,15 +356,58 @@ export default function LandingPage() {
     
     setFunZoneEditing(true);
     setFunZoneError(null);
+    setFunZoneSuccess(null);
+    setEditingProgress("Starting edit...");
+    
     try {
-      const url = await callEditImage(funZoneEditPrompt, funZoneImage);
+      // Check if the image is a data URL (uploaded file) or a regular URL
+      let imageUrl = funZoneImage;
+      if (funZoneImage.startsWith('data:')) {
+        // It's a base64 data URL, use it directly
+        imageUrl = funZoneImage;
+      } else {
+        // It's a regular URL, we might need to convert it to base64
+        try {
+          const response = await fetch(funZoneImage);
+          const blob = await response.blob();
+          imageUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(blob);
+          });
+        } catch (convertError) {
+          console.warn("Could not convert image to base64, using original URL");
+          imageUrl = funZoneImage;
+        }
+      }
+      
+      setEditingProgress("Processing your edit...");
+      const url = await callEditImage(funZoneEditPrompt, imageUrl);
       setFunZoneImage(url);
       setEditCount(prev => prev + 1);
       setFunZoneEditPrompt("");
+      setFunZoneSuccess(`Edit applied successfully! ${2 - editCount - 1} free edit${2 - editCount - 1 === 1 ? '' : 's'} remaining ✨`);
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setFunZoneSuccess(null), 3000);
     } catch (err: any) {
       setFunZoneError(err.message);
     } finally {
       setFunZoneEditing(false);
+      setEditingProgress("");
+    }
+  };
+
+  const handleFunZoneReset = () => {
+    setFunZoneImage(null);
+    setFunZonePrompt("");
+    setFunZoneEditPrompt("");
+    setEditCount(0);
+    setFunZoneError(null);
+    setFunZoneSuccess(null);
+    setEditingProgress("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -743,24 +837,74 @@ export default function LandingPage() {
           {/* Image Display Area */}
           {funZoneImage ? (
             <div className="flex justify-center mb-8">
-              <img
-                src={funZoneImage}
-                alt="Fun Zone Image"
-                className="rounded-2xl shadow-lg max-w-md w-full object-contain"
-                style={{ maxHeight: '400px' }}
-              />
+              <div className="relative">
+                <img
+                  src={funZoneImage}
+                  alt="Fun Zone Image"
+                  className="rounded-2xl shadow-lg max-w-md w-full object-contain"
+                  style={{ maxHeight: '400px' }}
+                />
+                {(funZoneGenerating || funZoneEditing) && (
+                  <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <div className="animate-spin text-4xl mb-2">⚡</div>
+                      <div className="text-lg font-semibold">
+                        {funZoneGenerating ? "Generating..." : editingProgress || "Editing..."}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Image Action Buttons */}
+                {!funZoneGenerating && !funZoneEditing && (
+                  <div className="absolute top-3 right-3 flex gap-2">
+                    <button
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = funZoneImage;
+                        link.download = 'jamble-creation.png';
+                        link.click();
+                      }}
+                      className="p-2 bg-[#F3752A] text-white rounded-full hover:bg-[#F53057] transition shadow-lg"
+                      title="Download Image"
+                    >
+                      📥
+                    </button>
+                    <button
+                      onClick={handleFunZoneReset}
+                      className="p-2 bg-[#A20222] text-white rounded-full hover:bg-[#F3752A] transition shadow-lg"
+                      title="Start Over"
+                    >
+                      🔄
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
             <div className="flex justify-center mb-8">
               <div className={`w-full max-w-md h-64 rounded-2xl border-2 border-dashed border-[#F3752A]/40 flex flex-col items-center justify-center transition-colors duration-300 ${
                 isDarkMode ? 'bg-[#333]' : 'bg-[#F2F2F2]'
-              }`}>
-                <div className="text-6xl mb-4">🖼️</div>
-                <p className={`text-center transition-colors duration-300 ${
-                  isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                }`}>
-                  Upload an image or generate one below
-                </p>
+              } ${funZoneGenerating ? 'animate-pulse' : ''}`}>
+                {funZoneGenerating ? (
+                  <div className="text-center">
+                    <div className="animate-spin text-6xl mb-4">⚡</div>
+                    <p className={`text-center font-semibold transition-colors duration-300 ${
+                      isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                    }`}>
+                      Creating your image...
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-6xl mb-4">🖼️</div>
+                    <p className={`text-center transition-colors duration-300 ${
+                      isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                    }`}>
+                      Upload an image or generate one below
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -775,22 +919,46 @@ export default function LandingPage() {
                   type="text"
                   value={funZonePrompt}
                   onChange={(e) => setFunZonePrompt(e.target.value)}
-                  placeholder="Describe your image..."
+                  placeholder="Describe your image... (e.g., 'a cat wearing sunglasses on a beach')"
                   className={`flex-1 text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#F3752A] transition ${
                     isDarkMode 
                       ? 'bg-[#333] text-white border-[#F3752A]/20' 
                       : 'bg-white text-[#1E1E1E] border-[#F3752A]/20'
                   }`}
                   disabled={funZoneGenerating}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !funZoneGenerating && funZonePrompt.trim()) {
+                      handleFunZoneGenerate();
+                    }
+                  }}
                 />
                 <button
                   onClick={handleFunZoneGenerate}
                   disabled={funZoneGenerating || !funZonePrompt.trim()}
-                  className="px-6 py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {funZoneGenerating ? "Creating..." : "Generate"}
+                  {funZoneGenerating ? (
+                    <>
+                      <div className="animate-spin text-lg">⚡</div>
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <span>✨</span>
+                      Generate
+                    </>
+                  )}
                 </button>
               </div>
+              {funZoneGenerating && (
+                <div className="text-center">
+                  <div className={`text-sm transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                  }`}>
+                    This may take 10-30 seconds...
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Upload Image */}
@@ -824,6 +992,11 @@ export default function LandingPage() {
                   isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
                 }`}>
                   {editCount}/2 free edits used
+                  {editCount < 2 && (
+                    <span className="ml-2 text-[#F53057] font-semibold">
+                      {2 - editCount} remaining
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -831,34 +1004,117 @@ export default function LandingPage() {
                   type="text"
                   value={funZoneEditPrompt}
                   onChange={(e) => setFunZoneEditPrompt(e.target.value)}
-                  placeholder="Tell me what to change..."
+                  placeholder="Tell me what to change... (e.g., 'make the sky purple' or 'add sunglasses')"
                   className={`flex-1 text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#A20222] transition ${
                     isDarkMode 
                       ? 'bg-[#333] text-white border-[#A20222]/20' 
                       : 'bg-white text-[#1E1E1E] border-[#A20222]/20'
                   }`}
                   disabled={funZoneEditing}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !funZoneEditing && funZoneEditPrompt.trim()) {
+                      handleFunZoneEdit();
+                    }
+                  }}
                 />
                 <button
                   onClick={handleFunZoneEdit}
                   disabled={funZoneEditing || !funZoneEditPrompt.trim()}
-                  className="px-6 py-3 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {funZoneEditing ? "Editing..." : editCount >= 2 ? "Upgrade" : "Edit"}
+                  {funZoneEditing ? (
+                    <>
+                      <div className="animate-spin text-lg">🔄</div>
+                      {editingProgress || "Editing..."}
+                    </>
+                  ) : editCount >= 2 ? (
+                    <>
+                      <span>💎</span>
+                      Upgrade
+                    </>
+                  ) : (
+                    <>
+                      <span>🎨</span>
+                      Edit
+                    </>
+                  )}
                 </button>
               </div>
-              {editCount >= 1 && editCount < 2 && (
+              {funZoneEditing && (
+                <div className="text-center">
+                  <div className={`text-sm transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                  }`}>
+                    Processing your edit... This may take 10-30 seconds
+                  </div>
+                </div>
+              )}
+              {editCount >= 1 && editCount < 2 && !funZoneEditing && (
                 <p className="text-sm text-[#F53057] text-center">
-                  {2 - editCount} free edit remaining!
+                  {2 - editCount} free edit remaining! Make it count ✨
                 </p>
               )}
             </div>
           )}
 
-          {/* Error Display */}
-          {funZoneError && (
-            <div className="mt-4 p-4 bg-red-100 border border-red-300 rounded-xl text-red-700 text-center">
-              {funZoneError}
+          {/* Status Messages */}
+          {(funZoneError || funZoneSuccess) && (
+            <div className="mt-6 space-y-3">
+              {funZoneError && (
+                <div className="p-4 bg-red-100 border border-red-300 rounded-xl text-red-700 text-center flex items-center gap-3 justify-center">
+                  <span className="text-xl">⚠️</span>
+                  <span>{funZoneError}</span>
+                  <button 
+                    onClick={() => setFunZoneError(null)}
+                    className="ml-2 text-red-500 hover:text-red-700 font-bold"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+              {funZoneSuccess && (
+                <div className="p-4 bg-green-100 border border-green-300 rounded-xl text-green-700 text-center flex items-center gap-3 justify-center">
+                  <span className="text-xl">✅</span>
+                  <span>{funZoneSuccess}</span>
+                  <button 
+                    onClick={() => setFunZoneSuccess(null)}
+                    className="ml-2 text-green-500 hover:text-green-700 font-bold"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sample Prompts for Inspiration */}
+          {!funZoneImage && !funZoneGenerating && (
+            <div className="mt-6 space-y-3">
+              <h4 className={`text-lg font-semibold text-center transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>
+                Need inspiration? Try these:
+              </h4>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {[
+                  "a golden retriever wearing a chef's hat",
+                  "a cozy coffee shop in winter",
+                  "a futuristic city at sunset",
+                  "a magical forest with glowing mushrooms"
+                ].map((samplePrompt, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setFunZonePrompt(samplePrompt)}
+                    className={`px-4 py-2 rounded-full text-sm border-2 transition-all hover:scale-105 ${
+                      isDarkMode 
+                        ? 'bg-[#333] border-[#F3752A]/30 text-white hover:border-[#F3752A] hover:bg-[#F3752A]/20' 
+                        : 'bg-white border-[#F3752A]/30 text-[#1E1E1E] hover:border-[#F3752A] hover:bg-[#F3752A]/10'
+                    }`}
+                  >
+                    {samplePrompt}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>
