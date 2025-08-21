@@ -565,7 +565,7 @@ export default function LandingPage() {
               <p className={`text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
               }`}>
-                "Change what you want, leave the rest untouched."
+                &quot;Change what you want, leave the rest untouched.&quot;
               </p>
             </div>
           </div>
@@ -584,7 +584,7 @@ export default function LandingPage() {
               <p className={`text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
               }`}>
-                "Play all you like — Jamble never ruins your base image."
+                &quot;Play all you like — Jamble never ruins your base image.&quot;
               </p>
             </div>
           </div>
@@ -603,7 +603,7 @@ export default function LandingPage() {
               <p className={`text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
               }`}>
-                "One click and done, no pro skills needed."
+                &quot;One click and done, no pro skills needed.&quot;
               </p>
             </div>
           </div>
@@ -637,7 +637,7 @@ export default function LandingPage() {
               <p className={`text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
-                "I changed my background 5 times — my face never changed once. Love it!"
+                &quot;I changed my background 5 times — my face never changed once. Love it!&quot;
               </p>
               <div className="text-[#F3752A] font-semibold mt-3 text-sm">- Sarah K.</div>
             </div>
@@ -658,7 +658,7 @@ export default function LandingPage() {
               <p className={`text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
-                "Finally an editor that listens to me!"
+                &quot;Finally an editor that listens to me!&quot;
               </p>
               <div className="text-[#F53057] font-semibold mt-3 text-sm">- Mike R.</div>
             </div>
@@ -687,7 +687,7 @@ export default function LandingPage() {
               <p className={`text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
-                "Magic! Only the sky changed, my perfect selfie stayed untouched ✨"
+                &quot;Magic! Only the sky changed, my perfect selfie stayed untouched ✨&quot;
               </p>
               <div className="text-[#A20222] font-semibold mt-3 text-sm">- Alex T.</div>
             </div>
@@ -708,7 +708,7 @@ export default function LandingPage() {
               <p className={`text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
-                "No more 'oops I ruined my photo' moments. Jamble gets it right!"
+                &quot;No more &apos;oops I ruined my photo&apos; moments. Jamble gets it right!&quot;
               </p>
               <div className="text-[#F3752A] font-semibold mt-3 text-sm">- Emma L.</div>
             </div>
@@ -882,7 +882,7 @@ export default function LandingPage() {
             <div className="text-center">
               <div className="text-6xl mb-4">🎮</div>
               <h3 className="text-2xl font-bold text-[#F3752A] mb-2">Free Jamble</h3>
-              <p className="text-[#F53057] font-semibold text-lg mb-6">"Play with it"</p>
+              <p className="text-[#F53057] font-semibold text-lg mb-6">&quot;Play with it&quot;</p>
               
               <div className={`text-4xl font-bold mb-6 transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
@@ -929,7 +929,7 @@ export default function LandingPage() {
             <div className="text-center">
               <div className="text-6xl mb-4">🚀</div>
               <h3 className="text-2xl font-bold text-[#F53057] mb-2">Jamble Plus</h3>
-              <p className="text-[#A20222] font-semibold text-lg mb-6">"Unlimited vibes"</p>
+              <p className="text-[#A20222] font-semibold text-lg mb-6">&quot;Unlimited vibes&quot;</p>
               
               <div className={`text-4xl font-bold mb-2 transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
@@ -980,7 +980,7 @@ export default function LandingPage() {
             <div className="text-center">
               <div className="text-6xl mb-4">👑</div>
               <h3 className="text-2xl font-bold text-[#A20222] mb-2">Jamble Pro</h3>
-              <p className="text-[#F3752A] font-semibold text-lg mb-6">"For the edit-obsessed"</p>
+              <p className="text-[#F3752A] font-semibold text-lg mb-6">&quot;For the edit-obsessed&quot;</p>
               
               <div className={`text-4xl font-bold mb-2 transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
@@ -1048,7 +1048,7 @@ export default function LandingPage() {
               <p className={`mb-6 transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
               }`}>
-                You've used your 2 free edits. Upgrade to continue the magic with unlimited edits, advanced features, and more!
+                You&apos;ve used your 2 free edits. Upgrade to continue the magic with unlimited edits, advanced features, and more!
               </p>
               
               <div className="space-y-4 mb-6">
