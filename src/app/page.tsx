@@ -462,29 +462,29 @@ export default function LandingPage() {
         : 'bg-[#FDFBF7]'
     }`}>
       {/* Logo Top Left and Auth Buttons Top Right */}
-      <div className="flex flex-row justify-between items-center w-full p-6">
-        <div className={`text-3xl font-bold transition-colors duration-300 ${
+      <div className="flex flex-row justify-between items-center w-full p-4 md:p-6">
+        <div className={`text-2xl md:text-3xl font-bold transition-colors duration-300 ${
           isDarkMode ? 'text-[#F3752A]' : 'text-[#F3752A]'
         }`}>Jamble</div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           {/* Theme Toggle */}
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-3 rounded-full transition-all duration-300 hover:scale-110 ${
+            className={`p-2 md:p-3 rounded-full transition-all duration-300 hover:scale-110 ${
               isDarkMode 
                 ? 'bg-[#F3752A]/20 text-[#F3752A] hover:bg-[#F3752A]/30' 
                 : 'bg-[#F3752A]/10 text-[#F3752A] hover:bg-[#F3752A]/20'
             }`}
             title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
           >
-            <span className="text-2xl">
+            <span className="text-xl md:text-2xl">
               {isDarkMode ? '☀️' : '🌙'}
             </span>
           </button>
           
           <button
-            className={`px-6 py-2 rounded-lg font-semibold transition-colors duration-300 ${
+            className={`px-3 py-1.5 md:px-6 md:py-2 rounded-lg font-semibold text-sm md:text-base transition-colors duration-300 ${
               isDarkMode 
                 ? 'bg-[#333] text-white hover:bg-[#F3752A] hover:text-white' 
                 : 'bg-[#F2F2F2] text-[#1E1E1E] hover:bg-[#F3752A] hover:text-white'
@@ -494,7 +494,7 @@ export default function LandingPage() {
             Sign In
           </button>
           <button
-            className="px-6 py-2 rounded-lg bg-[#F53057] text-white font-semibold hover:bg-[#A20222] transition"
+            className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-[#F53057] text-white font-semibold hover:bg-[#A20222] transition text-sm md:text-base"
             onClick={() => window.location.href = "/signup"}
           >
             Sign Up
@@ -502,23 +502,23 @@ export default function LandingPage() {
         </div>
       </div>
       {/* Centered Content */}
-      <div className="flex-1 flex flex-row items-end justify-between px-12 pb-16">
+      <div className="flex-1 flex flex-col lg:flex-row items-center lg:items-end justify-between px-4 md:px-8 lg:px-12 pb-8 lg:pb-16">
         {/* Left side - Main content */}
-        <div className="flex flex-col items-start justify-end w-1/2 pr-12">
-          <h1 className={`text-4xl md:text-5xl font-bold text-left mb-6 max-w-2xl transition-colors duration-300 ${
+        <div className="flex flex-col items-center lg:items-start justify-end w-full lg:w-1/2 lg:pr-12 text-center lg:text-left mb-8 lg:mb-0">
+          <h1 className={`text-3xl sm:text-4xl md:text-5xl font-bold mb-6 max-w-2xl transition-colors duration-300 ${
             isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
           }`}>
            Edit Fearlessly. Jamble Keeps Your Image True.
           </h1>
-          <p className={`text-lg md:text-xl text-left mb-10 max-w-xl transition-colors duration-300 ${
+          <p className={`text-base sm:text-lg md:text-xl mb-10 max-w-xl transition-colors duration-300 ${
             isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
           }`}>
             No more losing the original vibe. Jamble only changes what you want — nothing else
           </p>
-          <div className="flex flex-col gap-4">
-            <div className="flex gap-4 items-center">
+          <div className="flex flex-col gap-4 w-full">
+            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center lg:justify-start">
               <button
-                className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg relative overflow-hidden group"
+                className="font-semibold px-8 sm:px-10 py-3 sm:py-4 rounded-xl text-base sm:text-lg transition shadow-lg relative overflow-hidden group w-full sm:w-auto"
                 style={{
                   background: "linear-gradient(45deg, #F3752A 0%, #F53057 50%, #A20222 100%)",
                   backgroundSize: "300% 300%",
@@ -530,7 +530,7 @@ export default function LandingPage() {
                Try It Now
               </button>
               <button
-                className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg bg-[#F2F2F2] text-[#1E1E1E] border border-[#F3752A] hover:bg-[#F3752A] hover:text-white"
+                className="font-semibold px-8 sm:px-10 py-3 sm:py-4 rounded-xl text-base sm:text-lg transition shadow-lg bg-[#F2F2F2] text-[#1E1E1E] border border-[#F3752A] hover:bg-[#F3752A] hover:text-white w-full sm:w-auto"
                 onClick={() => router.push("/demo")}
               >
                 See Jamble in Action
@@ -543,14 +543,14 @@ export default function LandingPage() {
         </div>
 
         {/* Right side - Comparison boxes side by side */}
-        <div className="flex flex-row gap-6 w-1/2 justify-end">
+        <div className="flex flex-row gap-4 md:gap-6 w-full lg:w-1/2 justify-center lg:justify-end">
           {/* Others box */}
-          <div className={`rounded-2xl p-6 border-2 w-full max-w-xs transition-colors duration-300 ${
+          <div className={`rounded-2xl p-4 md:p-6 border-2 w-full max-w-xs transition-colors duration-300 ${
             isDarkMode 
               ? 'bg-[#333] border-[#F3752A]/30' 
               : 'bg-[#F2F2F2] border-[#F3752A]/30'
           }`}>
-            <h3 className={`text-lg font-bold mb-3 text-center transition-colors duration-300 ${
+            <h3 className={`text-base md:text-lg font-bold mb-2 md:mb-3 text-center transition-colors duration-300 ${
               isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
             }`}>Others</h3>
             <div className="flex justify-center">
@@ -561,18 +561,18 @@ export default function LandingPage() {
                 muted
                 playsInline
                 className="rounded-xl w-full h-auto object-contain bg-[#1E1E1E]/5"
-                style={{ maxHeight: '180px' }}
+                style={{ maxHeight: '120px', minHeight: '80px' }}
               />
             </div>
           </div>
           
           {/* Us box */}
-          <div className={`rounded-2xl p-6 border-2 w-full max-w-xs transition-colors duration-300 ${
+          <div className={`rounded-2xl p-4 md:p-6 border-2 w-full max-w-xs transition-colors duration-300 ${
             isDarkMode 
               ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F53057]/50' 
               : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F53057]/50'
           }`}>
-            <h3 className={`text-lg font-bold mb-3 text-center transition-colors duration-300 ${
+            <h3 className={`text-base md:text-lg font-bold mb-2 md:mb-3 text-center transition-colors duration-300 ${
               isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
             }`}>Jamble</h3>
             <div className="flex justify-center">
@@ -583,7 +583,7 @@ export default function LandingPage() {
                 muted
                 playsInline
                 className="rounded-xl w-full h-auto object-contain bg-[#1E1E1E]/5"
-                style={{ maxHeight: '180px' }}
+                style={{ maxHeight: '120px', minHeight: '80px' }}
               />
             </div>
           </div>
@@ -591,37 +591,37 @@ export default function LandingPage() {
       </div>
 
       {/* How It Works Section */}
-      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
-        <h2 className={`text-4xl font-bold text-center mb-16 transition-colors duration-300 ${
+      <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
+        <h2 className={`text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 ${
           isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
         }`}>
           How It Works
         </h2>
         
-        <div className="flex flex-row items-center justify-center gap-16 max-w-6xl mx-auto">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 max-w-6xl mx-auto">
           {/* Step 1 - Left side */}
           <div className="flex flex-col items-center cursor-pointer group transition-all duration-300 hover:scale-105">
-            <div className={`rounded-2xl p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
+            <div className={`rounded-2xl p-6 md:p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
               isDarkMode 
                 ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F3752A]/30' 
                 : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/30'
             }`}>
-              <div className="text-6xl mb-4">📷</div>
+              <div className="text-4xl md:text-6xl mb-2 md:mb-4">📷</div>
             </div>
             <div className="text-center">
-              <div className={`text-lg font-bold mb-2 transition-colors duration-300 ${
+              <div className={`text-base md:text-lg font-bold mb-2 transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>Step 1</div>
-              <div className="text-[#F3752A] font-semibold">Upload Your Image</div>
-              <div className={`text-sm mt-1 transition-colors duration-300 ${
+              <div className="text-[#F3752A] font-semibold text-sm md:text-base">Upload Your Image</div>
+              <div className={`text-xs md:text-sm mt-1 transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
               }`}>cute doodle of camera / photo frame</div>
             </div>
           </div>
 
           {/* Central Image */}
-          <div className="flex-1 flex justify-center items-center">
-            <div className={`rounded-3xl p-8 border transition-colors duration-300 ${
+          <div className="flex-1 flex justify-center items-center order-first lg:order-none">
+            <div className={`rounded-3xl p-4 md:p-8 border transition-colors duration-300 ${
               isDarkMode 
                 ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
                 : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
@@ -629,29 +629,29 @@ export default function LandingPage() {
               <img
                 src="/bright-cereal.png"
                 alt="Demo image showing the editing process"
-                className="rounded-2xl shadow-lg w-full max-w-md object-contain"
+                className="rounded-2xl shadow-lg w-full max-w-sm md:max-w-md object-contain"
                 style={{ background: "rgba(243,117,42,0.05)" }}
               />
             </div>
           </div>
 
-          {/* Steps 2 and 3 - Right side, stacked vertically */}
-          <div className="flex flex-col gap-8 items-center">
+          {/* Steps 2 and 3 - Right side, stacked vertically on mobile, side by side on lg */}
+          <div className="flex flex-row lg:flex-col gap-8 items-center">
             {/* Step 2 */}
             <div className="flex flex-col items-center cursor-pointer group transition-all duration-300 hover:scale-105">
-              <div className={`rounded-2xl p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
+              <div className={`rounded-2xl p-6 md:p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
                 isDarkMode 
                   ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F3752A]/30' 
                   : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/30'
               }`}>
-                <div className="text-6xl mb-4">🎯</div>
+                <div className="text-4xl md:text-6xl mb-2 md:mb-4">🎯</div>
               </div>
               <div className="text-center">
-                <div className={`text-lg font-bold mb-2 transition-colors duration-300 ${
+                <div className={`text-base md:text-lg font-bold mb-2 transition-colors duration-300 ${
                   isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
                 }`}>Step 2</div>
-                <div className="text-[#F3752A] font-semibold">Pick What to Change</div>
-                <div className={`text-sm mt-1 transition-colors duration-300 ${
+                <div className="text-[#F3752A] font-semibold text-sm md:text-base">Pick What to Change</div>
+                <div className={`text-xs md:text-sm mt-1 transition-colors duration-300 ${
                   isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
                 }`}>fun highlighting animation</div>
               </div>
@@ -659,19 +659,19 @@ export default function LandingPage() {
 
             {/* Step 3 */}
             <div className="flex flex-col items-center cursor-pointer group transition-all duration-300 hover:scale-105">
-              <div className={`rounded-2xl p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
+              <div className={`rounded-2xl p-6 md:p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
                 isDarkMode 
                   ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F3752A]/30' 
                   : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/30'
               }`}>
-                <div className="text-6xl mb-4">✨</div>
+                <div className="text-4xl md:text-6xl mb-2 md:mb-4">✨</div>
               </div>
               <div className="text-center">
-                <div className={`text-lg font-bold mb-2 transition-colors duration-300 ${
+                <div className={`text-base md:text-lg font-bold mb-2 transition-colors duration-300 ${
                   isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
                 }`}>Step 3</div>
-                <div className="text-[#F3752A] font-semibold">Jamble Magic</div>
-                <div className={`text-sm mt-1 transition-colors duration-300 ${
+                <div className="text-[#F3752A] font-semibold text-sm md:text-base">Jamble Magic</div>
+                <div className={`text-xs md:text-sm mt-1 transition-colors duration-300 ${
                   isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
                 }`}>poof effect, only that part changes</div>
               </div>
@@ -681,26 +681,26 @@ export default function LandingPage() {
       </div>
 
       {/* Why Jamble Section */}
-      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
-        <h2 className={`text-4xl font-bold text-center mb-16 transition-colors duration-300 ${
+      <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
+        <h2 className={`text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 ${
           isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
         }`}>
           Why Jamble?
         </h2>
         
-        <div className="flex flex-row gap-8 justify-center items-stretch w-full max-w-6xl mx-auto">
+        <div className="flex flex-col md:flex-row gap-6 md:gap-8 justify-center items-stretch w-full max-w-6xl mx-auto">
           {/* Card 1 - Precise Edits Only */}
-          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F53057]/40 hover:shadow-xl hover:shadow-[#F3752A]/20 group cursor-pointer ${
+          <div className={`flex-1 rounded-3xl p-6 md:p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F53057]/40 hover:shadow-xl hover:shadow-[#F3752A]/20 group cursor-pointer ${
             isDarkMode 
               ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
               : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
           }`}>
             <div className="text-center">
-              <div className="text-6xl mb-6 group-hover:animate-bounce">🎨</div>
-              <h3 className="text-xl font-bold text-[#F3752A] mb-4 group-hover:text-[#F53057] transition-colors">
+              <div className="text-4xl md:text-6xl mb-4 md:mb-6 group-hover:animate-bounce">🎨</div>
+              <h3 className="text-lg md:text-xl font-bold text-[#F3752A] mb-3 md:mb-4 group-hover:text-[#F53057] transition-colors">
                 Precise Edits Only
               </h3>
-              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+              <p className={`text-sm md:text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
               }`}>
                 &quot;Change what you want, leave the rest untouched.&quot;
@@ -709,17 +709,17 @@ export default function LandingPage() {
           </div>
 
           {/* Card 2 - Infinite Edits */}
-          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#A20222]/40 hover:shadow-xl hover:shadow-[#F53057]/20 group cursor-pointer ${
+          <div className={`flex-1 rounded-3xl p-6 md:p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#A20222]/40 hover:shadow-xl hover:shadow-[#F53057]/20 group cursor-pointer ${
             isDarkMode 
               ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 border-[#F53057]/20' 
               : 'bg-gradient-to-br from-[#F53057]/10 to-[#A20222]/10 border-[#F53057]/20'
           }`}>
             <div className="text-center">
-              <div className="text-6xl mb-6 group-hover:animate-spin">🔁</div>
-              <h3 className="text-xl font-bold text-[#F53057] mb-4 group-hover:text-[#A20222] transition-colors">
+              <div className="text-4xl md:text-6xl mb-4 md:mb-6 group-hover:animate-spin">🔁</div>
+              <h3 className="text-lg md:text-xl font-bold text-[#F53057] mb-3 md:mb-4 group-hover:text-[#A20222] transition-colors">
                 Infinite Edits
               </h3>
-              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+              <p className={`text-sm md:text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
               }`}>
                 &quot;Play all you like — Jamble never ruins your base image.&quot;
@@ -728,17 +728,17 @@ export default function LandingPage() {
           </div>
 
           {/* Card 3 - Quick & Easy */}
-          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F3752A]/40 hover:shadow-xl hover:shadow-[#A20222]/20 group cursor-pointer ${
+          <div className={`flex-1 rounded-3xl p-6 md:p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F3752A]/40 hover:shadow-xl hover:shadow-[#A20222]/20 group cursor-pointer ${
             isDarkMode 
               ? 'bg-gradient-to-br from-[#A20222]/20 to-[#F3752A]/20 border-[#A20222]/20' 
               : 'bg-gradient-to-br from-[#A20222]/10 to-[#F3752A]/10 border-[#A20222]/20'
           }`}>
             <div className="text-center">
-              <div className="text-6xl mb-6 group-hover:animate-pulse">⚡</div>
-              <h3 className="text-xl font-bold text-[#A20222] mb-4 group-hover:text-[#F3752A] transition-colors">
+              <div className="text-4xl md:text-6xl mb-4 md:mb-6 group-hover:animate-pulse">⚡</div>
+              <h3 className="text-lg md:text-xl font-bold text-[#A20222] mb-3 md:mb-4 group-hover:text-[#F3752A] transition-colors">
                 Quick & Easy
               </h3>
-              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+              <p className={`text-sm md:text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
               }`}>
                 &quot;One click and done, no pro skills needed.&quot;
@@ -749,22 +749,22 @@ export default function LandingPage() {
       </div>
 
       {/* Fun Testimonials Section */}
-      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
-        <h2 className={`text-4xl font-bold text-center mb-16 transition-colors duration-300 ${
+      <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
+        <h2 className={`text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 ${
           isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
         }`}>
           Fun Testimonials
         </h2>
         
-        <div className="w-full max-w-4xl mx-auto space-y-8">
+        <div className="w-full max-w-4xl mx-auto space-y-6 md:space-y-8">
           {/* Testimonial 1 */}
-          <div className="flex items-start gap-4 animate-slide-in-left">
+          <div className="flex items-start gap-3 md:gap-4 animate-slide-in-left">
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#F3752A] to-[#F53057] flex items-center justify-center text-white text-xl font-bold">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#F3752A] to-[#F53057] flex items-center justify-center text-white text-lg md:text-xl font-bold">
                 😊
               </div>
             </div>
-            <div className={`rounded-3xl rounded-tl-sm p-6 shadow-lg border-2 max-w-md relative transition-colors duration-300 ${
+            <div className={`rounded-3xl rounded-tl-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
               isDarkMode 
                 ? 'bg-[#333] border-[#F3752A]/20' 
                 : 'bg-white border-[#F3752A]/20'
@@ -772,18 +772,18 @@ export default function LandingPage() {
               <div className={`absolute -left-2 top-4 w-4 h-4 border-l-2 border-b-2 border-[#F3752A]/20 transform rotate-45 transition-colors duration-300 ${
                 isDarkMode ? 'bg-[#333]' : 'bg-white'
               }`}></div>
-              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+              <p className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
                 &quot;I changed my background 5 times — my face never changed once. Love it!&quot;
               </p>
-              <div className="text-[#F3752A] font-semibold mt-3 text-sm">- Sarah K.</div>
+              <div className="text-[#F3752A] font-semibold mt-3 text-xs md:text-sm">- Sarah K.</div>
             </div>
           </div>
 
           {/* Testimonial 2 - Right aligned */}
-          <div className="flex items-start gap-4 justify-end animate-slide-in-right">
-            <div className={`rounded-3xl rounded-tr-sm p-6 shadow-lg border-2 max-w-md relative transition-colors duration-300 ${
+          <div className="flex items-start gap-3 md:gap-4 justify-end animate-slide-in-right">
+            <div className={`rounded-3xl rounded-tr-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
               isDarkMode 
                 ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 border-[#F53057]/20' 
                 : 'bg-gradient-to-br from-[#F53057]/10 to-[#A20222]/10 border-[#F53057]/20'
@@ -793,28 +793,28 @@ export default function LandingPage() {
                   ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20' 
                   : 'bg-gradient-to-br from-[#F53057]/10 to-[#A20222]/10'
               }`}></div>
-              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+              <p className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
                 &quot;Finally an editor that listens to me!&quot;
               </p>
-              <div className="text-[#F53057] font-semibold mt-3 text-sm">- Mike R.</div>
+              <div className="text-[#F53057] font-semibold mt-3 text-xs md:text-sm">- Mike R.</div>
             </div>
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#F53057] to-[#A20222] flex items-center justify-center text-white text-xl font-bold">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#F53057] to-[#A20222] flex items-center justify-center text-white text-lg md:text-xl font-bold">
                 🤩
               </div>
             </div>
           </div>
 
           {/* Testimonial 3 */}
-          <div className="flex items-start gap-4 animate-slide-in-left">
+          <div className="flex items-start gap-3 md:gap-4 animate-slide-in-left">
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#A20222] to-[#F3752A] flex items-center justify-center text-white text-xl font-bold">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#A20222] to-[#F3752A] flex items-center justify-center text-white text-lg md:text-xl font-bold">
                 🎨
               </div>
             </div>
-            <div className={`rounded-3xl rounded-tl-sm p-6 shadow-lg border-2 max-w-md relative transition-colors duration-300 ${
+            <div className={`rounded-3xl rounded-tl-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
               isDarkMode 
                 ? 'bg-[#333] border-[#A20222]/20' 
                 : 'bg-white border-[#A20222]/20'
@@ -822,18 +822,18 @@ export default function LandingPage() {
               <div className={`absolute -left-2 top-4 w-4 h-4 border-l-2 border-b-2 border-[#A20222]/20 transform rotate-45 transition-colors duration-300 ${
                 isDarkMode ? 'bg-[#333]' : 'bg-white'
               }`}></div>
-              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+              <p className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
                 &quot;Magic! Only the sky changed, my perfect selfie stayed untouched ✨&quot;
               </p>
-              <div className="text-[#A20222] font-semibold mt-3 text-sm">- Alex T.</div>
+              <div className="text-[#A20222] font-semibold mt-3 text-xs md:text-sm">- Alex T.</div>
             </div>
           </div>
 
           {/* Testimonial 4 - Right aligned */}
-          <div className="flex items-start gap-4 justify-end animate-slide-in-right">
-            <div className={`rounded-3xl rounded-tr-sm p-6 shadow-lg border-2 max-w-md relative transition-colors duration-300 ${
+          <div className="flex items-start gap-3 md:gap-4 justify-end animate-slide-in-right">
+            <div className={`rounded-3xl rounded-tr-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
               isDarkMode 
                 ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
                 : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
@@ -843,15 +843,15 @@ export default function LandingPage() {
                   ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20' 
                   : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10'
               }`}></div>
-              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+              <p className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
                 &quot;No more &apos;oops I ruined my photo&apos; moments. Jamble gets it right!&quot;
               </p>
-              <div className="text-[#F3752A] font-semibold mt-3 text-sm">- Emma L.</div>
+              <div className="text-[#F3752A] font-semibold mt-3 text-xs md:text-sm">- Emma L.</div>
             </div>
             <div className="flex-shrink-0">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#F3752A] to-[#F53057] flex items-center justify-center text-white text-xl font-bold">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#F3752A] to-[#F53057] flex items-center justify-center text-white text-lg md:text-xl font-bold">
                 💯
               </div>
             </div>
@@ -860,13 +860,13 @@ export default function LandingPage() {
       </div>
 
       {/* The Jamble Fun Zone */}
-      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
-        <h2 className={`text-4xl font-bold text-center mb-8 transition-colors duration-300 ${
+      <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
+        <h2 className={`text-3xl md:text-4xl font-bold text-center mb-4 md:mb-8 transition-colors duration-300 ${
           isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
         }`}>
           The Jamble Fun Zone
         </h2>
-        <p className={`text-lg text-center mb-16 max-w-2xl transition-colors duration-300 ${
+        <p className={`text-base md:text-lg text-center mb-8 md:mb-16 max-w-2xl transition-colors duration-300 ${
           isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
         }`}>
           Try Jamble right here! Generate or upload an image, then edit it with simple text prompts. 
@@ -874,7 +874,7 @@ export default function LandingPage() {
         </p>
         
         <div 
-          className={`w-full max-w-4xl mx-auto rounded-3xl p-8 border-2 transition-colors duration-300 ${
+          className={`w-full max-w-4xl mx-auto rounded-3xl p-4 md:p-8 border-2 transition-colors duration-300 ${
             isDarkMode 
               ? 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20' 
               : 'bg-gradient-to-br from-[#F3752A]/5 to-[#F53057]/5 border-[#F3752A]/20'
@@ -884,19 +884,19 @@ export default function LandingPage() {
         >
           {/* Image Display Area */}
           {funZoneImage ? (
-            <div className="flex justify-center mb-8">
+            <div className="flex justify-center mb-6 md:mb-8">
               <div className="relative">
                 <img
                   src={funZoneImage}
                   alt="Fun Zone Image"
-                  className="rounded-2xl shadow-lg max-w-md w-full object-contain"
-                  style={{ maxHeight: '400px' }}
+                  className="rounded-2xl shadow-lg max-w-full w-full object-contain"
+                  style={{ maxHeight: '300px' }}
                 />
                 {(funZoneGenerating || funZoneEditing) && (
                   <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
                     <div className="text-center text-white">
-                      <div className="animate-spin text-4xl mb-2">⚡</div>
-                      <div className="text-lg font-semibold">
+                      <div className="animate-spin text-3xl md:text-4xl mb-2">⚡</div>
+                      <div className="text-sm md:text-lg font-semibold">
                         {funZoneGenerating ? "Generating..." : editingProgress || "Editing..."}
                       </div>
                     </div>
@@ -905,7 +905,7 @@ export default function LandingPage() {
                 
                 {/* Image Action Buttons */}
                 {!funZoneGenerating && !funZoneEditing && (
-                  <div className="absolute top-3 right-3 flex gap-2">
+                  <div className="absolute top-2 md:top-3 right-2 md:right-3 flex gap-1 md:gap-2">
                     <button
                       onClick={() => {
                         const link = document.createElement('a');
@@ -913,14 +913,14 @@ export default function LandingPage() {
                         link.download = 'jamble-creation.png';
                         link.click();
                       }}
-                      className="p-2 bg-[#F3752A] text-white rounded-full hover:bg-[#F53057] transition shadow-lg"
+                      className="p-1.5 md:p-2 bg-[#F3752A] text-white rounded-full hover:bg-[#F53057] transition shadow-lg text-sm md:text-base"
                       title="Download Image"
                     >
                       📥
                     </button>
                     <button
                       onClick={handleFunZoneReset}
-                      className="p-2 bg-[#A20222] text-white rounded-full hover:bg-[#F3752A] transition shadow-lg"
+                      className="p-1.5 md:p-2 bg-[#A20222] text-white rounded-full hover:bg-[#F3752A] transition shadow-lg text-sm md:text-base"
                       title="Start Over"
                     >
                       🔄
@@ -930,14 +930,14 @@ export default function LandingPage() {
               </div>
             </div>
           ) : (
-            <div className="flex justify-center mb-8">
-              <div className={`w-full max-w-md h-64 rounded-2xl border-2 border-dashed border-[#F3752A]/40 flex flex-col items-center justify-center transition-colors duration-300 ${
+            <div className="flex justify-center mb-6 md:mb-8">
+              <div className={`w-full max-w-md h-48 md:h-64 rounded-2xl border-2 border-dashed border-[#F3752A]/40 flex flex-col items-center justify-center transition-colors duration-300 ${
                 isDarkMode ? 'bg-[#333]' : 'bg-[#F2F2F2]'
               } ${funZoneGenerating ? 'animate-pulse' : ''}`}>
                 {funZoneGenerating ? (
                   <div className="text-center">
-                    <div className="animate-spin text-6xl mb-4">⚡</div>
-                    <p className={`text-center font-semibold transition-colors duration-300 ${
+                    <div className="animate-spin text-5xl md:text-6xl mb-4">⚡</div>
+                    <p className={`text-center font-semibold text-sm md:text-base transition-colors duration-300 ${
                       isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
                     }`}>
                       Creating your image...
@@ -945,8 +945,8 @@ export default function LandingPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="text-6xl mb-4">🖼️</div>
-                    <p className={`text-center transition-colors duration-300 ${
+                    <div className="text-5xl md:text-6xl mb-4">🖼️</div>
+                    <p className={`text-center text-sm md:text-base transition-colors duration-300 ${
                       isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
                     }`}>
                       Upload an image or generate one below
@@ -958,17 +958,17 @@ export default function LandingPage() {
           )}
 
           {/* Generation and Upload Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <div className="grid grid-cols-1 gap-6 md:gap-8 mb-6 md:mb-8">
             {/* Generate Image */}
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-[#F3752A] text-center">Generate Image</h3>
-              <div className="flex gap-2">
+              <h3 className="text-lg md:text-xl font-bold text-[#F3752A] text-center">Generate Image</h3>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={funZonePrompt}
                   onChange={(e) => setFunZonePrompt(e.target.value)}
                   placeholder="Describe your image... (e.g., 'a cat wearing sunglasses on a beach')"
-                  className={`flex-1 text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#F3752A] transition ${
+                  className={`flex-1 text-sm md:text-lg rounded-xl px-3 md:px-4 py-2 md:py-3 outline-none border-2 focus:border-[#F3752A] transition ${
                     isDarkMode 
                       ? 'bg-[#333] text-white border-[#F3752A]/20' 
                       : 'bg-white text-[#1E1E1E] border-[#F3752A]/20'
@@ -983,11 +983,11 @@ export default function LandingPage() {
                 <button
                   onClick={handleFunZoneGenerate}
                   disabled={funZoneGenerating || !funZonePrompt.trim()}
-                  className="px-6 py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 md:px-6 py-2 md:py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
                 >
                   {funZoneGenerating ? (
                     <>
-                      <div className="animate-spin text-lg">⚡</div>
+                      <div className="animate-spin text-sm md:text-lg">⚡</div>
                       Creating...
                     </>
                   ) : (
@@ -1000,7 +1000,7 @@ export default function LandingPage() {
               </div>
               {funZoneGenerating && (
                 <div className="text-center">
-                  <div className={`text-sm transition-colors duration-300 ${
+                  <div className={`text-xs md:text-sm transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
                   }`}>
                     This may take 10-30 seconds...
@@ -1011,9 +1011,9 @@ export default function LandingPage() {
 
             {/* Upload Image */}
             <div className="space-y-4">
-              <h3 className="text-xl font-bold text-[#F53057] text-center">Upload Image</h3>
+              <h3 className="text-lg md:text-xl font-bold text-[#F53057] text-center">Upload Image</h3>
               <div 
-                className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 cursor-pointer group ${
+                className={`relative border-2 border-dashed rounded-xl p-6 md:p-8 text-center transition-all duration-300 cursor-pointer group ${
                   isDragOver 
                     ? 'border-[#F53057] bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 scale-105 shadow-lg shadow-[#F53057]/20' 
                     : isDarkMode 
@@ -1034,22 +1034,22 @@ export default function LandingPage() {
                 />
                 
                 <div className={`transition-all duration-300 ${isDragOver ? 'animate-bounce' : 'group-hover:scale-110'}`}>
-                  <div className={`text-5xl mb-4 transition-all duration-300 ${
-                    isDragOver ? 'animate-pulse text-6xl' : ''
+                  <div className={`text-4xl md:text-5xl mb-3 md:mb-4 transition-all duration-300 ${
+                    isDragOver ? 'animate-pulse text-5xl md:text-6xl' : ''
                   }`}>
                     {isDragOver ? '🎯' : '📁'}
                   </div>
-                  <p className={`font-bold text-lg mb-2 transition-colors duration-300 ${
+                  <p className={`font-bold text-base md:text-lg mb-2 transition-colors duration-300 ${
                     isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
                   } ${isDragOver ? 'text-[#F53057]' : ''}`}>
                     {isDragOver ? 'Perfect! Drop it here!' : 'Upload Your Image'}
                   </p>
-                  <p className={`text-sm mb-3 transition-colors duration-300 ${
+                  <p className={`text-xs md:text-sm mb-3 transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
                   }`}>
                     {isDragOver ? 'Release to upload and start editing' : 'Drag & drop your image here or click to browse'}
                   </p>
-                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all duration-300 ${
+                  <div className={`inline-flex items-center gap-2 px-3 md:px-4 py-1 md:py-2 rounded-full text-xs transition-all duration-300 ${
                     isDragOver 
                       ? 'bg-[#F53057] text-white' 
                       : isDarkMode 
@@ -1075,9 +1075,9 @@ export default function LandingPage() {
           {/* Edit Section */}
           {funZoneImage && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-[#A20222]">Edit Your Image</h3>
-                <div className={`text-sm transition-colors duration-300 ${
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
+                <h3 className="text-lg md:text-xl font-bold text-[#A20222]">Edit Your Image</h3>
+                <div className={`text-xs md:text-sm transition-colors duration-300 ${
                   isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
                 }`}>
                   {editCount}/2 free edits used
@@ -1088,13 +1088,13 @@ export default function LandingPage() {
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={funZoneEditPrompt}
                   onChange={(e) => setFunZoneEditPrompt(e.target.value)}
                   placeholder="Tell me what to change... (e.g., 'make the sky purple' or 'add sunglasses')"
-                  className={`flex-1 text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#A20222] transition ${
+                  className={`flex-1 text-sm md:text-lg rounded-xl px-3 md:px-4 py-2 md:py-3 outline-none border-2 focus:border-[#A20222] transition ${
                     isDarkMode 
                       ? 'bg-[#333] text-white border-[#A20222]/20' 
                       : 'bg-white text-[#1E1E1E] border-[#A20222]/20'
@@ -1109,11 +1109,11 @@ export default function LandingPage() {
                 <button
                   onClick={handleFunZoneEdit}
                   disabled={funZoneEditing || !funZoneEditPrompt.trim()}
-                  className="px-6 py-3 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="px-4 md:px-6 py-2 md:py-3 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
                 >
                   {funZoneEditing ? (
                     <>
-                      <div className="animate-spin text-lg">🔄</div>
+                      <div className="animate-spin text-sm md:text-lg">🔄</div>
                       {editingProgress || "Editing..."}
                     </>
                   ) : editCount >= 2 ? (
@@ -1148,26 +1148,26 @@ export default function LandingPage() {
 
           {/* Status Messages */}
           {(funZoneError || funZoneSuccess) && (
-            <div className="mt-6 space-y-3">
+            <div className="mt-4 md:mt-6 space-y-3">
               {funZoneError && (
-                <div className="p-4 bg-red-100 border border-red-300 rounded-xl text-red-700 text-center flex items-center gap-3 justify-center">
-                  <span className="text-xl">⚠️</span>
-                  <span>{funZoneError}</span>
+                <div className="p-3 md:p-4 bg-red-100 border border-red-300 rounded-xl text-red-700 text-center flex flex-col sm:flex-row items-center gap-2 md:gap-3 justify-center text-sm md:text-base">
+                  <span className="text-lg md:text-xl">⚠️</span>
+                  <span className="flex-1">{funZoneError}</span>
                   <button 
                     onClick={() => setFunZoneError(null)}
-                    className="ml-2 text-red-500 hover:text-red-700 font-bold"
+                    className="text-red-500 hover:text-red-700 font-bold text-lg"
                   >
                     ×
                   </button>
                 </div>
               )}
               {funZoneSuccess && (
-                <div className="p-4 bg-green-100 border border-green-300 rounded-xl text-green-700 text-center flex items-center gap-3 justify-center">
-                  <span className="text-xl">✅</span>
-                  <span>{funZoneSuccess}</span>
+                <div className="p-3 md:p-4 bg-green-100 border border-green-300 rounded-xl text-green-700 text-center flex flex-col sm:flex-row items-center gap-2 md:gap-3 justify-center text-sm md:text-base">
+                  <span className="text-lg md:text-xl">✅</span>
+                  <span className="flex-1">{funZoneSuccess}</span>
                   <button 
                     onClick={() => setFunZoneSuccess(null)}
-                    className="ml-2 text-green-500 hover:text-green-700 font-bold"
+                    className="text-green-500 hover:text-green-700 font-bold text-lg"
                   >
                     ×
                   </button>
@@ -1178,8 +1178,8 @@ export default function LandingPage() {
 
           {/* Sample Prompts for Inspiration */}
           {!funZoneImage && !funZoneGenerating && (
-            <div className="mt-6 space-y-3">
-              <h4 className={`text-lg font-semibold text-center transition-colors duration-300 ${
+            <div className="mt-4 md:mt-6 space-y-3">
+              <h4 className={`text-base md:text-lg font-semibold text-center transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
                 Need inspiration? Try these:
@@ -1194,7 +1194,7 @@ export default function LandingPage() {
                   <button
                     key={index}
                     onClick={() => setFunZonePrompt(samplePrompt)}
-                    className={`px-4 py-2 rounded-full text-sm border-2 transition-all hover:scale-105 ${
+                    className={`px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm border-2 transition-all hover:scale-105 ${
                       isDarkMode 
                         ? 'bg-[#333] border-[#F3752A]/30 text-white hover:border-[#F3752A] hover:bg-[#F3752A]/20' 
                         : 'bg-white border-[#F3752A]/30 text-[#1E1E1E] hover:border-[#F3752A] hover:bg-[#F3752A]/10'
@@ -1210,16 +1210,16 @@ export default function LandingPage() {
       </div>
 
       {/* Pricing Section */}
-      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
-        <h2 className={`text-4xl font-bold text-center mb-16 transition-colors duration-300 ${
+      <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
+        <h2 className={`text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 ${
           isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
         }`}>
           Pricing
         </h2>
         
-        <div className="flex flex-row gap-8 justify-center items-stretch w-full max-w-6xl mx-auto">
+        <div className="flex flex-col lg:flex-row gap-4 md:gap-8 justify-center items-stretch w-full max-w-6xl mx-auto">
           {/* Free Jamble */}
-          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F53057]/40 hover:shadow-xl hover:shadow-[#F3752A]/20 ${
+          <div className={`flex-1 rounded-3xl p-4 md:p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F53057]/40 hover:shadow-xl hover:shadow-[#F3752A]/20 ${
             isDarkMode 
               ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
               : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
