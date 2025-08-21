@@ -52,6 +52,21 @@ async function callEditImage(prompt: string, input_image: string) {
 
 export default function LandingPage() {
   const router = useRouter();
+  
+  // Theme state
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Fun Zone state
+  const [funZoneImage, setFunZoneImage] = useState<string | null>(null);
+  const [funZonePrompt, setFunZonePrompt] = useState("");
+  const [funZoneEditPrompt, setFunZoneEditPrompt] = useState("");
+  const [funZoneGenerating, setFunZoneGenerating] = useState(false);
+  const [funZoneEditing, setFunZoneEditing] = useState(false);
+  const [funZoneError, setFunZoneError] = useState<string | null>(null);
+  const [editCount, setEditCount] = useState(0);
+  const [showPricingPopup, setShowPricingPopup] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
   // Typing animation logic
   const fullText1 =
     'a box of cereal called "super crunch" is placed on a table near a window';
@@ -250,502 +265,975 @@ export default function LandingPage() {
     return () => window.removeEventListener("mousedown", handle);
   }, [activeGif]);
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#111] to-[#1a1a1a] flex flex-col relative overflow-x-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-lime-400/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-[600px] h-[600px] bg-lime-600/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-gradient-radial from-lime-400/3 via-transparent to-transparent rounded-full"></div>
-      </div>
+  // Fun Zone functions
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFunZoneImage(e.target?.result as string);
+        setEditCount(0);
+        setFunZoneError(null);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
+  const handleFunZoneGenerate = async () => {
+    if (!funZonePrompt.trim()) return;
+    
+    setFunZoneGenerating(true);
+    setFunZoneError(null);
+    try {
+      const url = await callGenerateImage(funZonePrompt);
+      setFunZoneImage(url);
+      setEditCount(0);
+    } catch (err: any) {
+      setFunZoneError(err.message);
+    } finally {
+      setFunZoneGenerating(false);
+    }
+  };
+
+  const handleFunZoneEdit = async () => {
+    if (!funZoneImage || !funZoneEditPrompt.trim()) return;
+    
+    if (editCount >= 2) {
+      setShowPricingPopup(true);
+      return;
+    }
+    
+    setFunZoneEditing(true);
+    setFunZoneError(null);
+    try {
+      const url = await callEditImage(funZoneEditPrompt, funZoneImage);
+      setFunZoneImage(url);
+      setEditCount(prev => prev + 1);
+      setFunZoneEditPrompt("");
+    } catch (err: any) {
+      setFunZoneError(err.message);
+    } finally {
+      setFunZoneEditing(false);
+    }
+  };
+
+  return (
+    <div className={`min-h-screen flex flex-col relative overflow-x-hidden transition-colors duration-300 ${
+      isDarkMode 
+        ? 'bg-[#1E1E1E]' 
+        : 'bg-[#FDFBF7]'
+    }`}>
       {/* Logo Top Left and Auth Buttons Top Right */}
-      <div className="flex flex-row justify-between items-center w-full p-6 relative z-10">
-        <div className="flex items-center gap-3">
-          <Image src="/logo.png" alt="Juicebox Logo" width={48} height={48} className="drop-shadow-lg" />
-          <span className="text-white font-bold text-xl">Juicebox</span>
-        </div>
-        <div className="flex gap-4">
+      <div className="flex flex-row justify-between items-center w-full p-6">
+        <div className={`text-3xl font-bold transition-colors duration-300 ${
+          isDarkMode ? 'text-[#F3752A]' : 'text-[#F3752A]'
+        }`}>Jamble</div>
+        
+        <div className="flex items-center gap-4">
+          {/* Theme Toggle */}
           <button
-            className="px-6 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 text-white font-semibold hover:bg-white/20 hover:border-white/30 transition-all duration-300 hover:scale-105"
-            onClick={() => router.push("/signin")}
+            onClick={() => setIsDarkMode(!isDarkMode)}
+            className={`p-3 rounded-full transition-all duration-300 hover:scale-110 ${
+              isDarkMode 
+                ? 'bg-[#F3752A]/20 text-[#F3752A] hover:bg-[#F3752A]/30' 
+                : 'bg-[#F3752A]/10 text-[#F3752A] hover:bg-[#F3752A]/20'
+            }`}
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            <span className="text-2xl">
+              {isDarkMode ? '☀️' : '🌙'}
+            </span>
+          </button>
+          
+          <button
+            className={`px-6 py-2 rounded-lg font-semibold transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-[#333] text-white hover:bg-[#F3752A] hover:text-white' 
+                : 'bg-[#F2F2F2] text-[#1E1E1E] hover:bg-[#F3752A] hover:text-white'
+            }`}
+            onClick={() => window.location.href = "/signin"}
           >
             Sign In
           </button>
           <button
-            className="px-6 py-3 rounded-xl bg-gradient-to-r from-lime-400 to-lime-500 text-black font-semibold hover:from-lime-300 hover:to-lime-400 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-lime-400/25"
-            onClick={() => router.push("/signup")}
+            className="px-6 py-2 rounded-lg bg-[#F53057] text-white font-semibold hover:bg-[#A20222] transition"
+            onClick={() => window.location.href = "/signup"}
           >
             Sign Up
           </button>
         </div>
       </div>
       {/* Centered Content */}
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10 px-4">
-        {/* Hero Badge */}
-        <div className="mb-6">
-          <span className="inline-flex items-center gap-2 px-4 py-2 bg-lime-400/10 border border-lime-400/20 rounded-full text-lime-300 text-sm font-medium backdrop-blur-sm animate-pulse">
-            <span className="w-2 h-2 bg-lime-400 rounded-full animate-ping"></span>
-            AI-Powered Creative Studio
-          </span>
-        </div>
-
-        <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold text-white text-center mb-8 max-w-5xl leading-[1.1]">
-          Turn Your Words Into{' '}
-          <span className="bg-gradient-to-r from-lime-400 via-lime-300 to-lime-500 bg-clip-text text-transparent animate-gradient-x bg-300% drop-shadow-glow">
-            Works of Art
-          </span>
-          —And Edit Them Instantly.
-        </h1>
-        <p className="text-xl md:text-2xl text-gray-300 text-center mb-12 max-w-3xl leading-relaxed opacity-90">
-          Juicebox lets you generate stunning images and edit them with just a
-          sentence. No skills needed—just your imagination
-        </p>
-        <div className="flex flex-col sm:flex-row gap-6 items-center mb-8">
-          <button
-            className="group relative font-semibold px-12 py-5 rounded-2xl text-xl transition-all duration-300 transform hover:scale-105 overflow-hidden"
-            style={{
-              background: "linear-gradient(135deg, #C6FF00 0%, #76FF03 50%, #B2FF59 100%)",
-              color: "#111",
-              boxShadow: "0 0 30px 5px rgba(178, 255, 89, 0.3), 0 5px 20px 0 rgba(118, 255, 3, 0.2)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 0 50px 10px rgba(178, 255, 89, 0.5), 0 10px 30px 0 rgba(118, 255, 3, 0.3)";
-              e.currentTarget.style.transform = "scale(1.08)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow =
-                "0 0 30px 5px rgba(178, 255, 89, 0.3), 0 5px 20px 0 rgba(118, 255, 3, 0.2)";
-              e.currentTarget.style.transform = "scale(1)";
-            }}
-            onClick={() => router.push("/home")}
-          >
-            <span className="relative z-10 flex items-center gap-2">
-              Try it instantly
-              <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-          </button>
-          <button
-            className="font-semibold px-12 py-5 rounded-2xl text-xl transition-all duration-300 bg-white/10 backdrop-blur-sm text-white border border-white/20 hover:bg-white/20 hover:border-white/40 hover:scale-105"
-            onClick={() => router.push("/demo")}
-          >
-            Live Demo
-          </button>
-        </div>
-        <div className="mb-12 text-base text-gray-400 text-center">
-          <span className="inline-flex items-center gap-2">
-            <span className="w-2 h-2 bg-lime-400 rounded-full animate-pulse"></span>
-            Trusted by creators worldwide
-          </span>
-        </div>
-        {/* Enhanced Floating Pulsating Circles */}
-        <div
-          className="w-full flex justify-center items-end relative z-20"
-          style={{ minHeight: 120, marginBottom: 40 }}
-        >
-          <div className="flex flex-row gap-[-20px] md:gap-[-40px] justify-center items-end">
-            {["/girl1.jpeg", "/girl2.jpeg", "/girl3.jpeg", "/girl4.jpeg"].map(
-              (src, i) => (
-                <div
-                  key={src}
-                  className={`relative rounded-full bg-gradient-to-br from-white/20 via-white/10 to-white/5 shadow-2xl mx-[-16px] animate-float${
-                    i % 3
-                  } animate-pulse${i % 2} border-2 border-white/20 backdrop-blur-sm`}
-                  style={{
-                    width: 64,
-                    height: 64,
-                    zIndex: 10 + i,
-                    opacity: 0.8,
-                    transition: "all 0.3s ease",
-                    boxShadow: "0 0 20px rgba(178, 255, 89, 0.2), 0 5px 15px rgba(0,0,0,0.3)",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.opacity = "1";
-                    e.currentTarget.style.transform = "scale(1.1)";
-                    e.currentTarget.style.boxShadow = "0 0 30px rgba(178, 255, 89, 0.4), 0 10px 25px rgba(0,0,0,0.4)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.opacity = "0.8";
-                    e.currentTarget.style.transform = "scale(1)";
-                    e.currentTarget.style.boxShadow = "0 0 20px rgba(178, 255, 89, 0.2), 0 5px 15px rgba(0,0,0,0.3)";
-                  }}
-                >
-                  <img
-                    src={src}
-                    alt="Creator avatar"
-                    className="rounded-full w-full h-full object-cover"
-                    draggable={false}
-                    style={{ pointerEvents: "none" }}
-                  />
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-lime-400/10 via-transparent to-lime-600/10"></div>
-                </div>
-              )
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Glassmorphism Tile at Bottom */}
-      <div className="w-full flex justify-center mt-48 mb-20 px-4">
-        <div className="backdrop-blur-2xl bg-gradient-to-br from-white/15 via-white/10 to-white/5 border border-white/20 rounded-3xl shadow-2xl w-full max-w-7xl mx-auto px-8 py-12 sm:px-16 sm:py-16 flex flex-row items-center gap-8 overflow-x-auto pointer-events-auto transition-all justify-center relative">
-          {/* Decorative gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-lime-400/5 via-transparent to-lime-600/5 rounded-3xl pointer-events-none"></div>
-          
-          {/* First Text */}
-          <div className="flex flex-col items-center min-w-[240px] max-w-sm justify-center pl-8 sm:pl-16 relative z-10">
-            <div className="text-white text-lg font-mono opacity-90 min-h-[3em] w-full break-words text-center leading-relaxed bg-[#1a1a1a]/50 rounded-xl p-4 border border-white/10 backdrop-blur-sm">
-              {typedText1}
-              <span className="animate-blink text-lime-400">
-                {typedText1.length < fullText1.length ? "|" : ""}
-              </span>
-            </div>
-          </div>
-          {/* Enhanced Arrow 1 */}
-          {showArrow1 && (
-            <div className="animate-bounce text-4xl text-lime-400 drop-shadow-lg">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </div>
-          )}
-          {/* Enhanced Image 1 */}
-          {showImage1 && (
-            <div className="flex flex-col items-center min-w-[320px] max-w-lg justify-center px-4 sm:px-6 relative z-10">
-              <div className="relative group">
-                <img
-                  src="/bright-cereal.png"
-                  alt="Super Crunch Cereal"
-                  className="rounded-3xl shadow-2xl w-full max-w-[320px] object-contain border-2 border-white/20 group-hover:scale-105 transition-transform duration-300"
-                  style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))" }}
-                />
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-lime-400/10 via-transparent to-lime-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-            </div>
-          )}
-          {/* Enhanced Arrow 2 */}
-          {showImage1 && showArrow2 && (
-            <div className="animate-bounce text-4xl text-lime-400 drop-shadow-lg">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </div>
-          )}
-          {/* Enhanced Second Text */}
-          {showImage1 && (
-            <div className="flex flex-col items-center min-w-[240px] max-w-sm justify-center relative z-10">
-              <div className="text-white text-lg font-mono opacity-90 min-h-[3em] w-full break-words text-center leading-relaxed bg-[#1a1a1a]/50 rounded-xl p-4 border border-white/10 backdrop-blur-sm">
-                {typedText2}
-                <span className="animate-blink text-lime-400">
-                  {typedText2.length < fullText2.length ? "|" : ""}
-                </span>
-              </div>
-            </div>
-          )}
-          {/* Enhanced Arrow 3 */}
-          {showImage2 && (
-            <div className="animate-bounce text-4xl text-lime-400 drop-shadow-lg">
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </div>
-          )}
-          {/* Enhanced Image 2 */}
-          {showImage2 && (
-            <div className="flex flex-col items-center min-w-[320px] max-w-lg justify-center px-4 sm:px-6 pr-8 sm:pr-16 relative z-10">
-              <div className="relative group">
-                <img
-                  src="/blue-cereal.png"
-                  alt="Super Crunch Cereal Night"
-                  className="rounded-3xl shadow-2xl w-full max-w-[320px] object-contain border-2 border-white/20 group-hover:scale-105 transition-transform duration-300"
-                  style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))" }}
-                />
-                <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-lime-400/10 via-transparent to-lime-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      {/* Feature Cards Section */}
-      <div className="w-full flex flex-col items-center gap-12 pb-24 mt-56">
-        {/* Section Header */}
-        <div className="text-center mb-8">
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Powerful Features
-          </h2>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Everything you need to create, edit, and perfect your visual content
+      <div className="flex-1 flex flex-row items-end justify-between px-12 pb-16">
+        {/* Left side - Main content */}
+        <div className="flex flex-col items-start justify-end w-1/2 pr-12">
+          <h1 className={`text-4xl md:text-5xl font-bold text-left mb-6 max-w-2xl transition-colors duration-300 ${
+            isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+          }`}>
+           Edit Fearlessly. Jamble Keeps Your Image True.
+          </h1>
+          <p className={`text-lg md:text-xl text-left mb-10 max-w-xl transition-colors duration-300 ${
+            isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+          }`}>
+            No more losing the original vibe. Jamble only changes what you want — nothing else
           </p>
+          <div className="flex flex-col gap-4">
+            <div className="flex gap-4 items-center">
+              <button
+                className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg relative overflow-hidden group"
+                style={{
+                  background: "linear-gradient(45deg, #F3752A 0%, #F53057 50%, #A20222 100%)",
+                  backgroundSize: "300% 300%",
+                  animation: "gradient-shift 3s ease infinite",
+                  color: "white",
+                }}
+                onClick={() => router.push("/home")}
+              >
+               Try It Now
+              </button>
+              <button
+                className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg bg-[#F2F2F2] text-[#1E1E1E] border border-[#F3752A] hover:bg-[#F3752A] hover:text-white"
+                onClick={() => router.push("/demo")}
+              >
+                See Jamble in Action
+              </button>
+            </div>
+            
+          </div>
+          
+         
         </div>
-        {/* GIF Overlay */}
-        {activeGif !== null && (
-          <div
-            id="gif-overlay-bg"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 transition-opacity duration-300 animate-fade-in"
-            style={{ backdropFilter: "blur(2px)" }}
-          >
-            <div
-              className="relative flex items-center justify-center"
-              style={{
-                animation: "gif-pop-in 0.5s cubic-bezier(0.4,0,0.2,1)",
-              }}
-            >
-              <img
-                src={`/gifs/feature-${activeGif + 1}.gif`}
-                alt="Feature demo GIF"
-                className="rounded-2xl shadow-2xl max-w-[480px] w-full h-auto object-contain border-4 border-white/20 bg-black/40"
-                style={{ pointerEvents: "auto" }}
+
+        {/* Right side - Comparison boxes side by side */}
+        <div className="flex flex-row gap-6 w-1/2 justify-end">
+          {/* Others box */}
+          <div className={`rounded-2xl p-6 border-2 w-full max-w-xs transition-colors duration-300 ${
+            isDarkMode 
+              ? 'bg-[#333] border-[#F3752A]/30' 
+              : 'bg-[#F2F2F2] border-[#F3752A]/30'
+          }`}>
+            <h3 className={`text-lg font-bold mb-3 text-center transition-colors duration-300 ${
+              isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+            }`}>Others</h3>
+            <div className="flex justify-center">
+              <video
+                src="/others-comparison.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="rounded-xl w-full h-auto object-contain bg-[#1E1E1E]/5"
+                style={{ maxHeight: '180px' }}
               />
             </div>
           </div>
-        )}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full max-w-7xl px-4 mx-auto">
-          {[
-            {
-              title: "Text-to-Image",
-              tagline: "Pour Your Thoughts, Watch Them Bloom",
-              copy:
-                "Type a few words, and Juicebox whirls them into dazzling visuals. From wild unicorns to sleek product shots, your ideas become art—no paintbrush required.",
-              gif: "/feature1.gif",
-            },
-            {
-              title: "Text-to-Edit",
-              tagline: "Remix Reality, One Sentence at a Time",
-              copy:
-                "Don't just make images—reshape them! Want a blue sky or a bigger smile? Just say it. Juicebox listens, edits, and delivers. No pixels harmed in the process.",
-              gif: "/feature2.mp4",
-            },
-            {
-              title: "Background Remover",
-              tagline: "Bye-Bye, Boring Backdrops!",
-              copy:
-                "One click, and your subject pops. Swap the mundane for the magical—whether it's a tropical beach or a cosmic nebula, the world is your new background.",
-              gif: "/feature3.mp4",
-            },
-            {
-              title: "Generative Fill & Image Extender",
-              tagline: "Stretch the Canvas, Stretch the Imagination",
-              copy:
-                "Out of frame? Out of ideas? Not here. Juicebox fills, extends, and completes your images with a creative twist—no cropping, just more wow.",
-              gif: "/feature4.mp4",
-            },
-            {
-              title: "AI Object & Shadow Remover",
-              tagline: "Erase the Unwanted, Keep the Wow",
-              copy:
-                "Unwanted photobombers? Shadows that steal the show? Zap them away and let your vision shine—clean, crisp, and totally you.",
-              gif: "/feature5.mp4",
-            },
-            {
-              title: "AI Image Vectorizer",
-              tagline: "From Pixels to Pop Art",
-              copy:
-                "Watch your images transform into bold, scalable vectors—perfect for logos, merch, or wherever your brand wants to stand tall.",
-              gif: "/feature6.mp4",
-            },
-            {
-              title: "Text Effects & AI Tattoo Generator",
-              tagline: "Words That Pop, Ink That Inspires",
-              copy:
-                "Make your text shimmer, swirl, or roar. Dreaming of tattoo art? Describe it, and Juicebox sketches your next masterpiece.",
-              gif: "/feature7.mp4",
-            },
-            {
-              title: "AI Stock Images & Reverse Prompts",
-              tagline: "Never Settle for Stock Again",
-              copy:
-                "Need the perfect image? Describe it, and Juicebox invents it. Or, upload a photo and get instant inspiration with AI-powered prompt suggestions.",
-              gif: "/feature8.mp4",
-            },
-            {
-              title: "Photo Enhancer & Upscaler",
-              tagline: "Old Photos, New Vibes",
-              copy:
-                "Bring faded memories back to life, sharpen the details, and upscale images for crystal-clear impact—nostalgia never looked so fresh.",
-              gif: "/feature10.mp4",
-            },
-            {
-              title: "Brand Kit Integration",
-              tagline: "Your Brand, Bottled and Poured",
-              copy:
-                "Every image, every edit—always on-brand. Juicebox remembers your colors, fonts, and style, so your story stays consistent, campaign after campaign.",
-              gif: "/feature9.mp4",
-            },
-            {
-              title: "Gallery & Collaboration",
-              tagline: "Showcase, Share, and Shine",
-              copy:
-                "Curate your creations, collaborate with your crew, and build a gallery that's as vibrant as your imagination.",
-              gif: "/feature11.mp4",
-            },
-            {
-              title: "Campaign Automation & Scheduling",
-              tagline: "Set It, Forget It, Celebrate It",
-              copy:
-                "Plan, generate, and launch brand campaigns across socials—automatically. Juicebox handles the heavy lifting, you take the spotlight.",
-              gif: "/feature12.mp4",
-            },
-          ].map((card, i) => (
-            <div
-              key={card.title}
-              className="group relative overflow-hidden backdrop-blur-xl bg-gradient-to-br from-white/15 via-white/10 to-white/5 border border-white/20 rounded-3xl p-8 transition-all duration-500 hover:scale-[1.02] hover:bg-gradient-to-br hover:from-white/20 hover:via-white/15 hover:to-white/10 hover:border-white/30 cursor-pointer"
-              style={{
-                boxShadow: "0 8px 32px 0 rgba(178, 255, 89, 0.1), 0 2px 16px 0 rgba(118, 255, 3, 0.05)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = "0 16px 48px 0 rgba(178, 255, 89, 0.2), 0 4px 24px 0 rgba(118, 255, 3, 0.1)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = "0 8px 32px 0 rgba(178, 255, 89, 0.1), 0 2px 16px 0 rgba(118, 255, 3, 0.05)";
-              }}
-            >
-              {/* Subtle gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-br from-lime-400/5 via-transparent to-lime-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
+          
+          {/* Us box */}
+          <div className={`rounded-2xl p-6 border-2 w-full max-w-xs transition-colors duration-300 ${
+            isDarkMode 
+              ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F53057]/50' 
+              : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F53057]/50'
+          }`}>
+            <h3 className={`text-lg font-bold mb-3 text-center transition-colors duration-300 ${
+              isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+            }`}>Jamble</h3>
+            <div className="flex justify-center">
+              <video
+                src="/jamble-comparison.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="rounded-xl w-full h-auto object-contain bg-[#1E1E1E]/5"
+                style={{ maxHeight: '180px' }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* How It Works Section */}
+      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
+        <h2 className={`text-4xl font-bold text-center mb-16 transition-colors duration-300 ${
+          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+        }`}>
+          How It Works
+        </h2>
+        
+        <div className="flex flex-row items-center justify-center gap-16 max-w-6xl mx-auto">
+          {/* Step 1 - Left side */}
+          <div className="flex flex-col items-center cursor-pointer group transition-all duration-300 hover:scale-105">
+            <div className={`rounded-2xl p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
+              isDarkMode 
+                ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F3752A]/30' 
+                : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/30'
+            }`}>
+              <div className="text-6xl mb-4">📷</div>
+            </div>
+            <div className="text-center">
+              <div className={`text-lg font-bold mb-2 transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>Step 1</div>
+              <div className="text-[#F3752A] font-semibold">Upload Your Image</div>
+              <div className={`text-sm mt-1 transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+              }`}>cute doodle of camera / photo frame</div>
+            </div>
+          </div>
+
+          {/* Central Image */}
+          <div className="flex-1 flex justify-center items-center">
+            <div className={`rounded-3xl p-8 border transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
+                : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
+            }`}>
+              <img
+                src="/bright-cereal.png"
+                alt="Demo image showing the editing process"
+                className="rounded-2xl shadow-lg w-full max-w-md object-contain"
+                style={{ background: "rgba(243,117,42,0.05)" }}
+              />
+            </div>
+          </div>
+
+          {/* Steps 2 and 3 - Right side, stacked vertically */}
+          <div className="flex flex-col gap-8 items-center">
+            {/* Step 2 */}
+            <div className="flex flex-col items-center cursor-pointer group transition-all duration-300 hover:scale-105">
+              <div className={`rounded-2xl p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
+                isDarkMode 
+                  ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F3752A]/30' 
+                  : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/30'
+              }`}>
+                <div className="text-6xl mb-4">🎯</div>
+              </div>
+              <div className="text-center">
+                <div className={`text-lg font-bold mb-2 transition-colors duration-300 ${
+                  isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                }`}>Step 2</div>
+                <div className="text-[#F3752A] font-semibold">Pick What to Change</div>
+                <div className={`text-sm mt-1 transition-colors duration-300 ${
+                  isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                }`}>fun highlighting animation</div>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex flex-col items-center cursor-pointer group transition-all duration-300 hover:scale-105">
+              <div className={`rounded-2xl p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
+                isDarkMode 
+                  ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F3752A]/30' 
+                  : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/30'
+              }`}>
+                <div className="text-6xl mb-4">✨</div>
+              </div>
+              <div className="text-center">
+                <div className={`text-lg font-bold mb-2 transition-colors duration-300 ${
+                  isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                }`}>Step 3</div>
+                <div className="text-[#F3752A] font-semibold">Jamble Magic</div>
+                <div className={`text-sm mt-1 transition-colors duration-300 ${
+                  isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                }`}>poof effect, only that part changes</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Why Jamble Section */}
+      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
+        <h2 className={`text-4xl font-bold text-center mb-16 transition-colors duration-300 ${
+          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+        }`}>
+          Why Jamble?
+        </h2>
+        
+        <div className="flex flex-row gap-8 justify-center items-stretch w-full max-w-6xl mx-auto">
+          {/* Card 1 - Precise Edits Only */}
+          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F53057]/40 hover:shadow-xl hover:shadow-[#F3752A]/20 group cursor-pointer ${
+            isDarkMode 
+              ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
+              : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
+          }`}>
+            <div className="text-center">
+              <div className="text-6xl mb-6 group-hover:animate-bounce">🎨</div>
+              <h3 className="text-xl font-bold text-[#F3752A] mb-4 group-hover:text-[#F53057] transition-colors">
+                Precise Edits Only
+              </h3>
+              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+              }`}>
+                "Change what you want, leave the rest untouched."
+              </p>
+            </div>
+          </div>
+
+          {/* Card 2 - Infinite Edits */}
+          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#A20222]/40 hover:shadow-xl hover:shadow-[#F53057]/20 group cursor-pointer ${
+            isDarkMode 
+              ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 border-[#F53057]/20' 
+              : 'bg-gradient-to-br from-[#F53057]/10 to-[#A20222]/10 border-[#F53057]/20'
+          }`}>
+            <div className="text-center">
+              <div className="text-6xl mb-6 group-hover:animate-spin">🔁</div>
+              <h3 className="text-xl font-bold text-[#F53057] mb-4 group-hover:text-[#A20222] transition-colors">
+                Infinite Edits
+              </h3>
+              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+              }`}>
+                "Play all you like — Jamble never ruins your base image."
+              </p>
+            </div>
+          </div>
+
+          {/* Card 3 - Quick & Easy */}
+          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F3752A]/40 hover:shadow-xl hover:shadow-[#A20222]/20 group cursor-pointer ${
+            isDarkMode 
+              ? 'bg-gradient-to-br from-[#A20222]/20 to-[#F3752A]/20 border-[#A20222]/20' 
+              : 'bg-gradient-to-br from-[#A20222]/10 to-[#F3752A]/10 border-[#A20222]/20'
+          }`}>
+            <div className="text-center">
+              <div className="text-6xl mb-6 group-hover:animate-pulse">⚡</div>
+              <h3 className="text-xl font-bold text-[#A20222] mb-4 group-hover:text-[#F3752A] transition-colors">
+                Quick & Easy
+              </h3>
+              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+              }`}>
+                "One click and done, no pro skills needed."
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Fun Testimonials Section */}
+      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
+        <h2 className={`text-4xl font-bold text-center mb-16 transition-colors duration-300 ${
+          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+        }`}>
+          Fun Testimonials
+        </h2>
+        
+        <div className="w-full max-w-4xl mx-auto space-y-8">
+          {/* Testimonial 1 */}
+          <div className="flex items-start gap-4 animate-slide-in-left">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#F3752A] to-[#F53057] flex items-center justify-center text-white text-xl font-bold">
+                😊
+              </div>
+            </div>
+            <div className={`rounded-3xl rounded-tl-sm p-6 shadow-lg border-2 max-w-md relative transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-[#333] border-[#F3752A]/20' 
+                : 'bg-white border-[#F3752A]/20'
+            }`}>
+              <div className={`absolute -left-2 top-4 w-4 h-4 border-l-2 border-b-2 border-[#F3752A]/20 transform rotate-45 transition-colors duration-300 ${
+                isDarkMode ? 'bg-[#333]' : 'bg-white'
+              }`}></div>
+              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>
+                "I changed my background 5 times — my face never changed once. Love it!"
+              </p>
+              <div className="text-[#F3752A] font-semibold mt-3 text-sm">- Sarah K.</div>
+            </div>
+          </div>
+
+          {/* Testimonial 2 - Right aligned */}
+          <div className="flex items-start gap-4 justify-end animate-slide-in-right">
+            <div className={`rounded-3xl rounded-tr-sm p-6 shadow-lg border-2 max-w-md relative transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 border-[#F53057]/20' 
+                : 'bg-gradient-to-br from-[#F53057]/10 to-[#A20222]/10 border-[#F53057]/20'
+            }`}>
+              <div className={`absolute -right-2 top-4 w-4 h-4 border-r-2 border-b-2 border-[#F53057]/20 transform rotate-45 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20' 
+                  : 'bg-gradient-to-br from-[#F53057]/10 to-[#A20222]/10'
+              }`}></div>
+              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>
+                "Finally an editor that listens to me!"
+              </p>
+              <div className="text-[#F53057] font-semibold mt-3 text-sm">- Mike R.</div>
+            </div>
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#F53057] to-[#A20222] flex items-center justify-center text-white text-xl font-bold">
+                🤩
+              </div>
+            </div>
+          </div>
+
+          {/* Testimonial 3 */}
+          <div className="flex items-start gap-4 animate-slide-in-left">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#A20222] to-[#F3752A] flex items-center justify-center text-white text-xl font-bold">
+                🎨
+              </div>
+            </div>
+            <div className={`rounded-3xl rounded-tl-sm p-6 shadow-lg border-2 max-w-md relative transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-[#333] border-[#A20222]/20' 
+                : 'bg-white border-[#A20222]/20'
+            }`}>
+              <div className={`absolute -left-2 top-4 w-4 h-4 border-l-2 border-b-2 border-[#A20222]/20 transform rotate-45 transition-colors duration-300 ${
+                isDarkMode ? 'bg-[#333]' : 'bg-white'
+              }`}></div>
+              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>
+                "Magic! Only the sky changed, my perfect selfie stayed untouched ✨"
+              </p>
+              <div className="text-[#A20222] font-semibold mt-3 text-sm">- Alex T.</div>
+            </div>
+          </div>
+
+          {/* Testimonial 4 - Right aligned */}
+          <div className="flex items-start gap-4 justify-end animate-slide-in-right">
+            <div className={`rounded-3xl rounded-tr-sm p-6 shadow-lg border-2 max-w-md relative transition-colors duration-300 ${
+              isDarkMode 
+                ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
+                : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
+            }`}>
+              <div className={`absolute -right-2 top-4 w-4 h-4 border-r-2 border-b-2 border-[#F3752A]/20 transform rotate-45 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20' 
+                  : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10'
+              }`}></div>
+              <p className={`text-lg leading-relaxed transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>
+                "No more 'oops I ruined my photo' moments. Jamble gets it right!"
+              </p>
+              <div className="text-[#F3752A] font-semibold mt-3 text-sm">- Emma L.</div>
+            </div>
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#F3752A] to-[#F53057] flex items-center justify-center text-white text-xl font-bold">
+                💯
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* The Jamble Fun Zone */}
+      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
+        <h2 className={`text-4xl font-bold text-center mb-8 transition-colors duration-300 ${
+          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+        }`}>
+          The Jamble Fun Zone
+        </h2>
+        <p className={`text-lg text-center mb-16 max-w-2xl transition-colors duration-300 ${
+          isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+        }`}>
+          Try Jamble right here! Generate or upload an image, then edit it with simple text prompts. 
+          Get 2 free edits to experience the magic ✨
+        </p>
+        
+        <div className={`w-full max-w-4xl mx-auto rounded-3xl p-8 border-2 transition-colors duration-300 ${
+          isDarkMode 
+            ? 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20' 
+            : 'bg-gradient-to-br from-[#F3752A]/5 to-[#F53057]/5 border-[#F3752A]/20'
+        }`}>
+          {/* Image Display Area */}
+          {funZoneImage ? (
+            <div className="flex justify-center mb-8">
+              <img
+                src={funZoneImage}
+                alt="Fun Zone Image"
+                className="rounded-2xl shadow-lg max-w-md w-full object-contain"
+                style={{ maxHeight: '400px' }}
+              />
+            </div>
+          ) : (
+            <div className="flex justify-center mb-8">
+              <div className={`w-full max-w-md h-64 rounded-2xl border-2 border-dashed border-[#F3752A]/40 flex flex-col items-center justify-center transition-colors duration-300 ${
+                isDarkMode ? 'bg-[#333]' : 'bg-[#F2F2F2]'
+              }`}>
+                <div className="text-6xl mb-4">🖼️</div>
+                <p className={`text-center transition-colors duration-300 ${
+                  isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                }`}>
+                  Upload an image or generate one below
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Generation and Upload Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            {/* Generate Image */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-[#F3752A] text-center">Generate Image</h3>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={funZonePrompt}
+                  onChange={(e) => setFunZonePrompt(e.target.value)}
+                  placeholder="Describe your image..."
+                  className={`flex-1 text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#F3752A] transition ${
+                    isDarkMode 
+                      ? 'bg-[#333] text-white border-[#F3752A]/20' 
+                      : 'bg-white text-[#1E1E1E] border-[#F3752A]/20'
+                  }`}
+                  disabled={funZoneGenerating}
+                />
+                <button
+                  onClick={handleFunZoneGenerate}
+                  disabled={funZoneGenerating || !funZonePrompt.trim()}
+                  className="px-6 py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {funZoneGenerating ? "Creating..." : "Generate"}
+                </button>
+              </div>
+            </div>
+
+            {/* Upload Image */}
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-[#F53057] text-center">Upload Image</h3>
+              <div className="flex justify-center">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-8 py-3 rounded-xl bg-[#F53057] text-white font-semibold hover:bg-[#A20222] transition flex items-center gap-2"
+                >
+                  <span>📁</span>
+                  Upload Image
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Edit Section */}
+          {funZoneImage && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-[#A20222]">Edit Your Image</h3>
+                <div className={`text-sm transition-colors duration-300 ${
+                  isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                }`}>
+                  {editCount}/2 free edits used
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={funZoneEditPrompt}
+                  onChange={(e) => setFunZoneEditPrompt(e.target.value)}
+                  placeholder="Tell me what to change..."
+                  className={`flex-1 text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#A20222] transition ${
+                    isDarkMode 
+                      ? 'bg-[#333] text-white border-[#A20222]/20' 
+                      : 'bg-white text-[#1E1E1E] border-[#A20222]/20'
+                  }`}
+                  disabled={funZoneEditing}
+                />
+                <button
+                  onClick={handleFunZoneEdit}
+                  disabled={funZoneEditing || !funZoneEditPrompt.trim()}
+                  className="px-6 py-3 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {funZoneEditing ? "Editing..." : editCount >= 2 ? "Upgrade" : "Edit"}
+                </button>
+              </div>
+              {editCount >= 1 && editCount < 2 && (
+                <p className="text-sm text-[#F53057] text-center">
+                  {2 - editCount} free edit remaining!
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Error Display */}
+          {funZoneError && (
+            <div className="mt-4 p-4 bg-red-100 border border-red-300 rounded-xl text-red-700 text-center">
+              {funZoneError}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Pricing Section */}
+      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
+        <h2 className={`text-4xl font-bold text-center mb-16 transition-colors duration-300 ${
+          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+        }`}>
+          Pricing
+        </h2>
+        
+        <div className="flex flex-row gap-8 justify-center items-stretch w-full max-w-6xl mx-auto">
+          {/* Free Jamble */}
+          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F53057]/40 hover:shadow-xl hover:shadow-[#F3752A]/20 ${
+            isDarkMode 
+              ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
+              : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
+          }`}>
+            <div className="text-center">
+              <div className="text-6xl mb-4">🎮</div>
+              <h3 className="text-2xl font-bold text-[#F3752A] mb-2">Free Jamble</h3>
+              <p className="text-[#F53057] font-semibold text-lg mb-6">"Play with it"</p>
               
-              {/* Feature number badge */}
-              <div className="absolute top-4 right-4 w-8 h-8 bg-lime-400/20 backdrop-blur-sm border border-lime-400/30 rounded-full flex items-center justify-center text-lime-300 text-sm font-bold opacity-60 group-hover:opacity-100 transition-opacity duration-300">
-                {(i + 1).toString().padStart(2, '0')}
+              <div className={`text-4xl font-bold mb-6 transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>$0</div>
+              
+              <div className="space-y-3 text-left">
+                <div className="flex items-center gap-3">
+                  <span className="text-[#F3752A] text-xl">✨</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>2 free edits per session</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#F3752A] text-xl">🖼️</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Basic image generation</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#F3752A] text-xl">📱</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Standard resolution</span>
+                </div>
+              </div>
+              
+              <button className="w-full mt-8 px-6 py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition">
+                Get Started Free
+              </button>
+            </div>
+          </div>
+
+          {/* Jamble Plus */}
+          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#A20222]/40 hover:shadow-xl hover:shadow-[#F53057]/20 relative ${
+            isDarkMode 
+              ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 border-[#F53057]/20' 
+              : 'bg-gradient-to-br from-[#F53057]/10 to-[#A20222]/10 border-[#F53057]/20'
+          }`}>
+            {/* Popular Badge */}
+            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-[#F53057] text-white px-4 py-1 rounded-full text-sm font-semibold">
+              Most Popular
+            </div>
+            
+            <div className="text-center">
+              <div className="text-6xl mb-4">🚀</div>
+              <h3 className="text-2xl font-bold text-[#F53057] mb-2">Jamble Plus</h3>
+              <p className="text-[#A20222] font-semibold text-lg mb-6">"Unlimited vibes"</p>
+              
+              <div className={`text-4xl font-bold mb-2 transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>$9.99</div>
+              <div className={`text-sm mb-6 transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-60' : 'text-[#1E1E1E] opacity-60'
+              }`}>per month</div>
+              
+              <div className="space-y-3 text-left">
+                <div className="flex items-center gap-3">
+                  <span className="text-[#F53057] text-xl">🔥</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Unlimited edits</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#F53057] text-xl">⚡</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Priority processing</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#F53057] text-xl">🎨</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Advanced editing tools</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#F53057] text-xl">📸</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>HD image generation</span>
+                </div>
+              </div>
+              
+              <button className="w-full mt-8 px-6 py-3 rounded-xl bg-[#F53057] text-white font-semibold hover:bg-[#A20222] transition">
+                Upgrade to Plus
+              </button>
+            </div>
+          </div>
+
+          {/* Jamble Pro */}
+          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F3752A]/40 hover:shadow-xl hover:shadow-[#A20222]/20 ${
+            isDarkMode 
+              ? 'bg-gradient-to-br from-[#A20222]/20 to-[#F3752A]/20 border-[#A20222]/20' 
+              : 'bg-gradient-to-br from-[#A20222]/10 to-[#F3752A]/10 border-[#A20222]/20'
+          }`}>
+            <div className="text-center">
+              <div className="text-6xl mb-4">👑</div>
+              <h3 className="text-2xl font-bold text-[#A20222] mb-2">Jamble Pro</h3>
+              <p className="text-[#F3752A] font-semibold text-lg mb-6">"For the edit-obsessed"</p>
+              
+              <div className={`text-4xl font-bold mb-2 transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>$19.99</div>
+              <div className={`text-sm mb-6 transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-60' : 'text-[#1E1E1E] opacity-60'
+              }`}>per month</div>
+              
+              <div className="space-y-3 text-left">
+                <div className="flex items-center gap-3">
+                  <span className="text-[#A20222] text-xl">💎</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Everything in Plus</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#A20222] text-xl">🎭</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>AI style transfer</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#A20222] text-xl">📊</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Batch processing</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#A20222] text-xl">🔗</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>API access</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-[#A20222] text-xl">🎯</span>
+                  <span className={`transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Custom brand kit</span>
+                </div>
+              </div>
+              
+              <button className="w-full mt-8 px-6 py-3 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition">
+                Go Pro
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing Popup */}
+      {showPricingPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className={`rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 transition-colors duration-300 ${
+            isDarkMode 
+              ? 'bg-[#333] border-[#F3752A]/20' 
+              : 'bg-white border-[#F3752A]/20'
+          }`}>
+            <div className="text-center">
+              <div className="text-6xl mb-4">🚀</div>
+              <h3 className={`text-2xl font-bold mb-4 transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>
+                Unlock Unlimited Edits!
+              </h3>
+              <p className={`mb-6 transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+              }`}>
+                You've used your 2 free edits. Upgrade to continue the magic with unlimited edits, advanced features, and more!
+              </p>
+              
+              <div className="space-y-4 mb-6">
+                <div className={`rounded-2xl p-4 border-2 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
+                    : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
+                }`}>
+                  <div className="text-lg font-bold text-[#F3752A]">Pro Plan</div>
+                  <div className={`text-2xl font-bold transition-colors duration-300 ${
+                    isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                  }`}>$9.99/month</div>
+                  <div className={`text-sm transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                  }`}>Unlimited edits & premium features</div>
+                </div>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPricingPopup(false)}
+                  className={`flex-1 px-6 py-3 rounded-xl font-semibold transition ${
+                    isDarkMode 
+                      ? 'bg-[#555] text-white hover:bg-[#666]' 
+                      : 'bg-[#F2F2F2] text-[#1E1E1E] hover:bg-[#E5E5E5]'
+                  }`}
+                >
+                  Maybe Later
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPricingPopup(false);
+                    router.push("/signup");
+                  }}
+                  className="flex-1 px-6 py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition"
+                >
+                  Upgrade Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      
+     
+     
+      {/* Footer */}
+      <footer className={`w-full border-t px-8 py-12 transition-colors duration-300 ${
+        isDarkMode 
+          ? 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20' 
+          : 'bg-gradient-to-br from-[#F3752A]/5 to-[#F53057]/5 border-[#F3752A]/20'
+      }`}>
+        <div className="max-w-6xl mx-auto">
+          {/* Main Footer Content */}
+          <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-8">
+            {/* Logo Section */}
+            <div className="flex flex-col items-start">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="text-4xl">🎨</div>
+                <div className="text-3xl font-bold text-[#F3752A]">Jamble</div>
+              </div>
+              <p className={`text-sm max-w-sm transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+              }`}>
+                Edit fearlessly, create endlessly. Where your images stay true while magic happens ✨
+              </p>
+            </div>
+
+            {/* Quick Links */}
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Product Links */}
+              <div className="space-y-3">
+                <h4 className="text-lg font-bold text-[#F53057] mb-3">Product</h4>
+                <div className="space-y-2">
+                  <a href="/about" className={`block text-sm transition ${
+                    isDarkMode 
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                  }`}>
+                    About Jamble
+                  </a>
+                  <a href="/features" className={`block text-sm transition ${
+                    isDarkMode 
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                  }`}>
+                    Features
+                  </a>
+                  <a href="/pricing" className={`block text-sm transition ${
+                    isDarkMode 
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                  }`}>
+                    Pricing
+                  </a>
+                </div>
               </div>
 
-              <div className="relative z-10 flex flex-col h-full">
-                {/* Media section */}
-                <div className="flex items-center justify-center mb-6 relative overflow-hidden rounded-2xl bg-black/20 border border-white/10 group-hover:border-lime-400/30 transition-colors duration-300">
-                  {card.gif.match(/\.(mp4|webm)$/i) ? (
-                    <video
-                      src={card.gif}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <img
-                      src={card.gif}
-                      alt="Feature demo GIF"
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  )}
-                  {/* Play overlay for videos */}
-                  {card.gif.match(/\.(mp4|webm)$/i) && (
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                        <div className="w-0 h-0 border-l-[8px] border-l-white border-y-[6px] border-y-transparent ml-1" />
-                      </div>
-                    </div>
-                  )}
+              {/* Support Links */}
+              <div className="space-y-3">
+                <h4 className="text-lg font-bold text-[#A20222] mb-3">Support</h4>
+                <div className="space-y-2">
+                  <a href="/faq" className={`block text-sm transition ${
+                    isDarkMode 
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                  }`}>
+                    FAQ
+                  </a>
+                  <a href="/contact" className={`block text-sm transition ${
+                    isDarkMode 
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                  }`}>
+                    Contact Us
+                  </a>
+                  <a href="/help" className={`block text-sm transition ${
+                    isDarkMode 
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                  }`}>
+                    Help Center
+                  </a>
                 </div>
+              </div>
 
-                {/* Content section */}
-                <div className="flex-1 flex flex-col">
-                  <h3 className="text-xl font-bold text-white mb-3 group-hover:text-lime-100 transition-colors duration-300">
-                    {card.title}
-                  </h3>
-                  <div className="text-lime-300 font-semibold mb-4 text-base group-hover:text-lime-200 transition-colors duration-300">
-                    {card.tagline}
-                  </div>
-                  <p className="text-gray-300 text-sm leading-relaxed opacity-90 group-hover:opacity-100 group-hover:text-gray-200 transition-all duration-300 flex-1">
-                    {card.copy}
-                  </p>
-                  
-                  {/* Action indicator */}
-                  <div className="flex items-center mt-4 text-lime-400 text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                    <span>Explore feature</span>
-                    <svg className="w-4 h-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
+              {/* Social Links */}
+              <div className="space-y-3">
+                <h4 className="text-lg font-bold text-[#F3752A] mb-3">Connect</h4>
+                <div className="flex gap-4">
+                  <a href="#" className="text-2xl hover:scale-110 transition-transform" title="Twitter">
+                    🐦
+                  </a>
+                  <a href="#" className="text-2xl hover:scale-110 transition-transform" title="Instagram">
+                    📸
+                  </a>
+                  <a href="#" className="text-2xl hover:scale-110 transition-transform" title="Discord">
+                    💬
+                  </a>
+                  <a href="#" className="text-2xl hover:scale-110 transition-transform" title="YouTube">
+                    📺
+                  </a>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-        {/* Call to Action below feature cards */}
-        <div className="w-full flex flex-col items-center mt-16">
-          <div className="text-2xl md:text-3xl font-bold text-white text-center mb-6 max-w-2xl">
-            Ready to squeeze more out of your creativity? Dive into Juicebox and let your ideas flow!
           </div>
-          <button
-            className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg bg-gradient-to-r from-lime-400 to-lime-500 text-black hover:from-lime-300 hover:to-lime-400"
-            onClick={() => router.push("/home")}
-          >
-            Get started
-          </button>
-        </div>
-      </div>
-      
-      {/* Try Juicebox Live Section */}
-      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
-        <h2 className="text-4xl font-bold text-white text-center mb-16">
-          Try juicebox live!
-        </h2>
-        {/* Live Demo with API integration */}
-        <LiveDemoWithApi />
-      </div>
-      {/* Ready for more CTA */}
-      <div className="w-full flex flex-col items-center mt-32 mb-32 px-4">
-        <h2 className="text-4xl font-bold text-white text-center mb-8">
-          Ready for more
-        </h2>
-        <button className="font-semibold px-10 py-4 rounded-xl text-lg transition shadow-lg bg-gradient-to-r from-lime-400 to-lime-500 text-black hover:from-lime-300 hover:to-lime-400">
-          Get started free
-        </button>
-      </div>
-      {/* Footer */}
-      <footer className="w-full flex flex-col items-center justify-center py-8 text-gray-400 text-sm">
-        <div className="flex items-center gap-2">
-          <span>Built in India</span>
-          <span>&copy; {new Date().getFullYear()}</span>
+
+          {/* Bottom Section */}
+          <div className="border-t border-[#F3752A]/20 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className={`flex items-center gap-6 text-sm transition-colors duration-300 ${
+              isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+            }`}>
+              <span>© {new Date().getFullYear()} Jamble. All rights reserved.</span>
+              <span className="flex items-center gap-2">
+                Made with ❤️ in India
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm">
+              <a href="/privacy" className={`transition ${
+                isDarkMode 
+                  ? 'text-white opacity-70 hover:opacity-100 hover:text-[#F3752A]' 
+                  : 'text-[#1E1E1E] opacity-70 hover:opacity-100 hover:text-[#F3752A]'
+              }`}>
+                Privacy Policy
+              </a>
+              <span className={`transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-40' : 'text-[#1E1E1E] opacity-40'
+              }`}>•</span>
+              <a href="/terms" className={`transition ${
+                isDarkMode 
+                  ? 'text-white opacity-70 hover:opacity-100 hover:text-[#F3752A]' 
+                  : 'text-[#1E1E1E] opacity-70 hover:opacity-100 hover:text-[#F3752A]'
+              }`}>
+                Terms of Service
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
   );
 }
 
-/* Add this to your global CSS or in a <style jsx global> block if not present: */
-/* Add this to your global CSS or in a <style jsx global> block if not present:
-
-.animate-blink { animation: blink 1s steps(2, start) infinite; }
-@keyframes blink { to { visibility: hidden; } }
-
-.animate-gradient-x { animation: gradient-x 3s ease infinite; }
-@keyframes gradient-x { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
-
-.bg-300% { background-size: 300% 300%; }
-
-.drop-shadow-glow { filter: drop-shadow(0 0 20px rgba(178, 255, 89, 0.5)); }
-
-@keyframes float0 { 0%,100%{transform:translateY(0) rotate(0deg);} 50%{transform:translateY(-15px) rotate(2deg);} }
-@keyframes float1 { 0%,100%{transform:translateY(0) rotate(0deg);} 50%{transform:translateY(-25px) rotate(-2deg);} }
-@keyframes float2 { 0%,100%{transform:translateY(0) rotate(0deg);} 50%{transform:translateY(-10px) rotate(1deg);} }
-.animate-float0 { animation: float0 4s ease-in-out infinite; }
-.animate-float1 { animation: float1 5s ease-in-out infinite; }
-.animate-float2 { animation: float2 3.5s ease-in-out infinite; }
-.animate-pulse0 { animation: pulse 2.5s infinite alternate; }
-.animate-pulse1 { animation: pulse 3s infinite alternate; }
-@keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(178, 255, 89, 0.4);} 100%{box-shadow:0 0 25px 10px rgba(178, 255, 89, 0.1);} }
-
-.bg-gradient-radial { background: radial-gradient(ellipse at center, var(--tw-gradient-stops)); }
-
-.animate-blink-input::placeholder { animation: blink 1s steps(2, start) infinite; }
-
-@keyframes gif-pop-in { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-.animate-fade-in { animation: fadeIn 0.3s; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-*/
-
-/* Add to your global CSS:
-.animate-blink-input::placeholder { animation: blink 1s steps(2, start) infinite; }
-*/
-
-/* Add to your global CSS:
-@keyframes gif-pop-in { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-.animate-fade-in { animation: fadeIn 0.3s; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-*/
 
 // LiveDemoWithApi component
 function LiveDemoWithApi() {
