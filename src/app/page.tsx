@@ -502,90 +502,56 @@ export default function LandingPage() {
         </div>
       </div>
       {/* Centered Content */}
-      <div className="flex-1 flex flex-col lg:flex-row items-center lg:items-end justify-between px-4 md:px-8 lg:px-12 pb-8 lg:pb-16">
-        {/* Left side - Main content */}
-        <div className="flex flex-col items-center lg:items-start justify-end w-full lg:w-1/2 lg:pr-12 text-center lg:text-left mb-8 lg:mb-0">
-          <h1 className={`text-3xl sm:text-4xl md:text-5xl font-bold mb-6 max-w-2xl transition-colors duration-300 ${
-            isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-          }`}>
-           Edit Fearlessly. Jamble Keeps Your Image True.
-          </h1>
-          <p className={`text-base sm:text-lg md:text-xl mb-10 max-w-xl transition-colors duration-300 ${
-            isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-          }`}>
-            No more losing the original vibe. Jamble only changes what you want — nothing else
-          </p>
-          <div className="flex flex-col gap-4 w-full">
-            <div className="flex flex-col sm:flex-row gap-4 items-center justify-center lg:justify-start">
-              <button
-                className="font-semibold px-8 sm:px-10 py-3 sm:py-4 rounded-xl text-base sm:text-lg transition shadow-lg relative overflow-hidden group w-full sm:w-auto"
-                style={{
-                  background: "linear-gradient(45deg, #F3752A 0%, #F53057 50%, #A20222 100%)",
-                  backgroundSize: "300% 300%",
-                  animation: "gradient-shift 3s ease infinite",
-                  color: "white",
-                }}
-                onClick={() => router.push("/home")}
-              >
-               Try It Now
-              </button>
-              <button
-                className="font-semibold px-8 sm:px-10 py-3 sm:py-4 rounded-xl text-base sm:text-lg transition shadow-lg bg-[#F2F2F2] text-[#1E1E1E] border border-[#F3752A] hover:bg-[#F3752A] hover:text-white w-full sm:w-auto"
-                onClick={() => router.push("/demo")}
-              >
-                See Jamble in Action
-              </button>
-            </div>
-            
-          </div>
-          
-         
+      <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-8 lg:px-12 pb-8 lg:pb-16 text-center relative">
+        {/* Background Video */}
+        <div className="absolute inset-0 overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src="/download.mp4" type="video/mp4" />
+          </video>
+          {/* Black Overlay */}
+          <div className="absolute inset-0 bg-black/60"></div>
         </div>
-
-        {/* Right side - Comparison boxes side by side */}
-        <div className="flex flex-row gap-4 md:gap-6 w-full lg:w-1/2 justify-center lg:justify-end">
-          {/* Others box */}
-          <div className={`rounded-2xl p-4 md:p-6 border-2 w-full max-w-xs transition-colors duration-300 ${
-            isDarkMode 
-              ? 'bg-[#333] border-[#F3752A]/30' 
-              : 'bg-[#F2F2F2] border-[#F3752A]/30'
-          }`}>
-            <h3 className={`text-base md:text-lg font-bold mb-2 md:mb-3 text-center transition-colors duration-300 ${
-              isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-            }`}>Others</h3>
-            <div className="flex justify-center">
-              <video
-                src="/others-comparison.mp4"
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="rounded-xl w-full h-auto object-contain bg-[#1E1E1E]/5"
-                style={{ maxHeight: '120px', minHeight: '80px' }}
-              />
-            </div>
-          </div>
+        
+        {/* Content - Now with relative positioning to appear above video */}
+        <div className="relative z-10">
+          <h1 className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 max-w-4xl transition-colors duration-300 text-white`}>
+            One Image. <span 
+              className="font-serif bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] bg-clip-text text-transparent"
+              style={{ fontFamily: 'serif' }}
+            >
+              Endless
+            </span> Worlds.
+          </h1>
+          <p className={`text-lg sm:text-xl md:text-2xl mb-12 max-w-3xl transition-colors duration-300 text-white opacity-90`}>
+            Remix reality at <em className="font-medium">lightning speed</em> — your ideas, consistent and unstoppable.
+          </p>
           
-          {/* Us box */}
-          <div className={`rounded-2xl p-4 md:p-6 border-2 w-full max-w-xs transition-colors duration-300 ${
-            isDarkMode 
-              ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F53057]/50' 
-              : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F53057]/50'
-          }`}>
-            <h3 className={`text-base md:text-lg font-bold mb-2 md:mb-3 text-center transition-colors duration-300 ${
-              isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-            }`}>Jamble</h3>
-            <div className="flex justify-center">
-              <video
-                src="/jamble-comparison.mp4"
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="rounded-xl w-full h-auto object-contain bg-[#1E1E1E]/5"
-                style={{ maxHeight: '120px', minHeight: '80px' }}
-              />
-            </div>
+          <div className="flex flex-col items-center gap-6">
+            <button
+              className="font-semibold px-10 sm:px-12 py-4 sm:py-5 rounded-xl text-lg sm:text-xl transition shadow-lg relative overflow-hidden group"
+              style={{
+                background: "linear-gradient(45deg, #F3752A 0%, #F53057 50%, #A20222 100%)",
+                backgroundSize: "300% 300%",
+                animation: "gradient-shift 3s ease infinite",
+                color: "white",
+              }}
+              onClick={() => router.push("/home")}
+            >
+              Remix Your First Image
+            </button>
+            
+            <button
+              className="text-base sm:text-lg font-medium underline transition-colors duration-300 hover:no-underline text-white hover:text-[#F3752A]"
+              onClick={() => router.push("/demo")}
+            >
+              Watch the Magic
+            </button>
           </div>
         </div>
       </div>
