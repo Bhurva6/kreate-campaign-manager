@@ -99,19 +99,12 @@ export default function LandingPage() {
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(false);
   
-  // Fun Zone state
-  const [funZoneImage, setFunZoneImage] = useState<string | null>(null);
-  const [funZonePrompt, setFunZonePrompt] = useState("");
-  const [funZoneEditPrompt, setFunZoneEditPrompt] = useState("");
-  const [funZoneGenerating, setFunZoneGenerating] = useState(false);
-  const [funZoneEditing, setFunZoneEditing] = useState(false);
-  const [funZoneError, setFunZoneError] = useState<string | null>(null);
-  const [funZoneSuccess, setFunZoneSuccess] = useState<string | null>(null);
-  const [editCount, setEditCount] = useState(0);
+  // Scroll animation state for unify section
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const unifyRef = useRef<HTMLDivElement>(null);
+  
+  // Pricing popup state
   const [showPricingPopup, setShowPricingPopup] = useState(false);
-  const [editingProgress, setEditingProgress] = useState("");
-  const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Typing animation logic
   const fullText1 =
@@ -311,405 +304,736 @@ export default function LandingPage() {
     return () => window.removeEventListener("mousedown", handle);
   }, [activeGif]);
 
-  // Fun Zone functions
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFunZoneImage(e.target?.result as string);
-        setEditCount(0);
-        setFunZoneError(null);
-        setFunZoneSuccess("Image uploaded successfully! ✨");
+  // Scroll effect for Unify section
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!unifyRef.current) return;
+      
+      const rect = unifyRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      const elementHeight = rect.height;
+      
+      // Calculate scroll progress when element is in viewport
+      if (rect.top <= windowHeight && rect.bottom >= 0) {
+        // Create a longer animation range for the stacking effect
+        const startTrigger = windowHeight * 1.2; // Start when element is above viewport
+        const endTrigger = -elementHeight * 0.5; // End when element is mostly out of top
+        const totalRange = startTrigger - endTrigger;
         
-        // Clear success message after 3 seconds
-        setTimeout(() => setFunZoneSuccess(null), 3000);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setFunZoneImage(e.target?.result as string);
-          setEditCount(0);
-          setFunZoneError(null);
-          setFunZoneSuccess("Image uploaded successfully! ✨");
-          
-          // Clear success message after 3 seconds
-          setTimeout(() => setFunZoneSuccess(null), 3000);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setFunZoneError("Please upload a valid image file");
+        const progress = Math.max(0, Math.min(1, 
+          (startTrigger - rect.top) / totalRange
+        ));
+        setScrollProgress(progress);
+      } else if (rect.top > windowHeight) {
+        // Element hasn't entered viewport yet
+        setScrollProgress(0);
+      } else if (rect.bottom < 0) {
+        // Element has left viewport
+        setScrollProgress(1);
       }
-    }
-  };
+    };
 
-  const handleFunZoneGenerate = async () => {
-    if (!funZonePrompt.trim()) return;
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial call
     
-    setFunZoneGenerating(true);
-    setFunZoneError(null);
-    setFunZoneSuccess(null);
-    
-    try {
-      const url = await callGenerateImage(funZonePrompt);
-      setFunZoneImage(url);
-      setEditCount(0);
-      setFunZoneSuccess("Image generated successfully! ✨");
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setFunZoneSuccess(null), 3000);
-    } catch (err: any) {
-      setFunZoneError(err.message);
-    } finally {
-      setFunZoneGenerating(false);
-    }
-  };
-
-  const handleFunZoneEdit = async () => {
-    if (!funZoneImage || !funZoneEditPrompt.trim()) return;
-    
-    if (editCount >= 2) {
-      setShowPricingPopup(true);
-      return;
-    }
-    
-    setFunZoneEditing(true);
-    setFunZoneError(null);
-    setFunZoneSuccess(null);
-    setEditingProgress("Starting edit...");
-    
-    try {
-      // Check if the image is a data URL (uploaded file) or a regular URL
-      let imageUrl = funZoneImage;
-      if (funZoneImage.startsWith('data:')) {
-        // It's a base64 data URL, use it directly
-        imageUrl = funZoneImage;
-      } else {
-        // It's a regular URL, we might need to convert it to base64
-        try {
-          const response = await fetch(funZoneImage);
-          const blob = await response.blob();
-          imageUrl = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
-            reader.readAsDataURL(blob);
-          });
-        } catch (convertError) {
-          console.warn("Could not convert image to base64, using original URL");
-          imageUrl = funZoneImage;
-        }
-      }
-      
-      setEditingProgress("Processing your edit...");
-      const url = await callEditImage(funZoneEditPrompt, imageUrl);
-      setFunZoneImage(url);
-      setEditCount(prev => prev + 1);
-      setFunZoneEditPrompt("");
-      setFunZoneSuccess(`Edit applied successfully! ${2 - editCount - 1} free edit${2 - editCount - 1 === 1 ? '' : 's'} remaining ✨`);
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setFunZoneSuccess(null), 3000);
-    } catch (err: any) {
-      setFunZoneError(err.message);
-    } finally {
-      setFunZoneEditing(false);
-      setEditingProgress("");
-    }
-  };
-
-  const handleFunZoneReset = () => {
-    setFunZoneImage(null);
-    setFunZonePrompt("");
-    setFunZoneEditPrompt("");
-    setEditCount(0);
-    setFunZoneError(null);
-    setFunZoneSuccess(null);
-    setEditingProgress("");
-    setIsDragOver(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
-    <div className={`min-h-screen flex flex-col relative overflow-x-hidden transition-colors duration-300 ${
-      isDarkMode 
-        ? 'bg-[#1E1E1E]' 
-        : 'bg-[#FDFBF7]'
-    }`}>
-      {/* Logo Top Left and Auth Buttons Top Right */}
-      <div className="flex flex-row justify-between items-center w-full p-4 md:p-6">
-        <div className={`text-2xl md:text-3xl font-bold transition-colors duration-300 ${
-          isDarkMode ? 'text-[#F3752A]' : 'text-[#F3752A]'
-        }`}>Jamble</div>
-        
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Theme Toggle */}
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-2 md:p-3 rounded-full transition-all duration-300 hover:scale-110 ${
-              isDarkMode 
-                ? 'bg-[#F3752A]/20 text-[#F3752A] hover:bg-[#F3752A]/30' 
-                : 'bg-[#F3752A]/10 text-[#F3752A] hover:bg-[#F3752A]/20'
-            }`}
-            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            <span className="text-xl md:text-2xl">
-              {isDarkMode ? '☀️' : '🌙'}
-            </span>
-          </button>
+    <div className="min-h-screen flex flex-col relative overflow-x-hidden bg-black font-sans">
+      {/* First Viewport - Completely Black */}
+      <div className="min-h-screen flex flex-col bg-black relative">
+        {/* Logo Top Left and Auth Buttons Top Right */}
+        <div className="flex flex-row justify-between items-center w-full p-4 md:p-6 bg-black z-10">
+          <div className="text-2xl md:text-3xl font-bold text-white">Surreal</div>
           
-          <button
-            className={`px-3 py-1.5 md:px-6 md:py-2 rounded-lg font-semibold text-sm md:text-base transition-colors duration-300 ${
-              isDarkMode 
-                ? 'bg-[#333] text-white hover:bg-[#F3752A] hover:text-white' 
-                : 'bg-[#F2F2F2] text-[#1E1E1E] hover:bg-[#F3752A] hover:text-white'
-            }`}
-            onClick={() => window.location.href = "/signin"}
-          >
-            Sign In
-          </button>
-          <button
-            className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-[#F53057] text-white font-semibold hover:bg-[#A20222] transition text-sm md:text-base"
-            onClick={() => window.location.href = "/signup"}
-          >
-            Sign Up
-          </button>
-        </div>
-      </div>
-      {/* Centered Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 md:px-8 lg:px-12 pb-8 lg:pb-16 text-center relative">
-        {/* Background Video */}
-        <div className="absolute inset-0 overflow-hidden">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            className="absolute inset-0 w-full h-full object-cover"
-          >
-            <source src="/download.mp4" type="video/mp4" />
-          </video>
-          {/* Black Overlay */}
-          <div className="absolute inset-0 bg-black/60"></div>
-        </div>
-        
-        {/* Content - Now with relative positioning to appear above video */}
-        <div className="relative z-10">
-          <h1 className={`text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 max-w-4xl transition-colors duration-300 text-white`}>
-            One Image. <span 
-              className="font-serif bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] bg-clip-text text-transparent"
-              style={{ fontFamily: 'serif' }}
-            >
-              Endless
-            </span> Worlds.
-          </h1>
-          <p className={`text-lg sm:text-xl md:text-2xl mb-12 max-w-3xl transition-colors duration-300 text-white opacity-90`}>
-            Remix reality at <em className="font-medium">lightning speed</em> — your ideas, consistent and unstoppable.
-          </p>
-          
-          <div className="flex flex-col items-center gap-6">
+          <div className="flex items-center gap-2 md:gap-4">
+            {/* Theme Toggle */}
             <button
-              className="font-semibold px-10 sm:px-12 py-4 sm:py-5 rounded-xl text-lg sm:text-xl transition shadow-lg relative overflow-hidden group"
-              style={{
-                background: "linear-gradient(45deg, #F3752A 0%, #F53057 50%, #A20222 100%)",
-                backgroundSize: "300% 300%",
-                animation: "gradient-shift 3s ease infinite",
-                color: "white",
-              }}
-              onClick={() => router.push("/home")}
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 md:p-3 rounded-full transition-all duration-300 hover:scale-110 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm"
+              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
-              Remix Your First Image
+              <span className="text-xl md:text-2xl">
+                {isDarkMode ? '☀️' : '🌙'}
+              </span>
             </button>
             
             <button
-              className="text-base sm:text-lg font-medium underline transition-colors duration-300 hover:no-underline text-white hover:text-[#F3752A]"
+              className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg font-semibold text-sm md:text-base transition-all duration-300 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm border border-white/20"
+              onClick={() => window.location.href = "/signin"}
+            >
+              Sign In
+            </button>
+            <button
+              className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] text-white font-semibold hover:shadow-lg hover:shadow-[#F3752A]/25 transition-all duration-300 text-sm md:text-base"
+              onClick={() => window.location.href = "/signup"}
+            >
+              Sign Up
+            </button>
+          </div>
+        </div>
+
+        {/* Hero Content - Full Black Viewport */}
+        <div className="flex-1 flex flex-col justify-end px-4 md:px-8 lg:px-12 pb-16 lg:pb-24 relative bg-black">
+          {/* Subtle gradient overlay for depth */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black via-black to-gray-900/30"></div>
+          
+          {/* Content - Bottom left aligned */}
+          <div className="relative z-10 text-left max-w-4xl">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white leading-tight">
+              One Image. <span 
+                className="bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] bg-clip-text text-transparent"
+                
+              >
+                Endless
+              </span> Worlds.
+            </h1>
+            <p className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-3xl mb-8 leading-relaxed">
+              Remix reality at <em className="font-medium text-white">lightning speed</em> — your ideas, consistent and unstoppable.
+            </p>
+            
+            {/* CTA Button */}
+            <button
+              className="inline-flex items-center gap-3 font-semibold px-8 sm:px-10 py-4 sm:py-5 rounded-xl text-lg sm:text-xl transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105 bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] text-white hover:shadow-[#F3752A]/30"
               onClick={() => router.push("/demo")}
             >
-              Watch the Magic
+              <span>✨</span>
+              Get Started Free
+              <span className="text-sm opacity-80">→</span>
             </button>
+          </div>
+
+          {/* Scroll indicator */}
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/60 animate-bounce">
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-sm">Scroll to explore</span>
+              <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
+                <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* How It Works Section */}
-      <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
-        <h2 className={`text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 ${
-          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-        }`}>
-          How It Works
-        </h2>
-        
-        <div className="flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16 max-w-6xl mx-auto">
-          {/* Step 1 - Left side */}
-          <div className="flex flex-col items-center cursor-pointer group transition-all duration-300 hover:scale-105">
-            <div className={`rounded-2xl p-6 md:p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
-              isDarkMode 
-                ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F3752A]/30' 
-                : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/30'
-            }`}>
-              <div className="text-4xl md:text-6xl mb-2 md:mb-4">📷</div>
-            </div>
-            <div className="text-center">
-              <div className={`text-base md:text-lg font-bold mb-2 transition-colors duration-300 ${
-                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-              }`}>Step 1</div>
-              <div className="text-[#F3752A] font-semibold text-sm md:text-base">Upload Your Image</div>
-              <div className={`text-xs md:text-sm mt-1 transition-colors duration-300 ${
-                isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-              }`}>cute doodle of camera / photo frame</div>
-            </div>
-          </div>
+      {/* Content sections with theme-aware background */}
+      <div className={`transition-colors duration-300 ${
+        isDarkMode 
+          ? 'bg-[#1E1E1E]' 
+          : 'bg-[#FDFBF7]'
+      }`}>
+    
 
-          {/* Central Image */}
-          <div className="flex-1 flex justify-center items-center order-first lg:order-none">
-            <div className={`rounded-3xl p-4 md:p-8 border transition-colors duration-300 ${
-              isDarkMode 
-                ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
-                : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
+      {/* Unify Your Creations Section - Jeton Inspired */}
+      <div 
+        ref={unifyRef}
+        className="w-full py-32 md:py-48 px-4 relative overflow-hidden"
+      >
+        {/* Overlapping Images Container with Centered Text - Deck of Cards Effect */}
+        <div 
+          className="relative max-w-4xl mx-auto h-[400px] md:h-[500px] transition-all duration-1000 ease-out"
+        >
+          {/* Centered Title - Behind Images */}
+          <div 
+            className="absolute inset-0 flex items-center justify-center text-center transition-all duration-1500 ease-out z-5 pointer-events-none"
+            style={{
+              transform: `scale(${Math.max(0.3, 2 - scrollProgress * 1.7)})`,
+              opacity: 1
+            }}
+          >
+            <h2 className={`text-6xl md:text-8xl lg:text-9xl font-bold leading-tight transition-colors duration-300 ${
+              isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
             }`}>
+              Unify your
+              <br />
+              <span className="bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] bg-clip-text text-transparent">
+                creations
+              </span>
+            </h2>
+          </div>
+          {/* Image 1 - First card (bottom of stack when stacked) */}
+          <div 
+            className="absolute transition-all duration-1500 ease-out"
+            style={{
+              left: '50%',
+              top: '50%',
+              transform: `
+                translate(-50%, -50%) 
+                translateX(${scrollProgress < 0.6 ? -800 + scrollProgress * 1333 : scrollProgress > 0.9 ? 0 : (scrollProgress - 0.6) * -133}px)
+                translateY(${scrollProgress < 0.6 ? -400 + scrollProgress * 667 : scrollProgress > 0.9 ? (scrollProgress - 0.9) * 600 : 0}px)
+                rotate(${scrollProgress < 0.6 ? -45 + scrollProgress * 75 : scrollProgress > 0.9 ? (scrollProgress - 0.9) * -200 : 0}deg)
+                scale(${Math.max(0.6, 0.3 + scrollProgress * 0.7)})
+              `,
+              opacity: Math.min(1, Math.max(0, (scrollProgress - 0.3) * 3.33)),
+              zIndex: scrollProgress > 0.9 ? 1 : 5
+            }}
+          >
+            <div className="w-48 h-60 md:w-56 md:h-72 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
               <img
-                src="/bright-cereal.png"
-                alt="Demo image showing the editing process"
-                className="rounded-2xl shadow-lg w-full max-w-sm md:max-w-md object-contain"
-                style={{ background: "rgba(243,117,42,0.05)" }}
+                src="/artistic.jpeg"
+                alt="Creative process"
+                className="w-full h-full object-cover"
               />
             </div>
           </div>
 
-          {/* Steps 2 and 3 - Right side, stacked vertically on mobile, side by side on lg */}
-          <div className="flex flex-row lg:flex-col gap-8 items-center">
-            {/* Step 2 */}
-            <div className="flex flex-col items-center cursor-pointer group transition-all duration-300 hover:scale-105">
-              <div className={`rounded-2xl p-6 md:p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
-                isDarkMode 
-                  ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F3752A]/30' 
-                  : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/30'
-              }`}>
-                <div className="text-4xl md:text-6xl mb-2 md:mb-4">🎯</div>
-              </div>
-              <div className="text-center">
-                <div className={`text-base md:text-lg font-bold mb-2 transition-colors duration-300 ${
-                  isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                }`}>Step 2</div>
-                <div className="text-[#F3752A] font-semibold text-sm md:text-base">Pick What to Change</div>
-                <div className={`text-xs md:text-sm mt-1 transition-colors duration-300 ${
-                  isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                }`}>fun highlighting animation</div>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="flex flex-col items-center cursor-pointer group transition-all duration-300 hover:scale-105">
-              <div className={`rounded-2xl p-6 md:p-8 border-2 mb-4 group-hover:border-[#F53057]/50 transition-all duration-300 ${
-                isDarkMode 
-                  ? 'bg-gradient-to-br from-[#F3752A]/30 to-[#F53057]/30 border-[#F3752A]/30' 
-                  : 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/30'
-              }`}>
-                <div className="text-4xl md:text-6xl mb-2 md:mb-4">✨</div>
-              </div>
-              <div className="text-center">
-                <div className={`text-base md:text-lg font-bold mb-2 transition-colors duration-300 ${
-                  isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                }`}>Step 3</div>
-                <div className="text-[#F3752A] font-semibold text-sm md:text-base">Jamble Magic</div>
-                <div className={`text-xs md:text-sm mt-1 transition-colors duration-300 ${
-                  isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                }`}>poof effect, only that part changes</div>
-              </div>
+          {/* Image 2 - Second card */}
+          <div 
+            className="absolute transition-all duration-1500 ease-out"
+            style={{
+              left: '50%',
+              top: '50%',
+              transform: `
+                translate(-50%, -50%) 
+                translateX(${scrollProgress < 0.65 ? 600 - scrollProgress * 923 : scrollProgress > 0.9 ? 10 : (scrollProgress - 0.65) * -40}px)
+                translateY(${scrollProgress < 0.65 ? 300 - scrollProgress * 462 : scrollProgress > 0.9 ? (scrollProgress - 0.9) * 400 : 0}px)
+                rotate(${scrollProgress < 0.65 ? 30 - scrollProgress * 46 : scrollProgress > 0.9 ? (scrollProgress - 0.9) * -100 : 0}deg)
+                scale(${Math.max(0.65, 0.4 + scrollProgress * 0.6)})
+              `,
+              opacity: Math.min(1, Math.max(0, (scrollProgress - 0.4) * 4)),
+              zIndex: scrollProgress > 0.9 ? 2 : 4
+            }}
+          >
+            <div className="w-50 h-62 md:w-58 md:h-74 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
+              <img
+                src="/vibrant.jpeg"
+                alt="AI editing"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
+
+          {/* Image 3 - Center card (top of stack when stacked) */}
+          <div 
+            className="absolute transition-all duration-1500 ease-out"
+            style={{
+              left: '50%',
+              top: '50%',
+              transform: `
+                translate(-50%, -50%) 
+                translateX(${scrollProgress < 0.7 ? 0 : scrollProgress > 0.9 ? 0 : 0}px)
+                translateY(${scrollProgress < 0.7 ? 200 - scrollProgress * 286 : scrollProgress > 0.9 ? (scrollProgress - 0.9) * 200 : 0}px)
+                rotate(${scrollProgress > 0.9 ? 0 : 0}deg)
+                scale(${Math.max(0.7, 0.5 + scrollProgress * 0.5)})
+              `,
+              opacity: Math.min(1, Math.max(0, (scrollProgress - 0.5) * 5)),
+              zIndex: scrollProgress > 0.9 ? 5 : 3
+            }}
+          >
+            <div className="w-56 h-68 md:w-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/30 hover:scale-105 transition-transform duration-300">
+              <img
+                src="/minimalist.jpeg"
+                alt="Perfect creation"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+
+          {/* Image 4 - Fourth card */}
+          <div 
+            className="absolute transition-all duration-1500 ease-out"
+            style={{
+              left: '50%',
+              top: '50%',
+              transform: `
+                translate(-50%, -50%) 
+                translateX(${scrollProgress < 0.75 ? -600 + scrollProgress * 800 : scrollProgress > 0.9 ? -10 : (0.75 - scrollProgress) * -40}px)
+                translateY(${scrollProgress < 0.75 ? -300 + scrollProgress * 400 : scrollProgress > 0.9 ? (scrollProgress - 0.9) * 400 : 0}px)
+                rotate(${scrollProgress < 0.75 ? -30 + scrollProgress * 40 : scrollProgress > 0.9 ? (scrollProgress - 0.9) * 100 : 0}deg)
+                scale(${Math.max(0.65, 0.4 + scrollProgress * 0.6)})
+              `,
+              opacity: Math.min(1, Math.max(0, (scrollProgress - 0.6) * 6.67)),
+              zIndex: scrollProgress > 0.9 ? 2 : 2
+            }}
+          >
+            <div className="w-50 h-62 md:w-58 md:h-74 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
+              <img
+                src="/photorealistic.jpeg"
+                alt="Share creation"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+
+          {/* Image 5 - Fifth card (bottom when stacked) */}
+          <div 
+            className="absolute transition-all duration-1500 ease-out"
+            style={{
+              left: '50%',
+              top: '50%',
+              transform: `
+                translate(-50%, -50%) 
+                translateX(${scrollProgress < 0.8 ? 800 - scrollProgress * 1000 : scrollProgress > 0.9 ? -20 : (0.8 - scrollProgress) * -200}px)
+                translateY(${scrollProgress < 0.8 ? -400 + scrollProgress * 500 : scrollProgress > 0.9 ? (scrollProgress - 0.9) * 600 : 0}px)
+                rotate(${scrollProgress < 0.8 ? 45 - scrollProgress * 56.25 : scrollProgress > 0.9 ? (scrollProgress - 0.9) * 200 : 0}deg)
+                scale(${Math.max(0.6, 0.3 + scrollProgress * 0.7)})
+              `,
+              opacity: Math.min(1, Math.max(0, (scrollProgress - 0.7) * 10)),
+              zIndex: scrollProgress > 0.9 ? 1 : 1
+            }}
+          >
+            <div className="w-46 h-58 md:w-54 md:h-70 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
+              <img
+                src="/illustration.jpeg"
+                alt="Endless possibilities"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+
+          {/* Floating particles that appear during stacking */}
+          <div 
+            className="absolute w-3 h-3 bg-[#F3752A] rounded-full animate-pulse"
+            style={{
+              left: `${50 + Math.sin(scrollProgress * 10) * 20}%`,
+              top: `${30 + Math.cos(scrollProgress * 8) * 15}%`,
+              opacity: scrollProgress > 0.85 ? (scrollProgress - 0.85) * 6.67 : 0,
+              transform: `scale(${0.5 + scrollProgress * 0.5})`
+            }}
+          ></div>
+          <div 
+            className="absolute w-2 h-2 bg-[#F53057] rounded-full animate-pulse"
+            style={{
+              right: `${40 + Math.sin(scrollProgress * 12) * 25}%`,
+              bottom: `${25 + Math.cos(scrollProgress * 9) * 20}%`,
+              opacity: scrollProgress > 0.9 ? (scrollProgress - 0.9) * 10 : 0,
+              animationDelay: '0.5s',
+              transform: `scale(${0.3 + scrollProgress * 0.7})`
+            }}
+          ></div>
+          <div 
+            className="absolute w-1.5 h-1.5 bg-[#A20222] rounded-full animate-pulse"
+            style={{
+              left: `${70 + Math.sin(scrollProgress * 15) * 15}%`,
+              top: `${60 + Math.cos(scrollProgress * 11) * 10}%`,
+              opacity: scrollProgress > 0.95 ? (scrollProgress - 0.95) * 20 : 0,
+              animationDelay: '1s',
+              transform: `scale(${0.2 + scrollProgress * 0.8})`
+            }}
+          ></div>
         </div>
       </div>
 
-      {/* Why Jamble Section */}
+      {/* Three Words Reveal Section - Simple Fade In */}
+      <div 
+        className="w-full h-screen flex items-center justify-center relative overflow-hidden"
+        style={{
+          background: isDarkMode 
+            ? 'linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 30%, #0F0F0F 60%, #151515 100%)' 
+            : 'linear-gradient(135deg, #FFFFFF 0%, #FAFAFA 30%, #F5F5F5 60%, #F8F8F8 100%)'
+        }}
+      >
+        {/* Subtle background pattern */}
+        <div 
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `radial-gradient(circle at 25% 25%, currentColor 1px, transparent 1px), 
+                             radial-gradient(circle at 75% 75%, currentColor 1px, transparent 1px)`,
+            backgroundSize: '60px 60px',
+            backgroundPosition: '0 0, 30px 30px',
+            color: isDarkMode ? '#FFF' : '#000'
+          }}
+        ></div>
+
+        {/* Main Content Container */}
+        <div className="relative z-10 w-full max-w-4xl mx-auto px-6 space-y-8">
+          
+          {/* Word 1 - Consistency */}
+          <div 
+            data-word="1"
+            className="text-center opacity-0 translate-y-8 animate-[fadeIn_1s_ease-out_0.5s_forwards]"
+            style={{
+              animation: 'fadeIn 1s ease-out 0.5s forwards'
+            }}
+          >
+            <div className="relative">
+              <h2 
+                className={`text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none transition-colors duration-500 ${
+                  isDarkMode ? 'text-white' : 'text-[#0A0A0A]'
+                }`}
+                style={{
+                  fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segmental UI", Roboto, Arial, sans-serif',
+                  letterSpacing: '-0.05em'
+                }}
+              >
+                Consistency
+              </h2>
+              
+              
+            </div>
+          </div>
+
+          {/* Word 2 - Control */}
+          <div 
+            data-word="2"
+            className="text-center opacity-0 translate-y-8"
+            style={{
+              animation: 'fadeIn 1s ease-out 1s forwards'
+            }}
+          >
+            <div className="relative">
+              <h2 
+                className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] bg-clip-text text-transparent"
+                style={{
+                  fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segmental UI", Roboto, Arial, sans-serif',
+                  letterSpacing: '-0.05em'
+                }}
+              >
+                Control
+              </h2>
+              
+             
+            </div>
+          </div>
+
+          {/* Word 3 - Share */}
+          <div 
+            data-word="3"
+            className="text-center opacity-0 translate-y-8"
+            style={{
+              animation: 'fadeIn 1s ease-out 1.5s forwards'
+            }}
+          >
+            <div className="relative">
+              <h2 
+                className={`text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none transition-colors duration-500 ${
+                  isDarkMode ? 'text-white' : 'text-[#0A0A0A]'
+                }`}
+                style={{
+                  fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segmental UI", Roboto, Arial, sans-serif',
+                  letterSpacing: '-0.05em'
+                }}
+              >
+                Share
+              </h2>
+              
+             
+            </div>
+          </div>
+
+        </div>
+
+        {/* Ambient light effects */}
+        <div 
+          className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full opacity-[0.05] transition-all duration-3000"
+          style={{
+            background: 'radial-gradient(circle, #F3752A 0%, transparent 70%)',
+            transform: `scale(calc(0.5 + var(--scroll-progress, 0) * 1.5)) rotate(calc(var(--scroll-progress, 0) * 90deg))`,
+            filter: 'blur(40px)'
+          }}
+        ></div>
+        
+        <div 
+          className="absolute bottom-1/3 right-1/4 w-48 h-48 rounded-full opacity-[0.05] transition-all duration-3000"
+          style={{
+            background: 'radial-gradient(circle, #F53057 0%, transparent 70%)',
+            transform: `scale(calc(0.3 + var(--scroll-progress, 0) * 1.2)) rotate(calc(var(--scroll-progress, 0) * -120deg))`,
+            filter: 'blur(40px)'
+          }}
+        ></div>
+
+        <div 
+          className="absolute top-1/2 right-1/6 w-32 h-32 rounded-full opacity-[0.05] transition-all duration-3000"
+          style={{
+            background: 'radial-gradient(circle, #A20222 0%, transparent 70%)',
+            transform: `scale(calc(0.2 + var(--scroll-progress, 0) * 0.8)) rotate(calc(var(--scroll-progress, 0) * 60deg))`,
+            filter: 'blur(30px)'
+          }}
+        ></div>
+      </div>
+
+      {/* Features Section */}
       <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
         <h2 className={`text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 ${
           isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
         }`}>
-          Why Jamble?
+          Features 
         </h2>
         
-        <div className="flex flex-col md:flex-row gap-6 md:gap-8 justify-center items-stretch w-full max-w-6xl mx-auto">
-          {/* Card 1 - Precise Edits Only */}
-          <div className={`flex-1 rounded-3xl p-6 md:p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F53057]/40 hover:shadow-xl hover:shadow-[#F3752A]/20 group cursor-pointer ${
-            isDarkMode 
-              ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
-              : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
-          }`}>
-            <div className="text-center">
-              <div className="text-4xl md:text-6xl mb-4 md:mb-6 group-hover:animate-bounce">🎨</div>
-              <h3 className="text-lg md:text-xl font-bold text-[#F3752A] mb-3 md:mb-4 group-hover:text-[#F53057] transition-colors">
-                Precise Edits Only
-              </h3>
-              <p className={`text-sm md:text-lg leading-relaxed transition-colors duration-300 ${
-                isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-              }`}>
-                &quot;Change what you want, leave the rest untouched.&quot;
-              </p>
+        <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+          {/* Feature 1 - Precise Editing */}
+          <div className="flex flex-col items-center text-center group">
+            <div 
+              className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105 w-full max-w-lg select-none"
+              onMouseDown={(e) => {
+                const slider = e.currentTarget;
+                const rect = slider.getBoundingClientRect();
+                const startX = e.clientX - rect.left;
+                let isDragging = false;
+                
+                const handleMouseMove = (moveEvent: MouseEvent) => {
+                  isDragging = true;
+                  const currentX = moveEvent.clientX - rect.left;
+                  const percentage = Math.max(0, Math.min(100, (currentX / rect.width) * 100));
+                  
+                  const afterImage = slider.querySelector('.after-image') as HTMLElement;
+                  const sliderHandle = slider.querySelector('.slider-handle') as HTMLElement;
+                  const sliderLine = slider.querySelector('.slider-line') as HTMLElement;
+                  
+                  if (afterImage) afterImage.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
+                  if (sliderHandle) sliderHandle.style.left = `${percentage}%`;
+                  if (sliderLine) sliderLine.style.left = `${percentage}%`;
+                };
+                
+                const handleMouseUp = () => {
+                  document.removeEventListener('mousemove', handleMouseMove);
+                  document.removeEventListener('mouseup', handleMouseUp);
+                  if (!isDragging) {
+                    // Handle click to move slider
+                    const percentage = Math.max(0, Math.min(100, (startX / rect.width) * 100));
+                    const afterImage = slider.querySelector('.after-image') as HTMLElement;
+                    const sliderHandle = slider.querySelector('.slider-handle') as HTMLElement;
+                    const sliderLine = slider.querySelector('.slider-line') as HTMLElement;
+                    
+                    if (afterImage) afterImage.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
+                    if (sliderHandle) sliderHandle.style.left = `${percentage}%`;
+                    if (sliderLine) sliderLine.style.left = `${percentage}%`;
+                  }
+                };
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+              }}
+              style={{ cursor: 'ew-resize' }}
+            >
+              {/* Before Image (Background) */}
+              <img
+                src="/jaynitedit.jpeg"
+                alt="Before editing"
+                className="w-full h-80 md:h-96 object-contain bg-gray-100"
+                draggable={false}
+              />
+              
+              {/* After Image (Overlay with clip-path) */}
+              <img
+                src="/jaynitog.jpeg"
+                alt="After editing"
+                className="after-image absolute inset-0 w-full h-80 md:h-96 object-contain bg-gray-100"
+                style={{ clipPath: 'inset(0 50% 0 0)' }}
+                draggable={false}
+              />
+              
+              {/* Slider Line */}
+              <div 
+                className="slider-line absolute top-0 bottom-0 w-0.5 bg-white shadow-lg pointer-events-none z-10"
+                style={{ left: '50%', transform: 'translateX(-50%)' }}
+              ></div>
+              
+              {/* Slider Handle */}
+              <div 
+                className="slider-handle absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#F3752A] pointer-events-none flex items-center justify-center z-20"
+                style={{ left: '50%', transform: 'translate(-50%, -50%)' }}
+              >
+                <div className="w-1 h-4 bg-[#F3752A] rounded-full"></div>
+                <div className="w-1 h-4 bg-[#F3752A] rounded-full ml-1"></div>
+              </div>
+              
+              {/* Labels */}
+              <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-semibold z-10">
+                Before
+              </div>
+              <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-semibold z-10">
+                After
+              </div>
+              
+              {/* Instruction Text */}
+              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-10">
+                Drag to compare
+              </div>
             </div>
+            <h3 className="text-xl md:text-2xl font-bold text-[#F3752A] mb-4">
+              Edit Like It’s Magic
+
+            </h3>
+            <p className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
+              isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+            }`}>
+              Change exactly what you want — no distortions, no chaos.
+            </p>
           </div>
 
-          {/* Card 2 - Infinite Edits */}
-          <div className={`flex-1 rounded-3xl p-6 md:p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#A20222]/40 hover:shadow-xl hover:shadow-[#F53057]/20 group cursor-pointer ${
-            isDarkMode 
-              ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 border-[#F53057]/20' 
-              : 'bg-gradient-to-br from-[#F53057]/10 to-[#A20222]/10 border-[#F53057]/20'
-          }`}>
-            <div className="text-center">
-              <div className="text-4xl md:text-6xl mb-4 md:mb-6 group-hover:animate-spin">🔁</div>
-              <h3 className="text-lg md:text-xl font-bold text-[#F53057] mb-3 md:mb-4 group-hover:text-[#A20222] transition-colors">
-                Infinite Edits
-              </h3>
-              <p className={`text-sm md:text-lg leading-relaxed transition-colors duration-300 ${
-                isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-              }`}>
-                &quot;Play all you like — Jamble never ruins your base image.&quot;
-              </p>
+          {/* Feature 2 - Non-Destructive Workflow */}
+          <div className="flex flex-col items-center text-center group">
+            <div 
+              className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105 w-full max-w-lg select-none"
+              onMouseDown={(e) => {
+                const slider = e.currentTarget;
+                const rect = slider.getBoundingClientRect();
+                const startX = e.clientX - rect.left;
+                let isDragging = false;
+                
+                const handleMouseMove = (moveEvent: MouseEvent) => {
+                  isDragging = true;
+                  const currentX = moveEvent.clientX - rect.left;
+                  const percentage = Math.max(0, Math.min(100, (currentX / rect.width) * 100));
+                  
+                  const afterImage = slider.querySelector('.after-image-2') as HTMLElement;
+                  const sliderHandle = slider.querySelector('.slider-handle-2') as HTMLElement;
+                  const sliderLine = slider.querySelector('.slider-line-2') as HTMLElement;
+                  
+                  if (afterImage) afterImage.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
+                  if (sliderHandle) sliderHandle.style.left = `${percentage}%`;
+                  if (sliderLine) sliderLine.style.left = `${percentage}%`;
+                };
+                
+                const handleMouseUp = () => {
+                  document.removeEventListener('mousemove', handleMouseMove);
+                  document.removeEventListener('mouseup', handleMouseUp);
+                  if (!isDragging) {
+                    // Handle click to move slider
+                    const percentage = Math.max(0, Math.min(100, (startX / rect.width) * 100));
+                    const afterImage = slider.querySelector('.after-image-2') as HTMLElement;
+                    const sliderHandle = slider.querySelector('.slider-handle-2') as HTMLElement;
+                    const sliderLine = slider.querySelector('.slider-line-2') as HTMLElement;
+                    
+                    if (afterImage) afterImage.style.clipPath = `inset(0 ${100 - percentage}% 0 0)`;
+                    if (sliderHandle) sliderHandle.style.left = `${percentage}%`;
+                    if (sliderLine) sliderLine.style.left = `${percentage}%`;
+                  }
+                };
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+              }}
+              style={{ cursor: 'ew-resize' }}
+            >
+              {/* Before Image (Background) */}
+              <img
+                src="/finalclear.png"
+                alt="Before enhancement"
+                className="w-full h-80 md:h-96 object-contain bg-gray-100"
+                draggable={false}
+              />
+              
+              {/* After Image (Overlay with clip-path) */}
+              <img
+                src="/blurry.jpg"
+                alt="After enhancement"
+                className="after-image-2 absolute inset-0 w-full h-80 md:h-96 object-contain bg-gray-100"
+                style={{ clipPath: 'inset(0 50% 0 0)' }}
+                draggable={false}
+              />
+              
+              {/* Slider Line */}
+              <div 
+                className="slider-line-2 absolute top-0 bottom-0 w-0.5 bg-white shadow-lg pointer-events-none z-10"
+                style={{ left: '50%', transform: 'translateX(-50%)' }}
+              ></div>
+              
+              {/* Slider Handle */}
+              <div 
+                className="slider-handle-2 absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#F53057] pointer-events-none flex items-center justify-center z-20"
+                style={{ left: '50%', transform: 'translate(-50%, -50%)' }}
+              >
+                <div className="w-1 h-4 bg-[#F53057] rounded-full"></div>
+                <div className="w-1 h-4 bg-[#F53057] rounded-full ml-1"></div>
+              </div>
+              
+              {/* Labels */}
+              <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-semibold z-10">
+                Before
+              </div>
+              <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-semibold z-10">
+                After
+              </div>
+              
+              {/* Instruction Text */}
+              <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-10">
+                Drag to compare
+              </div>
             </div>
+            <h3 className="text-xl md:text-2xl font-bold text-[#F53057] mb-4">
+              Enhance Instantly
+
+            </h3>
+            <p className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
+              isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+            }`}>
+              Upscale, restore, colorize — your images, sharper and stronger in seconds.
+            </p>
           </div>
 
-          {/* Card 3 - Quick & Easy */}
-          <div className={`flex-1 rounded-3xl p-6 md:p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F3752A]/40 hover:shadow-xl hover:shadow-[#A20222]/20 group cursor-pointer ${
-            isDarkMode 
-              ? 'bg-gradient-to-br from-[#A20222]/20 to-[#F3752A]/20 border-[#A20222]/20' 
-              : 'bg-gradient-to-br from-[#A20222]/10 to-[#F3752A]/10 border-[#A20222]/20'
-          }`}>
-            <div className="text-center">
-              <div className="text-4xl md:text-6xl mb-4 md:mb-6 group-hover:animate-pulse">⚡</div>
-              <h3 className="text-lg md:text-xl font-bold text-[#A20222] mb-3 md:mb-4 group-hover:text-[#F3752A] transition-colors">
-                Quick & Easy
-              </h3>
-              <p className={`text-sm md:text-lg leading-relaxed transition-colors duration-300 ${
-                isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-              }`}>
-                &quot;One click and done, no pro skills needed.&quot;
-              </p>
+          {/* Feature 3 - AI-Powered Intelligence */}
+          <div className="flex flex-col items-center text-center group">
+            <div className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105">
+              <img
+                src="/variations.jpeg"
+                alt="AI-powered intelligent editing"
+                className="w-full h-64 md:h-72 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
             </div>
+            <h3 className="text-xl md:text-2xl font-bold text-[#A20222] mb-4">
+              Always On-Brand
+            </h3>
+            <p className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
+              isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+            }`}>
+             Your fonts. Your colors. Your logos. Locked in by default.
+            </p>
+          </div>
+
+          {/* Feature 4 - One-Click Magic */}
+          <div className="flex flex-col items-center text-center group">
+            <div className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105">
+              <img
+                src="/posts.jpeg"
+                alt="One-click editing magic"
+                className="w-full h-64 md:h-72 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+            </div>
+            <h3 className="text-xl md:text-2xl font-bold text-[#F3752A] mb-4">
+               Automate the Boring Stuff
+
+            </h3>
+            <p className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
+              isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+            }`}>
+              Generate. Schedule. Publish. Your campaigns, on autopilot.
+            </p>
+          </div>
+
+          {/* Feature 5 - Style Preservation */}
+          <div className="flex flex-col items-center text-center group">
+            <div className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105">
+              <img
+                src="/cherryblossoms.jpeg"
+                alt="Style preservation technology"
+                className="w-full h-64 md:h-72 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+            </div>
+            <h3 className="text-xl md:text-2xl font-bold text-[#F53057] mb-4">
+              Find Inspiration Backwards
+
+            </h3>
+            <p className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
+              isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+            }`}>
+              Upload one image → get infinite reimaginings. Inspiration in reverse.
+            </p>
+          </div>
+
+          {/* Feature 6 - Lightning Fast */}
+          <div className="flex flex-col items-center text-center group">
+            <div className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105">
+              <img
+                src="/collab.jpeg"
+                alt="Lightning fast processing"
+                className="w-full h-64 md:h-72 object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+            </div>
+            <h3 className="text-xl md:text-2xl font-bold text-[#A20222] mb-4">
+              Create Together
+
+            </h3>
+            <p className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
+              isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+            }`}>
+              Moodboards, shared galleries, teamwork — creativity works better when it’s social.
+            </p>
           </div>
         </div>
       </div>
@@ -812,7 +1136,7 @@ export default function LandingPage() {
               <p className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
-                &quot;No more &apos;oops I ruined my photo&apos; moments. Jamble gets it right!&quot;
+                &quot;No more &apos;oops I ruined my photo&apos; moments. Surreal gets it right!&quot;
               </p>
               <div className="text-[#F3752A] font-semibold mt-3 text-xs md:text-sm">- Emma L.</div>
             </div>
@@ -825,355 +1149,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      {/* The Jamble Fun Zone */}
-      <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
-        <h2 className={`text-3xl md:text-4xl font-bold text-center mb-4 md:mb-8 transition-colors duration-300 ${
-          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-        }`}>
-          The Jamble Fun Zone
-        </h2>
-        <p className={`text-base md:text-lg text-center mb-8 md:mb-16 max-w-2xl transition-colors duration-300 ${
-          isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-        }`}>
-          Try Jamble right here! Generate or upload an image, then edit it with simple text prompts. 
-          Get 2 free edits to experience the magic ✨
-        </p>
-        
-        <div 
-          className={`w-full max-w-4xl mx-auto rounded-3xl p-4 md:p-8 border-2 transition-colors duration-300 ${
-            isDarkMode 
-              ? 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20' 
-              : 'bg-gradient-to-br from-[#F3752A]/5 to-[#F53057]/5 border-[#F3752A]/20'
-          }`}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => e.preventDefault()}
-        >
-          {/* Image Display Area */}
-          {funZoneImage ? (
-            <div className="flex justify-center mb-6 md:mb-8">
-              <div className="relative">
-                <img
-                  src={funZoneImage}
-                  alt="Fun Zone Image"
-                  className="rounded-2xl shadow-lg max-w-full w-full object-contain"
-                  style={{ maxHeight: '300px' }}
-                />
-                {(funZoneGenerating || funZoneEditing) && (
-                  <div className="absolute inset-0 bg-black/50 rounded-2xl flex items-center justify-center">
-                    <div className="text-center text-white">
-                      <div className="animate-spin text-3xl md:text-4xl mb-2">⚡</div>
-                      <div className="text-sm md:text-lg font-semibold">
-                        {funZoneGenerating ? "Generating..." : editingProgress || "Editing..."}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Image Action Buttons */}
-                {!funZoneGenerating && !funZoneEditing && (
-                  <div className="absolute top-2 md:top-3 right-2 md:right-3 flex gap-1 md:gap-2">
-                    <button
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = funZoneImage;
-                        link.download = 'jamble-creation.png';
-                        link.click();
-                      }}
-                      className="p-1.5 md:p-2 bg-[#F3752A] text-white rounded-full hover:bg-[#F53057] transition shadow-lg text-sm md:text-base"
-                      title="Download Image"
-                    >
-                      📥
-                    </button>
-                    <button
-                      onClick={handleFunZoneReset}
-                      className="p-1.5 md:p-2 bg-[#A20222] text-white rounded-full hover:bg-[#F3752A] transition shadow-lg text-sm md:text-base"
-                      title="Start Over"
-                    >
-                      🔄
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex justify-center mb-6 md:mb-8">
-              <div className={`w-full max-w-md h-48 md:h-64 rounded-2xl border-2 border-dashed border-[#F3752A]/40 flex flex-col items-center justify-center transition-colors duration-300 ${
-                isDarkMode ? 'bg-[#333]' : 'bg-[#F2F2F2]'
-              } ${funZoneGenerating ? 'animate-pulse' : ''}`}>
-                {funZoneGenerating ? (
-                  <div className="text-center">
-                    <div className="animate-spin text-5xl md:text-6xl mb-4">⚡</div>
-                    <p className={`text-center font-semibold text-sm md:text-base transition-colors duration-300 ${
-                      isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                    }`}>
-                      Creating your image...
-                    </p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="text-5xl md:text-6xl mb-4">🖼️</div>
-                    <p className={`text-center text-sm md:text-base transition-colors duration-300 ${
-                      isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                    }`}>
-                      Upload an image or generate one below
-                    </p>
-                  </>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Generation and Upload Section */}
-          <div className="grid grid-cols-1 gap-6 md:gap-8 mb-6 md:mb-8">
-            {/* Generate Image */}
-            <div className="space-y-4">
-              <h3 className="text-lg md:text-xl font-bold text-[#F3752A] text-center">Generate Image</h3>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  value={funZonePrompt}
-                  onChange={(e) => setFunZonePrompt(e.target.value)}
-                  placeholder="Describe your image... (e.g., 'a cat wearing sunglasses on a beach')"
-                  className={`flex-1 text-sm md:text-lg rounded-xl px-3 md:px-4 py-2 md:py-3 outline-none border-2 focus:border-[#F3752A] transition ${
-                    isDarkMode 
-                      ? 'bg-[#333] text-white border-[#F3752A]/20' 
-                      : 'bg-white text-[#1E1E1E] border-[#F3752A]/20'
-                  }`}
-                  disabled={funZoneGenerating}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !funZoneGenerating && funZonePrompt.trim()) {
-                      handleFunZoneGenerate();
-                    }
-                  }}
-                />
-                <button
-                  onClick={handleFunZoneGenerate}
-                  disabled={funZoneGenerating || !funZonePrompt.trim()}
-                  className="px-4 md:px-6 py-2 md:py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
-                >
-                  {funZoneGenerating ? (
-                    <>
-                      <div className="animate-spin text-sm md:text-lg">⚡</div>
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <span>✨</span>
-                      Generate
-                    </>
-                  )}
-                </button>
-              </div>
-              {funZoneGenerating && (
-                <div className="text-center">
-                  <div className={`text-xs md:text-sm transition-colors duration-300 ${
-                    isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                  }`}>
-                    This may take 10-30 seconds...
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Upload Image */}
-            <div className="space-y-4">
-              <h3 className="text-lg md:text-xl font-bold text-[#F53057] text-center">Upload Image</h3>
-              <div 
-                className={`relative border-2 border-dashed rounded-xl p-6 md:p-8 text-center transition-all duration-300 cursor-pointer group ${
-                  isDragOver 
-                    ? 'border-[#F53057] bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 scale-105 shadow-lg shadow-[#F53057]/20' 
-                    : isDarkMode 
-                      ? 'border-[#F53057]/30 hover:border-[#F53057] hover:bg-[#F53057]/5 hover:scale-102' 
-                      : 'border-[#F53057]/30 hover:border-[#F53057] hover:bg-[#F53057]/5 hover:scale-102'
-                }`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                
-                <div className={`transition-all duration-300 ${isDragOver ? 'animate-bounce' : 'group-hover:scale-110'}`}>
-                  <div className={`text-4xl md:text-5xl mb-3 md:mb-4 transition-all duration-300 ${
-                    isDragOver ? 'animate-pulse text-5xl md:text-6xl' : ''
-                  }`}>
-                    {isDragOver ? '🎯' : '📁'}
-                  </div>
-                  <p className={`font-bold text-base md:text-lg mb-2 transition-colors duration-300 ${
-                    isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                  } ${isDragOver ? 'text-[#F53057]' : ''}`}>
-                    {isDragOver ? 'Perfect! Drop it here!' : 'Upload Your Image'}
-                  </p>
-                  <p className={`text-xs md:text-sm mb-3 transition-colors duration-300 ${
-                    isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                  }`}>
-                    {isDragOver ? 'Release to upload and start editing' : 'Drag & drop your image here or click to browse'}
-                  </p>
-                  <div className={`inline-flex items-center gap-2 px-3 md:px-4 py-1 md:py-2 rounded-full text-xs transition-all duration-300 ${
-                    isDragOver 
-                      ? 'bg-[#F53057] text-white' 
-                      : isDarkMode 
-                        ? 'bg-[#333] text-white opacity-70' 
-                        : 'bg-[#F2F2F2] text-[#1E1E1E] opacity-70'
-                  }`}>
-                    <span>✨</span>
-                    <span>Supports JPG, PNG, GIF, WebP</span>
-                  </div>
-                </div>
-                
-                {/* Animated border effect when dragging */}
-                {isDragOver && (
-                  <div className="absolute inset-0 rounded-xl pointer-events-none">
-                    <div className="absolute inset-0 rounded-xl border-2 border-[#F53057] animate-pulse"></div>
-                    <div className="absolute inset-2 rounded-lg border-2 border-[#F53057]/50 animate-ping"></div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Edit Section */}
-          {funZoneImage && (
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
-                <h3 className="text-lg md:text-xl font-bold text-[#A20222]">Edit Your Image</h3>
-                <div className={`text-xs md:text-sm transition-colors duration-300 ${
-                  isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                }`}>
-                  {editCount}/2 free edits used
-                  {editCount < 2 && (
-                    <span className="ml-2 text-[#F53057] font-semibold">
-                      {2 - editCount} remaining
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <input
-                  type="text"
-                  value={funZoneEditPrompt}
-                  onChange={(e) => setFunZoneEditPrompt(e.target.value)}
-                  placeholder="Tell me what to change... (e.g., 'make the sky purple' or 'add sunglasses')"
-                  className={`flex-1 text-sm md:text-lg rounded-xl px-3 md:px-4 py-2 md:py-3 outline-none border-2 focus:border-[#A20222] transition ${
-                    isDarkMode 
-                      ? 'bg-[#333] text-white border-[#A20222]/20' 
-                      : 'bg-white text-[#1E1E1E] border-[#A20222]/20'
-                  }`}
-                  disabled={funZoneEditing}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !funZoneEditing && funZoneEditPrompt.trim()) {
-                      handleFunZoneEdit();
-                    }
-                  }}
-                />
-                <button
-                  onClick={handleFunZoneEdit}
-                  disabled={funZoneEditing || !funZoneEditPrompt.trim()}
-                  className="px-4 md:px-6 py-2 md:py-3 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm md:text-base"
-                >
-                  {funZoneEditing ? (
-                    <>
-                      <div className="animate-spin text-sm md:text-lg">🔄</div>
-                      {editingProgress || "Editing..."}
-                    </>
-                  ) : editCount >= 2 ? (
-                    <>
-                      <span>💎</span>
-                      Upgrade
-                    </>
-                  ) : (
-                    <>
-                      <span>🎨</span>
-                      Edit
-                    </>
-                  )}
-                </button>
-              </div>
-              {funZoneEditing && (
-                <div className="text-center">
-                  <div className={`text-sm transition-colors duration-300 ${
-                    isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                  }`}>
-                    Processing your edit... This may take 10-30 seconds
-                  </div>
-                </div>
-              )}
-              {editCount >= 1 && editCount < 2 && !funZoneEditing && (
-                <p className="text-sm text-[#F53057] text-center">
-                  {2 - editCount} free edit remaining! Make it count ✨
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Status Messages */}
-          {(funZoneError || funZoneSuccess) && (
-            <div className="mt-4 md:mt-6 space-y-3">
-              {funZoneError && (
-                <div className="p-3 md:p-4 bg-red-100 border border-red-300 rounded-xl text-red-700 text-center flex flex-col sm:flex-row items-center gap-2 md:gap-3 justify-center text-sm md:text-base">
-                  <span className="text-lg md:text-xl">⚠️</span>
-                  <span className="flex-1">{funZoneError}</span>
-                  <button 
-                    onClick={() => setFunZoneError(null)}
-                    className="text-red-500 hover:text-red-700 font-bold text-lg"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-              {funZoneSuccess && (
-                <div className="p-3 md:p-4 bg-green-100 border border-green-300 rounded-xl text-green-700 text-center flex flex-col sm:flex-row items-center gap-2 md:gap-3 justify-center text-sm md:text-base">
-                  <span className="text-lg md:text-xl">✅</span>
-                  <span className="flex-1">{funZoneSuccess}</span>
-                  <button 
-                    onClick={() => setFunZoneSuccess(null)}
-                    className="text-green-500 hover:text-green-700 font-bold text-lg"
-                  >
-                    ×
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Sample Prompts for Inspiration */}
-          {!funZoneImage && !funZoneGenerating && (
-            <div className="mt-4 md:mt-6 space-y-3">
-              <h4 className={`text-base md:text-lg font-semibold text-center transition-colors duration-300 ${
-                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-              }`}>
-                Need inspiration? Try these:
-              </h4>
-              <div className="flex flex-wrap gap-2 justify-center">
-                {[
-                  "a golden retriever wearing a chef's hat",
-                  "a cozy coffee shop in winter",
-                  "a futuristic city at sunset",
-                  "a magical forest with glowing mushrooms"
-                ].map((samplePrompt, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setFunZonePrompt(samplePrompt)}
-                    className={`px-3 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm border-2 transition-all hover:scale-105 ${
-                      isDarkMode 
-                        ? 'bg-[#333] border-[#F3752A]/30 text-white hover:border-[#F3752A] hover:bg-[#F3752A]/20' 
-                        : 'bg-white border-[#F3752A]/30 text-[#1E1E1E] hover:border-[#F3752A] hover:bg-[#F3752A]/10'
-                    }`}
-                  >
-                    {samplePrompt}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+     
 
       {/* Pricing Section */}
       <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
@@ -1184,7 +1160,7 @@ export default function LandingPage() {
         </h2>
         
         <div className="flex flex-col lg:flex-row gap-4 md:gap-8 justify-center items-stretch w-full max-w-6xl mx-auto">
-          {/* Free Jamble */}
+          {/* Free Surreal */}
           <div className={`flex-1 rounded-3xl p-4 md:p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F53057]/40 hover:shadow-xl hover:shadow-[#F3752A]/20 ${
             isDarkMode 
               ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
@@ -1192,7 +1168,7 @@ export default function LandingPage() {
           }`}>
             <div className="text-center">
               <div className="text-6xl mb-4">🎮</div>
-              <h3 className="text-2xl font-bold text-[#F3752A] mb-2">Free Jamble</h3>
+              <h3 className="text-2xl font-bold text-[#F3752A] mb-2">Free Surreal</h3>
               <p className="text-[#F53057] font-semibold text-lg mb-6">&quot;Play with it&quot;</p>
               
               <div className={`text-4xl font-bold mb-6 transition-colors duration-300 ${
@@ -1220,13 +1196,16 @@ export default function LandingPage() {
                 </div>
               </div>
               
-              <button className="w-full mt-8 px-6 py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition">
+              <button 
+                className="w-full mt-8 px-6 py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition"
+                onClick={() => router.push("/demo")}
+              >
                 Get Started Free
               </button>
             </div>
           </div>
 
-          {/* Jamble Plus */}
+          {/* Surreal Plus */}
           <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#A20222]/40 hover:shadow-xl hover:shadow-[#F53057]/20 relative ${
             isDarkMode 
               ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 border-[#F53057]/20' 
@@ -1239,7 +1218,7 @@ export default function LandingPage() {
             
             <div className="text-center">
               <div className="text-6xl mb-4">🚀</div>
-              <h3 className="text-2xl font-bold text-[#F53057] mb-2">Jamble Plus</h3>
+              <h3 className="text-2xl font-bold text-[#F53057] mb-2">Surreal Plus</h3>
               <p className="text-[#A20222] font-semibold text-lg mb-6">&quot;Unlimited vibes&quot;</p>
               
               <div className={`text-4xl font-bold mb-2 transition-colors duration-300 ${
@@ -1282,7 +1261,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Jamble Pro */}
+          {/* Surreal Pro */}
           <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F3752A]/40 hover:shadow-xl hover:shadow-[#A20222]/20 ${
             isDarkMode 
               ? 'bg-gradient-to-br from-[#A20222]/20 to-[#F3752A]/20 border-[#A20222]/20' 
@@ -1290,7 +1269,7 @@ export default function LandingPage() {
           }`}>
             <div className="text-center">
               <div className="text-6xl mb-4">👑</div>
-              <h3 className="text-2xl font-bold text-[#A20222] mb-2">Jamble Pro</h3>
+              <h3 className="text-2xl font-bold text-[#A20222] mb-2">Surreal Pro</h3>
               <p className="text-[#F3752A] font-semibold text-lg mb-6">&quot;For the edit-obsessed&quot;</p>
               
               <div className={`text-4xl font-bold mb-2 transition-colors duration-300 ${
@@ -1420,7 +1399,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-start">
               <div className="flex items-center gap-3 mb-4">
                 <div className="text-4xl">🎨</div>
-                <div className="text-3xl font-bold text-[#F3752A]">Jamble</div>
+                <div className="text-3xl font-bold text-[#F3752A]">Surreal</div>
               </div>
               <p className={`text-sm max-w-sm transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
@@ -1440,7 +1419,7 @@ export default function LandingPage() {
                       ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
                       : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
                   }`}>
-                    About Jamble
+                    About Surreal
                   </a>
                   <a href="/features" className={`block text-sm transition ${
                     isDarkMode 
@@ -1513,7 +1492,7 @@ export default function LandingPage() {
             <div className={`flex items-center gap-6 text-sm transition-colors duration-300 ${
               isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
             }`}>
-              <span>© {new Date().getFullYear()} Jamble. All rights reserved.</span>
+              <span>© {new Date().getFullYear()} Surreal. All rights reserved.</span>
               <span className="flex items-center gap-2">
                 Made with ❤️ in India
               </span>
@@ -1541,6 +1520,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      </div>
     </div>
   );
 }
