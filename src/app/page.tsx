@@ -6,6 +6,7 @@ import { useImageStore } from "../store/imageStore";
 import Image from "next/image";
 import React from "react";
 import { useAuth } from "../lib/auth";
+import { useCredits } from "../lib/credits";
 import AuthModal from "../components/AuthModal";
 import UserDropdown from "../components/UserDropdown";
 
@@ -99,6 +100,17 @@ async function pollEditResult(polling_url: string, prompt: string): Promise<stri
 export default function LandingPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { 
+    imageGenerationsUsed, 
+    imageEditsUsed, 
+    canUseImageGeneration, 
+    canUseImageEdit, 
+    isUnlimitedUser,
+    consumeImageGeneration, 
+    consumeImageEdit, 
+    showPricingModal, 
+    setShowPricingModal 
+  } = useCredits();
   
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -113,9 +125,6 @@ export default function LandingPage() {
   // Scroll animation state for broken creativity section
   const [brokenCreativityProgress, setBrokenCreativityProgress] = useState(0);
   const brokenCreativityRef = useRef<HTMLDivElement>(null);
-  
-  // Pricing popup state
-  const [showPricingPopup, setShowPricingPopup] = useState(false);
   
   // Typing animation logic
   const fullText1 =
@@ -384,7 +393,7 @@ export default function LandingPage() {
       <div className="min-h-screen flex flex-col bg-black relative">
         {/* Logo Top Left and Auth Buttons Top Right */}
         <div className="flex flex-row justify-between items-center w-full p-4 md:p-6 bg-black z-10">
-          <div className="text-2xl md:text-3xl font-bold text-white">Surreal</div>
+          <div className="text-2xl md:text-3xl font-bold text-white">GoLoco</div>
           
           <div className="flex items-center gap-2 md:gap-4">
             {/* Theme Toggle */}
@@ -412,7 +421,7 @@ export default function LandingPage() {
                   Sign In
                 </button>
                 <button
-                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] text-white font-semibold hover:shadow-lg hover:shadow-[#F3752A]/25 transition-all duration-300 text-sm md:text-base"
+                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-gradient-to-r from-[#0171B9] via-[#004684] to-[#E72C19] text-white font-semibold hover:shadow-lg hover:shadow-[#0171B9]/25 transition-all duration-300 text-sm md:text-base"
                   onClick={() => setShowAuthModal(true)}
                 >
                   Sign Up
@@ -431,7 +440,7 @@ export default function LandingPage() {
           <div className="relative z-10 text-left max-w-4xl">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white leading-tight">
               One Image. <span 
-                className="bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] bg-clip-text text-transparent"
+                className="bg-gradient-to-r from-[#0171B9] via-[#004684] to-[#E72C19] bg-clip-text text-transparent"
                 
               >
                 Endless
@@ -443,7 +452,7 @@ export default function LandingPage() {
             
             {/* CTA Button */}
             <button
-              className="inline-flex items-center gap-3 font-semibold px-8 sm:px-10 py-4 sm:py-5 rounded-xl text-lg sm:text-xl transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105 bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] text-white hover:shadow-[#F3752A]/30"
+              className="inline-flex items-center gap-3 font-semibold px-8 sm:px-10 py-4 sm:py-5 rounded-xl text-lg sm:text-xl transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105 bg-gradient-to-r from-[#0171B9] via-[#004684] to-[#E72C19] text-white hover:shadow-[#0171B9]/30"
               onClick={() => {
                 if (user) {
                   router.push("/demo");
@@ -469,6 +478,108 @@ export default function LandingPage() {
           </div>
         </div>
       </div>
+
+      {/* Demo Section - Only shown when logged in */}
+      {user && (
+        <div className={`w-full py-8 px-4 transition-colors duration-300 ${
+          isDarkMode 
+            ? 'bg-[#1E1E1E] border-b border-[#0171B9]/20' 
+            : 'bg-[#FDFBF7] border-b border-[#0171B9]/20'
+        }`}>
+          <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              {/* Usage Display */}
+              <div className={`flex-1 p-4 rounded-2xl border-2 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-[#333] border-[#0171B9]/20' 
+                  : 'bg-white border-[#0171B9]/20'
+              }`}>
+                <h3 className={`text-lg font-bold mb-3 transition-colors duration-300 ${
+                  isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                }`}>
+                  {isUnlimitedUser ? '✨ Unlimited Access' : '🎯 Your Free Credits'}
+                </h3>
+                {isUnlimitedUser ? (
+                  <p className={`text-sm transition-colors duration-300 ${
+                    isDarkMode ? 'text-green-400' : 'text-green-600'
+                  }`}>
+                    You have unlimited access to all features!
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className={`text-sm transition-colors duration-300 ${
+                          isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                        }`}>Image Generations</span>
+                        <span className={`text-sm font-bold transition-colors duration-300 ${
+                          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                        }`}>{imageGenerationsUsed}/3</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-[#0171B9] h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${(imageGenerationsUsed / 3) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className={`text-sm transition-colors duration-300 ${
+                          isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                        }`}>Image Edits</span>
+                        <span className={`text-sm font-bold transition-colors duration-300 ${
+                          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                        }`}>{imageEditsUsed}/7</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-[#004684] h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${(imageEditsUsed / 7) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Demo Buttons */}
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    if (consumeImageGeneration()) {
+                      alert('🎨 Image generation used! This would normally generate an image.');
+                    }
+                  }}
+                  disabled={!canUseImageGeneration && !isUnlimitedUser}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                    canUseImageGeneration || isUnlimitedUser
+                      ? 'bg-[#0171B9] text-white hover:bg-[#004684] hover:scale-105'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  🎨 Try Generation {!canUseImageGeneration && !isUnlimitedUser && '(0 left)'}
+                </button>
+                <button
+                  onClick={() => {
+                    if (consumeImageEdit()) {
+                      alert('✨ Image edit used! This would normally edit an image.');
+                    }
+                  }}
+                  disabled={!canUseImageEdit && !isUnlimitedUser}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                    canUseImageEdit || isUnlimitedUser
+                      ? 'bg-[#004684] text-white hover:bg-[#E72C19] hover:scale-105'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  ✨ Try Edit {!canUseImageEdit && !isUnlimitedUser && '(0 left)'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Content sections with theme-aware background */}
       <div className={`transition-colors duration-300 ${
@@ -500,7 +611,7 @@ export default function LandingPage() {
             }`}>
               Unify your
               <br />
-              <span className="bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-[#0171B9] via-[#004684] to-[#E72C19] bg-clip-text text-transparent">
                 creations
               </span>
             </h2>
@@ -637,7 +748,7 @@ export default function LandingPage() {
 
           {/* Floating particles that appear during stacking */}
           <div 
-            className="absolute w-3 h-3 bg-[#F3752A] rounded-full animate-pulse"
+            className="absolute w-3 h-3 bg-[#0171B9] rounded-full animate-pulse"
             style={{
               left: `${50 + Math.sin(scrollProgress * 10) * 20}%`,
               top: `${30 + Math.cos(scrollProgress * 8) * 15}%`,
@@ -646,7 +757,7 @@ export default function LandingPage() {
             }}
           ></div>
           <div 
-            className="absolute w-2 h-2 bg-[#F53057] rounded-full animate-pulse"
+            className="absolute w-2 h-2 bg-[#004684] rounded-full animate-pulse"
             style={{
               right: `${40 + Math.sin(scrollProgress * 12) * 25}%`,
               bottom: `${25 + Math.cos(scrollProgress * 9) * 20}%`,
@@ -656,7 +767,7 @@ export default function LandingPage() {
             }}
           ></div>
           <div 
-            className="absolute w-1.5 h-1.5 bg-[#A20222] rounded-full animate-pulse"
+            className="absolute w-1.5 h-1.5 bg-[#E72C19] rounded-full animate-pulse"
             style={{
               left: `${70 + Math.sin(scrollProgress * 15) * 15}%`,
               top: `${60 + Math.cos(scrollProgress * 11) * 10}%`,
@@ -727,7 +838,7 @@ export default function LandingPage() {
           >
             <div className="relative">
               <h2 
-                className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] bg-clip-text text-transparent"
+                className="text-6xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-none bg-gradient-to-r from-[#0171B9] via-[#004684] to-[#E72C19] bg-clip-text text-transparent"
                 style={{
                   fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segmental UI", Roboto, Arial, sans-serif',
                   letterSpacing: '-0.05em'
@@ -771,7 +882,7 @@ export default function LandingPage() {
         <div 
           className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full opacity-[0.05] transition-all duration-3000"
           style={{
-            background: 'radial-gradient(circle, #F3752A 0%, transparent 70%)',
+            background: 'radial-gradient(circle, #0171B9 0%, transparent 70%)',
             transform: `scale(calc(0.5 + var(--scroll-progress, 0) * 1.5)) rotate(calc(var(--scroll-progress, 0) * 90deg))`,
             filter: 'blur(40px)'
           }}
@@ -780,7 +891,7 @@ export default function LandingPage() {
         <div 
           className="absolute bottom-1/3 right-1/4 w-48 h-48 rounded-full opacity-[0.05] transition-all duration-3000"
           style={{
-            background: 'radial-gradient(circle, #F53057 0%, transparent 70%)',
+            background: 'radial-gradient(circle, #004684 0%, transparent 70%)',
             transform: `scale(calc(0.3 + var(--scroll-progress, 0) * 1.2)) rotate(calc(var(--scroll-progress, 0) * -120deg))`,
             filter: 'blur(40px)'
           }}
@@ -789,7 +900,7 @@ export default function LandingPage() {
         <div 
           className="absolute top-1/2 right-1/6 w-32 h-32 rounded-full opacity-[0.05] transition-all duration-3000"
           style={{
-            background: 'radial-gradient(circle, #A20222 0%, transparent 70%)',
+            background: 'radial-gradient(circle, #E72C19 0%, transparent 70%)',
             transform: `scale(calc(0.2 + var(--scroll-progress, 0) * 0.8)) rotate(calc(var(--scroll-progress, 0) * 60deg))`,
             filter: 'blur(30px)'
           }}
@@ -877,11 +988,11 @@ export default function LandingPage() {
               
               {/* Slider Handle */}
               <div 
-                className="slider-handle absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#F3752A] pointer-events-none flex items-center justify-center z-20"
+                className="slider-handle absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#0171B9] pointer-events-none flex items-center justify-center z-20"
                 style={{ left: '50%', transform: 'translate(-50%, -50%)' }}
               >
-                <div className="w-1 h-4 bg-[#F3752A] rounded-full"></div>
-                <div className="w-1 h-4 bg-[#F3752A] rounded-full ml-1"></div>
+                <div className="w-1 h-4 bg-[#0171B9] rounded-full"></div>
+                <div className="w-1 h-4 bg-[#0171B9] rounded-full ml-1"></div>
               </div>
               
               {/* Labels */}
@@ -897,7 +1008,7 @@ export default function LandingPage() {
                 Drag to compare
               </div>
             </div>
-            <h3 className="text-xl md:text-2xl font-bold text-[#F3752A] mb-4">
+            <h3 className="text-xl md:text-2xl font-bold text-[#0171B9] mb-4">
               Edit Like It’s Magic
 
             </h3>
@@ -978,11 +1089,11 @@ export default function LandingPage() {
               
               {/* Slider Handle */}
               <div 
-                className="slider-handle-2 absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#F53057] pointer-events-none flex items-center justify-center z-20"
+                className="slider-handle-2 absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#004684] pointer-events-none flex items-center justify-center z-20"
                 style={{ left: '50%', transform: 'translate(-50%, -50%)' }}
               >
-                <div className="w-1 h-4 bg-[#F53057] rounded-full"></div>
-                <div className="w-1 h-4 bg-[#F53057] rounded-full ml-1"></div>
+                <div className="w-1 h-4 bg-[#004684] rounded-full"></div>
+                <div className="w-1 h-4 bg-[#004684] rounded-full ml-1"></div>
               </div>
               
               {/* Labels */}
@@ -998,7 +1109,7 @@ export default function LandingPage() {
                 Drag to compare
               </div>
             </div>
-            <h3 className="text-xl md:text-2xl font-bold text-[#F53057] mb-4">
+            <h3 className="text-xl md:text-2xl font-bold text-[#004684] mb-4">
               Enhance Instantly
 
             </h3>
@@ -1019,7 +1130,7 @@ export default function LandingPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
             </div>
-            <h3 className="text-xl md:text-2xl font-bold text-[#A20222] mb-4">
+            <h3 className="text-xl md:text-2xl font-bold text-[#E72C19] mb-4">
               Always On-Brand
             </h3>
             <p className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
@@ -1039,7 +1150,7 @@ export default function LandingPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
             </div>
-            <h3 className="text-xl md:text-2xl font-bold text-[#F3752A] mb-4">
+            <h3 className="text-xl md:text-2xl font-bold text-[#0171B9] mb-4">
                Automate the Boring Stuff
 
             </h3>
@@ -1060,7 +1171,7 @@ export default function LandingPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
             </div>
-            <h3 className="text-xl md:text-2xl font-bold text-[#F53057] mb-4">
+            <h3 className="text-xl md:text-2xl font-bold text-[#004684] mb-4">
               Find Inspiration Backwards
 
             </h3>
@@ -1081,7 +1192,7 @@ export default function LandingPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
             </div>
-            <h3 className="text-xl md:text-2xl font-bold text-[#A20222] mb-4">
+            <h3 className="text-xl md:text-2xl font-bold text-[#E72C19] mb-4">
               Create Together
 
             </h3>
@@ -1106,16 +1217,16 @@ export default function LandingPage() {
           {/* Testimonial 1 */}
           <div className="flex items-start gap-3 md:gap-4 animate-slide-in-left">
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#F3752A] to-[#F53057] flex items-center justify-center text-white text-lg md:text-xl font-bold">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#0171B9] to-[#004684] flex items-center justify-center text-white text-lg md:text-xl font-bold">
                 😊
               </div>
             </div>
             <div className={`rounded-3xl rounded-tl-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
               isDarkMode 
-                ? 'bg-[#333] border-[#F3752A]/20' 
-                : 'bg-white border-[#F3752A]/20'
+                ? 'bg-[#333] border-[#0171B9]/20' 
+                : 'bg-white border-[#0171B9]/20'
             }`}>
-              <div className={`absolute -left-2 top-4 w-4 h-4 border-l-2 border-b-2 border-[#F3752A]/20 transform rotate-45 transition-colors duration-300 ${
+              <div className={`absolute -left-2 top-4 w-4 h-4 border-l-2 border-b-2 border-[#0171B9]/20 transform rotate-45 transition-colors duration-300 ${
                 isDarkMode ? 'bg-[#333]' : 'bg-white'
               }`}></div>
               <p className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
@@ -1123,7 +1234,7 @@ export default function LandingPage() {
               }`}>
                 &quot;I changed my background 5 times — my face never changed once. Love it!&quot;
               </p>
-              <div className="text-[#F3752A] font-semibold mt-3 text-xs md:text-sm">- Ananya K.</div>
+              <div className="text-[#0171B9] font-semibold mt-3 text-xs md:text-sm">- Ananya K.</div>
             </div>
           </div>
 
@@ -1131,23 +1242,23 @@ export default function LandingPage() {
           <div className="flex items-start gap-3 md:gap-4 justify-end animate-slide-in-right">
             <div className={`rounded-3xl rounded-tr-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
               isDarkMode 
-                ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 border-[#F53057]/20' 
-                : 'bg-gradient-to-br from-[#F53057]/10 to-[#A20222]/10 border-[#F53057]/20'
+                ? 'bg-gradient-to-br from-[#004684]/20 to-[#E72C19]/20 border-[#004684]/20' 
+                : 'bg-gradient-to-br from-[#004684]/10 to-[#E72C19]/10 border-[#004684]/20'
             }`}>
-              <div className={`absolute -right-2 top-4 w-4 h-4 border-r-2 border-b-2 border-[#F53057]/20 transform rotate-45 transition-colors duration-300 ${
+              <div className={`absolute -right-2 top-4 w-4 h-4 border-r-2 border-b-2 border-[#004684]/20 transform rotate-45 transition-colors duration-300 ${
                 isDarkMode 
-                  ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20' 
-                  : 'bg-gradient-to-br from-[#F53057]/10 to-[#A20222]/10'
+                  ? 'bg-gradient-to-br from-[#004684]/20 to-[#E72C19]/20' 
+                  : 'bg-gradient-to-br from-[#004684]/10 to-[#E72C19]/10'
               }`}></div>
               <p className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
                 &quot;Finally an editor that listens to me!&quot;
               </p>
-              <div className="text-[#F53057] font-semibold mt-3 text-xs md:text-sm">- Mahesh R.</div>
+              <div className="text-[#004684] font-semibold mt-3 text-xs md:text-sm">- Mahesh R.</div>
             </div>
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#F53057] to-[#A20222] flex items-center justify-center text-white text-lg md:text-xl font-bold">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#004684] to-[#E72C19] flex items-center justify-center text-white text-lg md:text-xl font-bold">
                 🤩
               </div>
             </div>
@@ -1156,16 +1267,16 @@ export default function LandingPage() {
           {/* Testimonial 3 */}
           <div className="flex items-start gap-3 md:gap-4 animate-slide-in-left">
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#A20222] to-[#F3752A] flex items-center justify-center text-white text-lg md:text-xl font-bold">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#E72C19] to-[#0171B9] flex items-center justify-center text-white text-lg md:text-xl font-bold">
                 🎨
               </div>
             </div>
             <div className={`rounded-3xl rounded-tl-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
               isDarkMode 
-                ? 'bg-[#333] border-[#A20222]/20' 
-                : 'bg-white border-[#A20222]/20'
+                ? 'bg-[#333] border-[#E72C19]/20' 
+                : 'bg-white border-[#E72C19]/20'
             }`}>
-              <div className={`absolute -left-2 top-4 w-4 h-4 border-l-2 border-b-2 border-[#A20222]/20 transform rotate-45 transition-colors duration-300 ${
+              <div className={`absolute -left-2 top-4 w-4 h-4 border-l-2 border-b-2 border-[#E72C19]/20 transform rotate-45 transition-colors duration-300 ${
                 isDarkMode ? 'bg-[#333]' : 'bg-white'
               }`}></div>
               <p className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
@@ -1173,7 +1284,7 @@ export default function LandingPage() {
               }`}>
                 &quot;Magic! Only the sky changed, my perfect selfie stayed untouched ✨&quot;
               </p>
-              <div className="text-[#A20222] font-semibold mt-3 text-xs md:text-sm">- Arya T.</div>
+              <div className="text-[#E72C19] font-semibold mt-3 text-xs md:text-sm">- Arya T.</div>
             </div>
           </div>
 
@@ -1181,23 +1292,23 @@ export default function LandingPage() {
           <div className="flex items-start gap-3 md:gap-4 justify-end animate-slide-in-right">
             <div className={`rounded-3xl rounded-tr-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
               isDarkMode 
-                ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
-                : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
+                ? 'bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20' 
+                : 'bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20'
             }`}>
-              <div className={`absolute -right-2 top-4 w-4 h-4 border-r-2 border-b-2 border-[#F3752A]/20 transform rotate-45 transition-colors duration-300 ${
+              <div className={`absolute -right-2 top-4 w-4 h-4 border-r-2 border-b-2 border-[#0171B9]/20 transform rotate-45 transition-colors duration-300 ${
                 isDarkMode 
-                  ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20' 
-                  : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10'
+                  ? 'bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20' 
+                  : 'bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10'
               }`}></div>
               <p className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
-                &quot;No more &apos;oops I ruined my photo&apos; moments. Surreal gets it right!&quot;
+                &quot;No more &apos;oops I ruined my photo&apos; moments. GoLoco gets it right!&quot;
               </p>
-              <div className="text-[#F3752A] font-semibold mt-3 text-xs md:text-sm">- Eshaan L.</div>
+              <div className="text-[#0171B9] font-semibold mt-3 text-xs md:text-sm">- Eshaan L.</div>
             </div>
             <div className="flex-shrink-0">
-              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#F3752A] to-[#F53057] flex items-center justify-center text-white text-lg md:text-xl font-bold">
+              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#0171B9] to-[#004684] flex items-center justify-center text-white text-lg md:text-xl font-bold">
                 💯
               </div>
             </div>
@@ -1208,52 +1319,52 @@ export default function LandingPage() {
      
 
       {/* Pricing Section */}
-      <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
+      <div id="pricing-section" className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
         <h2 className={`text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 ${
           isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
         }`}>
           Pricing
         </h2>
         
-        <div className="flex flex-col lg:flex-row gap-4 md:gap-8 justify-center items-stretch w-full max-w-6xl mx-auto">
-          {/* Free Surreal */}
-          <div className={`flex-1 rounded-3xl p-4 md:p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F53057]/40 hover:shadow-xl hover:shadow-[#F3752A]/20 ${
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 justify-center items-stretch w-full max-w-7xl mx-auto">
+          {/* Free Plan */}
+          <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${
             isDarkMode 
-              ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
-              : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
+              ? 'bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20' 
+              : 'bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20'
           }`}>
             <div className="text-center">
-              <div className="text-6xl mb-4">🎮</div>
-              <h3 className="text-2xl font-bold text-[#F3752A] mb-2">Free Surreal</h3>
-              <p className="text-[#F53057] font-semibold text-lg mb-6">&quot;Play with it&quot;</p>
+              <div className="text-4xl mb-4">🎮</div>
+              <h3 className="text-xl font-bold text-[#0171B9] mb-2">Free</h3>
+              <p className="text-[#004684] font-semibold text-sm mb-4">&quot;Try it out&quot;</p>
               
-              <div className={`text-4xl font-bold mb-6 transition-colors duration-300 ${
+              <div className={`text-3xl font-bold mb-4 transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-              }`}>$0</div>
+              }`}>₹0</div>
               
-              <div className="space-y-3 text-left">
-                <div className="flex items-center gap-3">
-                  <span className="text-[#F3752A] text-xl">✨</span>
-                  <span className={`transition-colors duration-300 ${
+              <div className="space-y-2 text-left mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#0171B9] text-sm">✨</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                  }`}>2 free edits per session</span>
+                  }`}>3 free image generations</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[#F3752A] text-xl">🖼️</span>
-                  <span className={`transition-colors duration-300 ${
+                <div className="flex items-center gap-2">
+                  <span className="text-[#0171B9] text-sm">🖼️</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                  }`}>Basic image generation</span>
+                  }`}>7 free image edits</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[#F3752A] text-xl">📱</span>
-                  <span className={`transition-colors duration-300 ${
+                <div className="flex items-center gap-2">
+                  <span className="text-[#0171B9] text-sm">📱</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
                   }`}>Standard resolution</span>
                 </div>
               </div>
               
               <button 
-                className="w-full mt-8 px-6 py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition"
+                className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm"
                 onClick={() => {
                   if (user) {
                     router.push("/demo");
@@ -1267,115 +1378,249 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Surreal Plus */}
-          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#A20222]/40 hover:shadow-xl hover:shadow-[#F53057]/20 relative ${
+          {/* Basic Plan */}
+          <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#004684]/20 ${
             isDarkMode 
-              ? 'bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 border-[#F53057]/20' 
-              : 'bg-gradient-to-br from-[#F53057]/10 to-[#A20222]/10 border-[#F53057]/20'
+              ? 'bg-gradient-to-br from-[#004684]/20 to-[#E72C19]/20 border-[#004684]/20' 
+              : 'bg-gradient-to-br from-[#004684]/10 to-[#E72C19]/10 border-[#004684]/20'
           }`}>
-            {/* Popular Badge */}
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 bg-[#F53057] text-white px-4 py-1 rounded-full text-sm font-semibold">
-              Most Popular
-            </div>
-            
             <div className="text-center">
-              <div className="text-6xl mb-4">🚀</div>
-              <h3 className="text-2xl font-bold text-[#F53057] mb-2">Surreal Plus</h3>
-              <p className="text-[#A20222] font-semibold text-lg mb-6">&quot;Unlimited vibes&quot;</p>
+              <div className="text-4xl mb-4">🚀</div>
+              <h3 className="text-xl font-bold text-[#004684] mb-2">Basic</h3>
+              <p className="text-[#E72C19] font-semibold text-sm mb-4">&quot;Get started&quot;</p>
               
-              <div className={`text-4xl font-bold mb-2 transition-colors duration-300 ${
+              <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-              }`}>$9.99</div>
-              <div className={`text-sm mb-6 transition-colors duration-300 ${
+              }`}>₹700</div>
+              <div className={`text-xs mb-4 transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-60' : 'text-[#1E1E1E] opacity-60'
-              }`}>per month</div>
+              }`}>140 credits</div>
               
-              <div className="space-y-3 text-left">
-                <div className="flex items-center gap-3">
-                  <span className="text-[#F53057] text-xl">🔥</span>
-                  <span className={`transition-colors duration-300 ${
+              <div className="space-y-2 text-left mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#004684] text-sm">⚡</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                  }`}>Unlimited edits</span>
+                  }`}>140 image generations</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[#F53057] text-xl">⚡</span>
-                  <span className={`transition-colors duration-300 ${
+                <div className="flex items-center gap-2">
+                  <span className="text-[#004684] text-sm">🎨</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                  }`}>Priority processing</span>
+                  }`}>Basic editing tools</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[#F53057] text-xl">🎨</span>
-                  <span className={`transition-colors duration-300 ${
+                <div className="flex items-center gap-2">
+                  <span className="text-[#004684] text-sm">📸</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                  }`}>Advanced editing tools</span>
+                  }`}>HD quality</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[#F53057] text-xl">📸</span>
-                  <span className={`transition-colors duration-300 ${
+                <div className="flex items-center gap-2">
+                  <span className="text-[#004684] text-sm">💾</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                  }`}>HD image generation</span>
+                  }`}>Download & share</span>
                 </div>
               </div>
               
-              <button className="w-full mt-8 px-6 py-3 rounded-xl bg-[#F53057] text-white font-semibold hover:bg-[#A20222] transition">
-                Upgrade to Plus
+              <button className="w-full px-4 py-2 rounded-lg bg-[#004684] text-white font-semibold hover:bg-[#E72C19] transition text-sm">
+                Choose Basic
               </button>
             </div>
           </div>
 
-          {/* Surreal Pro */}
-          <div className={`flex-1 rounded-3xl p-8 border-2 transition-all duration-300 hover:scale-105 hover:border-[#F3752A]/40 hover:shadow-xl hover:shadow-[#A20222]/20 ${
+          {/* Pro Plan */}
+          <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#E72C19]/40 hover:shadow-xl hover:shadow-[#E72C19]/20 relative ${
             isDarkMode 
-              ? 'bg-gradient-to-br from-[#A20222]/20 to-[#F3752A]/20 border-[#A20222]/20' 
-              : 'bg-gradient-to-br from-[#A20222]/10 to-[#F3752A]/10 border-[#A20222]/20'
+              ? 'bg-gradient-to-br from-[#E72C19]/20 to-[#0171B9]/20 border-[#E72C19]/20' 
+              : 'bg-gradient-to-br from-[#E72C19]/10 to-[#0171B9]/10 border-[#E72C19]/20'
           }`}>
+            {/* Popular Badge */}
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#E72C19] text-white px-3 py-1 rounded-full text-xs font-semibold">
+              Most Popular
+            </div>
+            
             <div className="text-center">
-              <div className="text-6xl mb-4">👑</div>
-              <h3 className="text-2xl font-bold text-[#A20222] mb-2">Surreal Pro</h3>
-              <p className="text-[#F3752A] font-semibold text-lg mb-6">&quot;For the edit-obsessed&quot;</p>
+              <div className="text-4xl mb-4">�</div>
+              <h3 className="text-xl font-bold text-[#E72C19] mb-2">Pro</h3>
+              <p className="text-[#0171B9] font-semibold text-sm mb-4">&quot;For creators&quot;</p>
               
-              <div className={`text-4xl font-bold mb-2 transition-colors duration-300 ${
+              <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-              }`}>$19.99</div>
-              <div className={`text-sm mb-6 transition-colors duration-300 ${
+              }`}>₹2,200</div>
+              <div className={`text-xs mb-4 transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-60' : 'text-[#1E1E1E] opacity-60'
-              }`}>per month</div>
+              }`}>600 credits</div>
               
-              <div className="space-y-3 text-left">
-                <div className="flex items-center gap-3">
-                  <span className="text-[#A20222] text-xl">💎</span>
-                  <span className={`transition-colors duration-300 ${
+              <div className="space-y-2 text-left mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#E72C19] text-sm">🔥</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                  }`}>Everything in Plus</span>
+                  }`}>600 image generations</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[#A20222] text-xl">🎭</span>
-                  <span className={`transition-colors duration-300 ${
+                <div className="flex items-center gap-2">
+                  <span className="text-[#E72C19] text-sm">⚡</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Priority processing</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#E72C19] text-sm">🎨</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Advanced editing tools</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#E72C19] text-sm">📸</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>4K quality</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#E72C19] text-sm">🎭</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
                   }`}>AI style transfer</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[#A20222] text-xl">📊</span>
-                  <span className={`transition-colors duration-300 ${
+              </div>
+              
+              <button className="w-full px-4 py-2 rounded-lg bg-[#E72C19] text-white font-semibold hover:bg-[#0171B9] transition text-sm">
+                Choose Pro
+              </button>
+            </div>
+          </div>
+
+          {/* Max Plan */}
+          <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#0171B9]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${
+            isDarkMode 
+              ? 'bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20' 
+              : 'bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20'
+          }`}>
+            <div className="text-center">
+              <div className="text-4xl mb-4">🌟</div>
+              <h3 className="text-xl font-bold text-[#0171B9] mb-2">Max</h3>
+              <p className="text-[#004684] font-semibold text-sm mb-4">&quot;Power user&quot;</p>
+              
+              <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>₹6,000</div>
+              <div className={`text-xs mb-4 transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-60' : 'text-[#1E1E1E] opacity-60'
+              }`}>1000 credits</div>
+              
+              <div className="space-y-2 text-left mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-[#0171B9] text-sm">�</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>1000 image generations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#0171B9] text-sm">⚡</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Fastest processing</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#0171B9] text-sm">�</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>All editing tools</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#0171B9] text-sm">📸</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>8K quality</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[#0171B9] text-sm">📊</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
                   }`}>Batch processing</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[#A20222] text-xl">🔗</span>
-                  <span className={`transition-colors duration-300 ${
+                <div className="flex items-center gap-2">
+                  <span className="text-[#0171B9] text-sm">🔗</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
                   }`}>API access</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-[#A20222] text-xl">🎯</span>
-                  <span className={`transition-colors duration-300 ${
+              </div>
+              
+              <button className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm">
+                Choose Max
+              </button>
+            </div>
+          </div>
+
+          {/* Enterprise Plan */}
+          <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-gray-400/40 hover:shadow-xl hover:shadow-gray-400/20 ${
+            isDarkMode 
+              ? 'bg-gradient-to-br from-gray-700/20 to-gray-600/20 border-gray-600/20' 
+              : 'bg-gradient-to-br from-gray-100/50 to-gray-200/50 border-gray-300/20'
+          }`}>
+            <div className="text-center">
+              <div className="text-4xl mb-4">🏢</div>
+              <h3 className="text-xl font-bold text-gray-600 mb-2">Enterprise</h3>
+              <p className="text-gray-500 font-semibold text-sm mb-4">&quot;Custom solution&quot;</p>
+              
+              <div className={`text-2xl font-bold mb-2 transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>Custom</div>
+              <div className={`text-xs mb-4 transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-60' : 'text-[#1E1E1E] opacity-60'
+              }`}>Unlimited credits</div>
+              
+              <div className="space-y-2 text-left mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-sm">♾️</span>
+                  <span className={`text-xs transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                  }`}>Custom brand kit</span>
+                  }`}>Unlimited generations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-sm">🎯</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Custom branding</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-sm">🔧</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Custom integrations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-sm">👥</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>Team management</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-sm">📞</span>
+                  <span className={`text-xs transition-colors duration-300 ${
+                    isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                  }`}>24/7 support</span>
                 </div>
               </div>
               
-              <button className="w-full mt-8 px-6 py-3 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition">
-                Go Pro
+              <button 
+                className="w-full px-4 py-2 rounded-lg bg-gray-600 text-white font-semibold hover:bg-gray-700 transition text-sm"
+                onClick={() => {
+                  const subject = encodeURIComponent("Enterprise Plan Inquiry - GoLoco");
+                  const body = encodeURIComponent(`Hello GoLoco Team,
+
+I am interested in learning more about your Enterprise plan and would like to discuss custom pricing and features for my organization.
+
+Please contact me to schedule a call or provide more information.
+
+Best regards`);
+                  const mailtoLink = `mailto:golocostudios@gmail.com?subject=${subject}&body=${body}`;
+                  window.open(mailtoLink, '_self');
+                }}
+              >
+                Talk to Us
               </button>
             </div>
           </div>
@@ -1383,45 +1628,54 @@ export default function LandingPage() {
       </div>
 
       {/* Pricing Popup */}
-      {showPricingPopup && (
+      {showPricingModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className={`rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 transition-colors duration-300 ${
             isDarkMode 
-              ? 'bg-[#333] border-[#F3752A]/20' 
-              : 'bg-white border-[#F3752A]/20'
+              ? 'bg-[#333] border-[#0171B9]/20' 
+              : 'bg-white border-[#0171B9]/20'
           }`}>
             <div className="text-center">
               <div className="text-6xl mb-4">🚀</div>
               <h3 className={`text-2xl font-bold mb-4 transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>
-                Unlock Unlimited Edits!
+                Credits Exhausted!
               </h3>
+              <div className={`mb-4 transition-colors duration-300 ${
+                isDarkMode ? 'text-white opacity-90' : 'text-[#1E1E1E] opacity-90'
+              }`}>
+                <div className="text-sm mb-2">Your current usage:</div>
+                <div className="space-y-1 text-xs">
+                  <div>Image Generations: {imageGenerationsUsed}/3 used</div>
+                  <div>Image Edits: {imageEditsUsed}/7 used</div>
+                </div>
+              </div>
               <p className={`mb-6 transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
               }`}>
-                You&apos;ve used your 2 free edits. Upgrade to continue the magic with unlimited edits, advanced features, and more!
+                You&apos;ve reached your free limit. Upgrade to continue creating with unlimited generations, edits, and premium features!
               </p>
               
               <div className="space-y-4 mb-6">
                 <div className={`rounded-2xl p-4 border-2 transition-colors duration-300 ${
                   isDarkMode 
-                    ? 'bg-gradient-to-br from-[#F3752A]/20 to-[#F53057]/20 border-[#F3752A]/20' 
-                    : 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20'
+                    ? 'bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20' 
+                    : 'bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20'
                 }`}>
-                  <div className="text-lg font-bold text-[#F3752A]">Pro Plan</div>
+                  <div className="text-lg font-bold text-[#0171B9]">Pro Plan</div>
                   <div className={`text-2xl font-bold transition-colors duration-300 ${
                     isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                  }`}>$9.99/month</div>
+                  }`}>₹2,200</div>
                   <div className={`text-sm transition-colors duration-300 ${
                     isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                  }`}>Unlimited edits & premium features</div>
+                  }`}>600 credits • Unlimited generations & edits</div>
                 </div>
               </div>
               
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowPricingPopup(false)}
+                  onClick={() => setShowPricingModal(false)}
                   className={`flex-1 px-6 py-3 rounded-xl font-semibold transition ${
                     isDarkMode 
                       ? 'bg-[#555] text-white hover:bg-[#666]' 
@@ -1432,10 +1686,14 @@ export default function LandingPage() {
                 </button>
                 <button
                   onClick={() => {
-                    setShowPricingPopup(false);
-                    router.push("/signup");
+                    setShowPricingModal(false);
+                    // Scroll to pricing section instead of going to signup
+                    const pricingSection = document.querySelector('#pricing-section');
+                    if (pricingSection) {
+                      pricingSection.scrollIntoView({ behavior: 'smooth' });
+                    }
                   }}
-                  className="flex-1 px-6 py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition"
+                  className="flex-1 px-6 py-3 rounded-xl bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition"
                 >
                   Upgrade Now
                 </button>
@@ -1451,8 +1709,8 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className={`w-full border-t px-8 py-12 transition-colors duration-300 ${
         isDarkMode 
-          ? 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20' 
-          : 'bg-gradient-to-br from-[#F3752A]/5 to-[#F53057]/5 border-[#F3752A]/20'
+          ? 'bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20' 
+          : 'bg-gradient-to-br from-[#0171B9]/5 to-[#004684]/5 border-[#0171B9]/20'
       }`}>
         <div className="max-w-6xl mx-auto">
           {/* Main Footer Content */}
@@ -1461,7 +1719,7 @@ export default function LandingPage() {
             <div className="flex flex-col items-start">
               <div className="flex items-center gap-3 mb-4">
                 <div className="text-4xl">🎨</div>
-                <div className="text-3xl font-bold text-[#F3752A]">Surreal</div>
+                <div className="text-3xl font-bold text-[#0171B9]">GoLoco</div>
               </div>
               <p className={`text-sm max-w-sm transition-colors duration-300 ${
                 isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
@@ -1474,26 +1732,26 @@ export default function LandingPage() {
             <div className="flex flex-col md:flex-row gap-8">
               {/* Product Links */}
               <div className="space-y-3">
-                <h4 className="text-lg font-bold text-[#F53057] mb-3">Product</h4>
+                <h4 className="text-lg font-bold text-[#004684] mb-3">Product</h4>
                 <div className="space-y-2">
                   <a href="/about" className={`block text-sm transition ${
                     isDarkMode 
-                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
-                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]'
                   }`}>
-                    About Surreal
+                    About GoLoco
                   </a>
                   <a href="/features" className={`block text-sm transition ${
                     isDarkMode 
-                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
-                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]'
                   }`}>
                     Feature
                   </a>
                   <a href="/pricing" className={`block text-sm transition ${
                     isDarkMode 
-                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
-                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]'
                   }`}>
                     Pricing
                   </a>
@@ -1502,26 +1760,26 @@ export default function LandingPage() {
 
               {/* Support Links */}
               <div className="space-y-3">
-                <h4 className="text-lg font-bold text-[#A20222] mb-3">Support</h4>
+                <h4 className="text-lg font-bold text-[#E72C19] mb-3">Support</h4>
                 <div className="space-y-2">
                   <a href="/faq" className={`block text-sm transition ${
                     isDarkMode 
-                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
-                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]'
                   }`}>
                     FAQ
                   </a>
                   <a href="/contact" className={`block text-sm transition ${
                     isDarkMode 
-                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
-                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]'
                   }`}>
                     Contact Us
                   </a>
                   <a href="/help" className={`block text-sm transition ${
                     isDarkMode 
-                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
-                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
+                      ? 'text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]' 
+                      : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]'
                   }`}>
                     Help Center
                   </a>
@@ -1530,7 +1788,7 @@ export default function LandingPage() {
 
               {/* Social Links */}
               <div className="space-y-3">
-                <h4 className="text-lg font-bold text-[#F3752A] mb-3">Connect</h4>
+                <h4 className="text-lg font-bold text-[#0171B9] mb-3">Connect</h4>
                 <div className="flex gap-4">
                   <a href="#" className="text-2xl hover:scale-110 transition-transform" title="Twitter">
                     🐦
@@ -1550,11 +1808,11 @@ export default function LandingPage() {
           </div>
 
           {/* Bottom Section */}
-          <div className="border-t border-[#F3752A]/20 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="border-t border-[#0171B9]/20 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className={`flex items-center gap-6 text-sm transition-colors duration-300 ${
               isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
             }`}>
-              <span>© {new Date().getFullYear()} Surreal. All rights reserved.</span>
+              <span>© {new Date().getFullYear()} GoLoco. All rights reserved.</span>
               <span className="flex items-center gap-2">
                 Made with ❤️ in India
               </span>
@@ -1563,8 +1821,8 @@ export default function LandingPage() {
             <div className="flex items-center gap-4 text-sm">
               <a href="/privacy" className={`transition ${
                 isDarkMode 
-                  ? 'text-white opacity-70 hover:opacity-100 hover:text-[#F3752A]' 
-                  : 'text-[#1E1E1E] opacity-70 hover:opacity-100 hover:text-[#F3752A]'
+                  ? 'text-white opacity-70 hover:opacity-100 hover:text-[#0171B9]' 
+                  : 'text-[#1E1E1E] opacity-70 hover:opacity-100 hover:text-[#0171B9]'
               }`}>
                 Privacy Policy
               </a>
@@ -1573,8 +1831,8 @@ export default function LandingPage() {
               }`}>•</span>
               <a href="/terms" className={`transition ${
                 isDarkMode 
-                  ? 'text-white opacity-70 hover:opacity-100 hover:text-[#F3752A]' 
-                  : 'text-[#1E1E1E] opacity-70 hover:opacity-100 hover:text-[#F3752A]'
+                  ? 'text-white opacity-70 hover:opacity-100 hover:text-[#0171B9]' 
+                  : 'text-[#1E1E1E] opacity-70 hover:opacity-100 hover:text-[#0171B9]'
               }`}>
                 Terms of Service
               </a>

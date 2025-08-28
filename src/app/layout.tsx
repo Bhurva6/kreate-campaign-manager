@@ -10,7 +10,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Surreal",
+  title: "GoLoco",
   description: "One Image. Endless Worlds. Remix reality at lightning speed.",
 };
 

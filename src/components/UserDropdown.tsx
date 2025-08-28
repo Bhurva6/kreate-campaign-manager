@@ -2,9 +2,15 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
+import { useCredits } from '../lib/credits';
 
 export default function UserDropdown() {
   const { user, signOut } = useAuth();
+  const { 
+    imageGenerationsUsed, 
+    imageEditsUsed, 
+    isUnlimitedUser 
+  } = useCredits();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -68,7 +74,7 @@ export default function UserDropdown() {
         ) : null}
         {/* Fallback initials (hidden by default if photo exists) */}
         <div 
-          className={`w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-r from-[#F3752A] to-[#F53057] flex items-center justify-center text-white font-semibold text-sm border-2 border-white/30 ${
+          className={`w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-r from-[#0171B9] to-[#004684] flex items-center justify-center text-white font-semibold text-sm border-2 border-white/30 ${
             user.photoURL ? 'hidden' : 'flex'
           }`}
         >
@@ -110,7 +116,7 @@ export default function UserDropdown() {
                 />
               ) : null}
               {/* Fallback initials for dropdown */}
-              <div className={`w-12 h-12 rounded-full bg-gradient-to-r from-[#F3752A] to-[#F53057] flex items-center justify-center text-white font-semibold text-lg border-2 border-gray-200 ${
+              <div className={`w-12 h-12 rounded-full bg-gradient-to-r from-[#0171B9] to-[#004684] flex items-center justify-center text-white font-semibold text-lg border-2 border-gray-200 ${
                 user.photoURL ? 'hidden' : 'flex'
               }`}>
                 {initials}
@@ -124,6 +130,45 @@ export default function UserDropdown() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Credit Usage Section */}
+          <div className="p-4 border-b border-gray-100 bg-gray-50">
+            <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-2">
+              {isUnlimitedUser ? 'Unlimited Access' : 'Free Credits'}
+            </h4>
+            {isUnlimitedUser ? (
+              <div className="text-sm text-green-600 font-medium">
+                ✨ Unlimited generations & edits
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-600">Image Generations</span>
+                  <span className="text-xs font-medium text-gray-900">
+                    {imageGenerationsUsed}/3
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div 
+                    className="bg-[#0171B9] h-1.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${(imageGenerationsUsed / 3) * 100}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-600">Image Edits</span>
+                  <span className="text-xs font-medium text-gray-900">
+                    {imageEditsUsed}/7
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-1.5">
+                  <div 
+                    className="bg-[#004684] h-1.5 rounded-full transition-all duration-300" 
+                    style={{ width: `${(imageEditsUsed / 7) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Menu Items */}

@@ -4,7 +4,7 @@
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)
 2. Click "Create a project" or "Add project"
-3. Enter a project name (e.g., "surreal-app")
+3. Enter a project name (e.g., "GoLoco-app")
 4. Follow the setup wizard
 
 ## 2. Enable Authentication

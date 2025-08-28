@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthProvider } from '../lib/auth';
+import { CreditProvider } from '../lib/credits';
 import { useEffect, useState } from 'react';
 
 export default function ClientWrapper({ children }: { children: React.ReactNode }) {
@@ -17,7 +18,9 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
 
   return (
     <AuthProvider>
-      {children}
+      <CreditProvider>
+        {children}
+      </CreditProvider>
     </AuthProvider>
   );
 }

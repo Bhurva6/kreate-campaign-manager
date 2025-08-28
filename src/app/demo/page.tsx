@@ -1,6 +1,8 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../../lib/auth";
+import { useCredits } from "../../lib/credits";
 
 // Helper for API calls
 async function callGenerateImage(prompt: string) {
@@ -70,6 +72,18 @@ async function pollEditResult(polling_url: string, prompt: string): Promise<stri
 
 export default function DemoPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const {
+    imageGenerationsUsed,
+    imageEditsUsed,
+    canUseImageGeneration,
+    canUseImageEdit,
+    isUnlimitedUser,
+    consumeImageGeneration,
+    consumeImageEdit,
+    showPricingModal,
+    setShowPricingModal,
+  } = useCredits();
   
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -82,7 +96,6 @@ export default function DemoPage() {
   const [demoEditing, setDemoEditing] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
   const [demoSuccess, setDemoSuccess] = useState<string | null>(null);
-  const [editCount, setEditCount] = useState(0);
   const [editingProgress, setEditingProgress] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -94,7 +107,6 @@ export default function DemoPage() {
       const reader = new FileReader();
       reader.onload = (e) => {
         setDemoImage(e.target?.result as string);
-        setEditCount(0);
         setDemoError(null);
         setDemoSuccess("Image uploaded successfully! ✨");
         
@@ -129,7 +141,6 @@ export default function DemoPage() {
         const reader = new FileReader();
         reader.onload = (e) => {
           setDemoImage(e.target?.result as string);
-          setEditCount(0);
           setDemoError(null);
           setDemoSuccess("Image uploaded successfully! ✨");
           
@@ -143,20 +154,21 @@ export default function DemoPage() {
     }
   };
 
+  // Replace handleDemoGenerate
   const handleDemoGenerate = async () => {
     if (!demoPrompt.trim()) return;
-    
+    if (!canUseImageGeneration && !isUnlimitedUser) {
+      setShowPricingModal(true);
+      return;
+    }
+    if (!consumeImageGeneration()) return;
     setDemoGenerating(true);
     setDemoError(null);
     setDemoSuccess(null);
-    
     try {
       const url = await callGenerateImage(demoPrompt);
       setDemoImage(url);
-      setEditCount(0);
       setDemoSuccess("Image generated successfully! ✨");
-      
-      // Clear success message after 3 seconds
       setTimeout(() => setDemoSuccess(null), 3000);
     } catch (err: any) {
       setDemoError(err.message);
@@ -165,27 +177,23 @@ export default function DemoPage() {
     }
   };
 
+  // Replace handleDemoEdit
   const handleDemoEdit = async () => {
     if (!demoImage || !demoEditPrompt.trim()) return;
-    
-    if (editCount >= 2) {
-      setDemoError("You've used your 2 free edits! Upgrade to continue.");
+    if (!canUseImageEdit && !isUnlimitedUser) {
+      setShowPricingModal(true);
       return;
     }
-    
+    if (!consumeImageEdit()) return;
     setDemoEditing(true);
     setDemoError(null);
     setDemoSuccess(null);
     setEditingProgress("Starting edit...");
-    
     try {
-      // Check if the image is a data URL (uploaded file) or a regular URL
       let imageUrl = demoImage;
       if (demoImage.startsWith('data:')) {
-        // It's a base64 data URL, use it directly
         imageUrl = demoImage;
       } else {
-        // It's a regular URL, we might need to convert it to base64
         try {
           const response = await fetch(demoImage);
           const blob = await response.blob();
@@ -195,19 +203,14 @@ export default function DemoPage() {
             reader.readAsDataURL(blob);
           });
         } catch (convertError) {
-          console.warn("Could not convert image to base64, using original URL");
           imageUrl = demoImage;
         }
       }
-      
       setEditingProgress("Processing your edit...");
       const url = await callEditImage(demoEditPrompt, imageUrl);
       setDemoImage(url);
-      setEditCount(prev => prev + 1);
       setDemoEditPrompt("");
-      setDemoSuccess(`Edit applied successfully! ${2 - editCount - 1} free edit${2 - editCount - 1 === 1 ? '' : 's'} remaining ✨`);
-      
-      // Clear success message after 3 seconds
+      setDemoSuccess(`Edit applied successfully! ${7 - imageEditsUsed - 1} free edit${7 - imageEditsUsed - 1 === 1 ? '' : 's'} remaining ✨`);
       setTimeout(() => setDemoSuccess(null), 3000);
     } catch (err: any) {
       setDemoError(err.message);
@@ -221,7 +224,6 @@ export default function DemoPage() {
     setDemoImage(null);
     setDemoPrompt("");
     setDemoEditPrompt("");
-    setEditCount(0);
     setDemoError(null);
     setDemoSuccess(null);
     setEditingProgress("");
@@ -235,7 +237,7 @@ export default function DemoPage() {
     if (!demoImage) return;
     const link = document.createElement('a');
     link.href = demoImage;
-    link.download = 'Surreal-creation.png';
+    link.download = 'GoLoco-creation.png';
     link.click();
   };
 
@@ -262,7 +264,7 @@ export default function DemoPage() {
           <div className={`text-2xl md:text-3xl font-bold transition-colors duration-300 ${
             isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
           }`}>
-            Surreal Demo
+            GoLoco Demo
           </div>
         </div>
         
@@ -289,7 +291,7 @@ export default function DemoPage() {
             <h1 className={`text-4xl md:text-6xl font-bold mb-4 transition-colors duration-300 ${
               isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
             }`}>
-              Try Surreal Free
+              Try GoLoco Free
             </h1>
             <p className={`text-lg md:text-xl mb-6 max-w-3xl mx-auto transition-colors duration-300 ${
               isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
@@ -305,11 +307,14 @@ export default function DemoPage() {
                 : 'bg-black/10 text-black border border-black/20'
             }`}>
               <span>🎯</span>
-              <span>{editCount}/2 free edits used</span>
-              {editCount < 2 && (
-                <span className="text-[#F53057] font-bold">
-                  • {2 - editCount} remaining
+              <span>{imageEditsUsed}/7 free edits used</span>
+              {imageEditsUsed < 7 && (
+                <span className="text-[#E72C19] font-bold">
+                  • {7 - imageEditsUsed} remaining
                 </span>
+              )}
+              {isUnlimitedUser && (
+                <span className="text-green-600 font-bold ml-2">Unlimited</span>
               )}
             </div>
           </div>
@@ -556,7 +561,7 @@ export default function DemoPage() {
                   />
                   <button
                     onClick={handleDemoEdit}
-                    disabled={demoEditing || !demoEditPrompt.trim() || editCount >= 2}
+                    disabled={demoEditing || !demoEditPrompt.trim() || imageEditsUsed >= 7}
                     className="w-full px-6 py-4 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base md:text-lg shadow-lg hover:shadow-xl"
                   >
                     {demoEditing ? (
@@ -564,7 +569,7 @@ export default function DemoPage() {
                         <div className="animate-spin text-xl">🔄</div>
                         {editingProgress || "Editing..."}
                       </>
-                    ) : editCount >= 2 ? (
+                    ) : imageEditsUsed >= 7 ? (
                       <>
                         <span>💎</span>
                         Upgrade for More Edits
@@ -572,16 +577,16 @@ export default function DemoPage() {
                     ) : (
                       <>
                         <span className="text-lg">🪄</span>
-                        Edit Image ({2 - editCount} remaining)
+                        Edit Image ({7 - imageEditsUsed} remaining)
                       </>
                     )}
                   </button>
                 </div>
                 
-                {editCount >= 1 && editCount < 2 && !demoEditing && (
+                {imageEditsUsed >= 1 && imageEditsUsed < 7 && !demoEditing && (
                   <div className="mt-4 p-3 bg-[#F53057]/10 border border-[#F53057]/20 rounded-xl text-center">
                     <p className="text-sm text-[#F53057] font-semibold">
-                      🎯 {2 - editCount} free edit remaining! Make it count ✨
+                      🎯 {7 - imageEditsUsed} free edit remaining! Make it count ✨
                     </p>
                   </div>
                 )}
@@ -689,6 +694,45 @@ export default function DemoPage() {
           </div>
         </div>
       </div>
+
+      {/* Pricing Modal */}
+      {showPricingModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 bg-white">
+            <div className="text-center">
+              <div className="text-6xl mb-4">🚀</div>
+              <h3 className="text-2xl font-bold mb-4 text-[#E72C19]">Credits Exhausted!</h3>
+              <div className="mb-4">
+                <div className="text-sm mb-2">Your current usage:</div>
+                <div className="space-y-1 text-xs">
+                  <div>Image Generations: {imageGenerationsUsed}/3 used</div>
+                  <div>Image Edits: {imageEditsUsed}/7 used</div>
+                </div>
+              </div>
+              <p className="mb-6 text-[#1E1E1E] opacity-80">
+                You&apos;ve reached your free limit. Upgrade to continue creating with unlimited generations, edits, and premium features!
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowPricingModal(false)}
+                  className="flex-1 px-6 py-3 rounded-xl font-semibold bg-gray-200 text-[#1E1E1E] hover:bg-gray-300"
+                >
+                  Maybe Later
+                </button>
+                <button
+                  onClick={() => {
+                    setShowPricingModal(false);
+                    router.push("/pricing");
+                  }}
+                  className="flex-1 px-6 py-3 rounded-xl bg-[#0171B9] text-white font-semibold hover:bg-[#004684]"
+                >
+                  Upgrade Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

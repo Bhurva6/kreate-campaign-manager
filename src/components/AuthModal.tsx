@@ -49,7 +49,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           
           {/* Title */}
           <h2 className="text-3xl font-bold text-[#1E1E1E] mb-2">
-            Welcome to Surreal
+            Welcome to GoLoco
           </h2>
           
           {/* Subtitle */}
