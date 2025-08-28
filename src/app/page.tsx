@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation";
 import { useImageStore } from "../store/imageStore";
 import Image from "next/image";
 import React from "react";
+import { useAuth } from "../lib/auth";
+import AuthModal from "../components/AuthModal";
+import UserDropdown from "../components/UserDropdown";
 
 type GeneratedImage = { url: string; prompt?: string };
 
@@ -95,13 +98,21 @@ async function pollEditResult(polling_url: string, prompt: string): Promise<stri
 
 export default function LandingPage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
   
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(false);
   
+  // Auth modal state
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
   // Scroll animation state for unify section
   const [scrollProgress, setScrollProgress] = useState(0);
   const unifyRef = useRef<HTMLDivElement>(null);
+  
+  // Scroll animation state for broken creativity section
+  const [brokenCreativityProgress, setBrokenCreativityProgress] = useState(0);
+  const brokenCreativityRef = useRef<HTMLDivElement>(null);
   
   // Pricing popup state
   const [showPricingPopup, setShowPricingPopup] = useState(false);
@@ -304,32 +315,60 @@ export default function LandingPage() {
     return () => window.removeEventListener("mousedown", handle);
   }, [activeGif]);
 
-  // Scroll effect for Unify section
+  // Scroll effect for both Unify and Broken Creativity sections
   useEffect(() => {
     const handleScroll = () => {
-      if (!unifyRef.current) return;
-      
-      const rect = unifyRef.current.getBoundingClientRect();
-      const windowHeight = window.innerHeight;
-      const elementHeight = rect.height;
-      
-      // Calculate scroll progress when element is in viewport
-      if (rect.top <= windowHeight && rect.bottom >= 0) {
-        // Create a longer animation range for the stacking effect
-        const startTrigger = windowHeight * 1.2; // Start when element is above viewport
-        const endTrigger = -elementHeight * 0.5; // End when element is mostly out of top
-        const totalRange = startTrigger - endTrigger;
+      // Handle Unify section scroll
+      if (unifyRef.current) {
+        const rect = unifyRef.current.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const elementHeight = rect.height;
         
-        const progress = Math.max(0, Math.min(1, 
-          (startTrigger - rect.top) / totalRange
-        ));
-        setScrollProgress(progress);
-      } else if (rect.top > windowHeight) {
-        // Element hasn't entered viewport yet
-        setScrollProgress(0);
-      } else if (rect.bottom < 0) {
-        // Element has left viewport
-        setScrollProgress(1);
+        // Calculate scroll progress when element is in viewport
+        if (rect.top <= windowHeight && rect.bottom >= 0) {
+          // Create a longer animation range for the stacking effect
+          const startTrigger = windowHeight * 1.2; // Start when element is above viewport
+          const endTrigger = -elementHeight * 0.5; // End when element is mostly out of top
+          const totalRange = startTrigger - endTrigger;
+          
+          const progress = Math.max(0, Math.min(1, 
+            (startTrigger - rect.top) / totalRange
+          ));
+          setScrollProgress(progress);
+        } else if (rect.top > windowHeight) {
+          // Element hasn't entered viewport yet
+          setScrollProgress(0);
+        } else if (rect.bottom < 0) {
+          // Element has left viewport
+          setScrollProgress(1);
+        }
+      }
+
+      // Handle Broken Creativity section scroll
+      if (brokenCreativityRef.current) {
+        const rect = brokenCreativityRef.current.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        const elementHeight = rect.height;
+        
+        // Calculate progress when section is in view
+        if (rect.top <= windowHeight && rect.bottom >= 0) {
+          // Start animation when section enters viewport (bottom of section hits bottom of viewport)
+          // Complete animation when section is fully in view (top of section hits top of viewport)
+          const startTrigger = windowHeight; // Start when section starts entering
+          const endTrigger = 0; // Complete when section top reaches viewport top
+          const totalRange = startTrigger - endTrigger;
+          
+          const progress = Math.max(0, Math.min(1, 
+            (startTrigger - rect.top) / totalRange
+          ));
+          setBrokenCreativityProgress(progress);
+        } else if (rect.top > windowHeight) {
+          // Element hasn't entered viewport yet
+          setBrokenCreativityProgress(0);
+        } else if (rect.bottom < 0) {
+          // Element has left viewport
+          setBrokenCreativityProgress(1);
+        }
       }
     };
 
@@ -359,18 +398,27 @@ export default function LandingPage() {
               </span>
             </button>
             
-            <button
-              className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg font-semibold text-sm md:text-base transition-all duration-300 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm border border-white/20"
-              onClick={() => window.location.href = "/signin"}
-            >
-              Sign In
-            </button>
-            <button
-              className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] text-white font-semibold hover:shadow-lg hover:shadow-[#F3752A]/25 transition-all duration-300 text-sm md:text-base"
-              onClick={() => window.location.href = "/signup"}
-            >
-              Sign Up
-            </button>
+            {/* Authentication Section */}
+            {loading ? (
+              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+            ) : user ? (
+              <UserDropdown />
+            ) : (
+              <>
+                <button
+                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg font-semibold text-sm md:text-base transition-all duration-300 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm border border-white/20"
+                  onClick={() => setShowAuthModal(true)}
+                >
+                  Sign In
+                </button>
+                <button
+                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] text-white font-semibold hover:shadow-lg hover:shadow-[#F3752A]/25 transition-all duration-300 text-sm md:text-base"
+                  onClick={() => setShowAuthModal(true)}
+                >
+                  Sign Up
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -396,7 +444,13 @@ export default function LandingPage() {
             {/* CTA Button */}
             <button
               className="inline-flex items-center gap-3 font-semibold px-8 sm:px-10 py-4 sm:py-5 rounded-xl text-lg sm:text-xl transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105 bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] text-white hover:shadow-[#F3752A]/30"
-              onClick={() => router.push("/demo")}
+              onClick={() => {
+                if (user) {
+                  router.push("/demo");
+                } else {
+                  setShowAuthModal(true);
+                }
+              }}
             >
               <span>✨</span>
               Get Started Free
@@ -742,6 +796,8 @@ export default function LandingPage() {
         ></div>
       </div>
 
+     
+
       {/* Features Section */}
       <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
         <h2 className={`text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 ${
@@ -1067,7 +1123,7 @@ export default function LandingPage() {
               }`}>
                 &quot;I changed my background 5 times — my face never changed once. Love it!&quot;
               </p>
-              <div className="text-[#F3752A] font-semibold mt-3 text-xs md:text-sm">- Sarah K.</div>
+              <div className="text-[#F3752A] font-semibold mt-3 text-xs md:text-sm">- Ananya K.</div>
             </div>
           </div>
 
@@ -1088,7 +1144,7 @@ export default function LandingPage() {
               }`}>
                 &quot;Finally an editor that listens to me!&quot;
               </p>
-              <div className="text-[#F53057] font-semibold mt-3 text-xs md:text-sm">- Mike R.</div>
+              <div className="text-[#F53057] font-semibold mt-3 text-xs md:text-sm">- Mahesh R.</div>
             </div>
             <div className="flex-shrink-0">
               <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#F53057] to-[#A20222] flex items-center justify-center text-white text-lg md:text-xl font-bold">
@@ -1117,7 +1173,7 @@ export default function LandingPage() {
               }`}>
                 &quot;Magic! Only the sky changed, my perfect selfie stayed untouched ✨&quot;
               </p>
-              <div className="text-[#A20222] font-semibold mt-3 text-xs md:text-sm">- Alex T.</div>
+              <div className="text-[#A20222] font-semibold mt-3 text-xs md:text-sm">- Arya T.</div>
             </div>
           </div>
 
@@ -1138,7 +1194,7 @@ export default function LandingPage() {
               }`}>
                 &quot;No more &apos;oops I ruined my photo&apos; moments. Surreal gets it right!&quot;
               </p>
-              <div className="text-[#F3752A] font-semibold mt-3 text-xs md:text-sm">- Emma L.</div>
+              <div className="text-[#F3752A] font-semibold mt-3 text-xs md:text-sm">- Eshaan L.</div>
             </div>
             <div className="flex-shrink-0">
               <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#F3752A] to-[#F53057] flex items-center justify-center text-white text-lg md:text-xl font-bold">
@@ -1198,7 +1254,13 @@ export default function LandingPage() {
               
               <button 
                 className="w-full mt-8 px-6 py-3 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition"
-                onClick={() => router.push("/demo")}
+                onClick={() => {
+                  if (user) {
+                    router.push("/demo");
+                  } else {
+                    setShowAuthModal(true);
+                  }
+                }}
               >
                 Get Started Free
               </button>
@@ -1426,7 +1488,7 @@ export default function LandingPage() {
                       ? 'text-white opacity-80 hover:opacity-100 hover:text-[#F3752A]' 
                       : 'text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#F3752A]'
                   }`}>
-                    Features
+                    Feature
                   </a>
                   <a href="/pricing" className={`block text-sm transition ${
                     isDarkMode 
@@ -1520,6 +1582,12 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      
+      {/* Authentication Modal */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+      />
       </div>
     </div>
   );
