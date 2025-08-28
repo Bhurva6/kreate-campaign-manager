@@ -13,6 +13,10 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
+    if (typeof window === 'undefined') {
+      return; // Don't run on server side
+    }
+    
     setIsLoading(true);
     try {
       await signInWithGoogle();
@@ -25,7 +29,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     }
   };
 
-  if (!isOpen) return null;
+  // Don't render on server side
+  if (typeof window === 'undefined' || !isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">

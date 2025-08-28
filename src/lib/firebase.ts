@@ -1,5 +1,5 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration
@@ -13,10 +13,16 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Initialize Firebase only if it hasn't been initialized yet
+let app;
+if (typeof window !== 'undefined' && !getApps().length) {
+  // Only initialize on client side
+  app = initializeApp(firebaseConfig);
+} else if (getApps().length) {
+  app = getApps()[0];
+}
 
 // Initialize Firebase Authentication and get a reference to the service
-export const auth = getAuth(app);
+// Only initialize auth on the client side
+export const auth = typeof window !== 'undefined' && app ? getAuth(app) : null;
 export default app;

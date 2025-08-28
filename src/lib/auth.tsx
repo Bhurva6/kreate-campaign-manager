@@ -35,6 +35,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Only set up auth listener on client side when auth is available
+    if (typeof window === 'undefined' || !auth) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
@@ -44,6 +50,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, []);
 
   const signInWithGoogle = async () => {
+    if (!auth) {
+      throw new Error('Firebase Auth not initialized');
+    }
+    
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
@@ -54,6 +64,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const signOut = async () => {
+    if (!auth) {
+      throw new Error('Firebase Auth not initialized');
+    }
+    
     try {
       await firebaseSignOut(auth);
     } catch (error) {

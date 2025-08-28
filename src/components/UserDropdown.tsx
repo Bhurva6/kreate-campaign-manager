@@ -28,10 +28,13 @@ export default function UserDropdown() {
       setIsOpen(false);
     } catch (error) {
       console.error('Error signing out:', error);
+      // Still close the dropdown even if sign out fails
+      setIsOpen(false);
     }
   };
 
-  if (!user) return null;
+  // Don't render if we're on server side or no user
+  if (typeof window === 'undefined' || !user) return null;
 
   // Get user's display name or email
   const displayName = user.displayName || user.email?.split('@')[0] || 'User';
