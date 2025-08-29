@@ -297,7 +297,7 @@ export default function DemoPage() {
               isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
             }`}>
               Experience the power of AI image editing. Generate or upload an image, then edit it with simple text prompts. 
-              Get 2 free edits to see the magic! ✨
+              Get 7 free edits to see the magic! ✨
             </p>
             
             {/* Edit Counter */}
@@ -318,6 +318,107 @@ export default function DemoPage() {
               )}
             </div>
           </div>
+            {/* Demo Section - Only shown when logged in */}
+      {user && (
+        <div className={`w-full py-8 px-4 transition-colors duration-300 ${
+          isDarkMode 
+            ? 'bg-[#1E1E1E] border-b border-[#0171B9]/20' 
+            : 'bg-[#FDFBF7] border-b border-[#0171B9]/20'
+        }`}>
+          <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              {/* Usage Display */}
+              <div className={`flex-1 p-4 rounded-2xl border-2 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-[#333] border-[#0171B9]/20' 
+                  : 'bg-white border-[#0171B9]/20'
+              }`}>
+                <h3 className={`text-lg font-bold mb-3 transition-colors duration-300 ${
+                  isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                }`}>
+                  {isUnlimitedUser ? '✨ Unlimited Access' : '🎯 Your Free Credits'}
+                </h3>
+                {isUnlimitedUser ? (
+                  <p className={`text-sm transition-colors duration-300 ${
+                    isDarkMode ? 'text-green-400' : 'text-green-600'
+                  }`}>
+                    You have unlimited access to all features!
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className={`text-sm transition-colors duration-300 ${
+                          isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                        }`}>Image Generations</span>
+                        <span className={`text-sm font-bold transition-colors duration-300 ${
+                          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                        }`}>{imageGenerationsUsed}/3</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-[#0171B9] h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${(imageGenerationsUsed / 3) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <span className={`text-sm transition-colors duration-300 ${
+                          isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                        }`}>Image Edits</span>
+                        <span className={`text-sm font-bold transition-colors duration-300 ${
+                          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                        }`}>{imageEditsUsed}/7</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-[#004684] h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${(imageEditsUsed / 7) * 100}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Demo Buttons */}
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => {
+                    if (consumeImageGeneration()) {
+                      alert('🎨 Image generation used! This would normally generate an image.');
+                    }
+                  }}
+                  disabled={!canUseImageGeneration && !isUnlimitedUser}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                    canUseImageGeneration || isUnlimitedUser
+                      ? 'bg-[#0171B9] text-white hover:bg-[#004684] hover:scale-105'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  🎨 Try Generation {!canUseImageGeneration && !isUnlimitedUser && '(0 left)'}
+                </button>
+                <button
+                  onClick={() => {
+                    if (consumeImageEdit()) {
+                      alert('✨ Image edit used! This would normally edit an image.');
+                    }
+                  }}
+                  disabled={!canUseImageEdit && !isUnlimitedUser}
+                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                    canUseImageEdit || isUnlimitedUser
+                      ? 'bg-[#004684] text-white hover:bg-[#E72C19] hover:scale-105'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                >
+                  ✨ Try Edit {!canUseImageEdit && !isUnlimitedUser && '(0 left)'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
           {/* Main Demo Interface */}
           <div className={`rounded-3xl p-6 md:p-12 border-2 transition-colors duration-300 shadow-2xl ${
@@ -365,7 +466,7 @@ export default function DemoPage() {
                         className="p-2 bg-[#A20222] text-white rounded-full hover:bg-[#F3752A] transition shadow-lg"
                         title="Start Over"
                       >
-                        <span className="text-lg">🔄</span>
+                        <span className="text-lg">🗑️</span>
                       </button>
                     </div>
                   )}
