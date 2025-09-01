@@ -6,9 +6,10 @@ import { useImageStore } from "../store/imageStore";
 import Image from "next/image";
 import React from "react";
 import { useAuth } from "../lib/auth";
-import { useCredits } from "../lib/credits";
+import { useCredits, Plan, PLANS } from "../lib/credits";
 import AuthModal from "../components/AuthModal";
 import UserDropdown from "../components/UserDropdown";
+import RazorpayHandler from "../components/RazorpayHandler";
 
 type GeneratedImage = { url: string; prompt?: string };
 
@@ -97,6 +98,55 @@ async function pollEditResult(polling_url: string, prompt: string): Promise<stri
   throw new Error("Image editing timed out");
 }
 
+// Define the pricing plans for the home page
+const homePlans: Plan[] = [
+  {
+    id: 'basic',
+    name: 'Basic',
+    price: 700,
+    imageGenerations: 140,
+    imageEdits: 140,
+    description: "Get started",
+    features: [
+      '140 image generations',
+      'Basic editing tools',
+      'HD quality',
+      'Download & share'
+    ]
+  },
+  {
+    id: 'pro',
+    name: 'Pro',
+    price: 2200,
+    imageGenerations: 600,
+    imageEdits: 600,
+    description: "For creators",
+    features: [
+      '600 image generations',
+      'Priority processing',
+      'Advanced editing tools',
+      '4K quality',
+      'AI style transfer'
+    ]
+  },
+  {
+    id: 'max',
+    name: 'Max',
+    price: 6000,
+    imageGenerations: 1000,
+    imageEdits: 1000,
+    description: "Power user",
+    features: [
+      '1000 image generations',
+      'Fastest processing',
+      'All editing tools',
+      '8K quality',
+      'Batch processing',
+      'API access'
+    ]
+  },
+];
+
 export default function LandingPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -117,6 +167,22 @@ export default function LandingPage() {
   
   // Auth modal state
   const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  // Payment state
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  
+  // Handle successful payment
+  const handlePaymentSuccess = () => {
+    setPaymentSuccess(true);
+    // Show success message for 3 seconds
+    setTimeout(() => setPaymentSuccess(false), 3000);
+  };
+  
+  // Handle payment failure
+  const handlePaymentFailure = () => {
+    // Could show a toast or error message here
+    console.log("Payment failed");
+  };
   
   // Scroll animation state for unify section
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -1218,6 +1284,13 @@ export default function LandingPage() {
 
      
 
+      {/* Success Message for Payment */}
+      {paymentSuccess && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg">
+          Payment successful! Your plan has been activated.
+        </div>
+      )}
+
       {/* Pricing Section */}
       <div id="pricing-section" className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
         <h2 className={`text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 ${
@@ -1323,9 +1396,22 @@ export default function LandingPage() {
                 </div>
               </div>
               
-              <button className="w-full px-4 py-2 rounded-lg bg-[#004684] text-white font-semibold hover:bg-[#E72C19] transition text-sm">
-                Choose Basic
-              </button>
+              {user ? (
+                <RazorpayHandler 
+                  plan={homePlans[0]} 
+                  buttonText="Choose Basic"
+                  customClassName="w-full px-4 py-2 rounded-lg bg-[#004684] text-white font-semibold hover:bg-[#E72C19] transition text-sm"
+                  onSuccess={handlePaymentSuccess}
+                  onFailure={handlePaymentFailure}
+                />
+              ) : (
+                <button 
+                  className="w-full px-4 py-2 rounded-lg bg-[#004684] text-white font-semibold hover:bg-[#E72C19] transition text-sm"
+                  onClick={() => setShowAuthModal(true)}
+                >
+                  Choose Basic
+                </button>
+              )}
             </div>
           </div>
 
@@ -1385,9 +1471,22 @@ export default function LandingPage() {
                 </div>
               </div>
               
-              <button className="w-full px-4 py-2 rounded-lg bg-[#E72C19] text-white font-semibold hover:bg-[#0171B9] transition text-sm">
-                Choose Pro
-              </button>
+              {user ? (
+                <RazorpayHandler 
+                  plan={homePlans[1]} 
+                  buttonText="Choose Pro"
+                  customClassName="w-full px-4 py-2 rounded-lg bg-[#E72C19] text-white font-semibold hover:bg-[#0171B9] transition text-sm"
+                  onSuccess={handlePaymentSuccess}
+                  onFailure={handlePaymentFailure}
+                />
+              ) : (
+                <button 
+                  className="w-full px-4 py-2 rounded-lg bg-[#E72C19] text-white font-semibold hover:bg-[#0171B9] transition text-sm"
+                  onClick={() => setShowAuthModal(true)}
+                >
+                  Choose Pro
+                </button>
+              )}
             </div>
           </div>
 
@@ -1448,9 +1547,22 @@ export default function LandingPage() {
                 </div>
               </div>
               
-              <button className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm">
-                Choose Max
-              </button>
+              {user ? (
+                <RazorpayHandler 
+                  plan={homePlans[2]} 
+                  buttonText="Choose Max"
+                  customClassName="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm"
+                  onSuccess={handlePaymentSuccess}
+                  onFailure={handlePaymentFailure}
+                />
+              ) : (
+                <button 
+                  className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm"
+                  onClick={() => setShowAuthModal(true)}
+                >
+                  Choose Max
+                </button>
+              )}
             </div>
           </div>
 

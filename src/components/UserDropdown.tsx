@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
 import { useCredits } from '../lib/credits';
+import Link from 'next/link';
 
 export default function UserDropdown() {
   const { user, signOut } = useAuth();
@@ -12,7 +13,13 @@ export default function UserDropdown() {
     isUnlimitedUser 
   } = useCredits();
   const [isOpen, setIsOpen] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Set hasMounted to true after component mounts
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -39,16 +46,12 @@ export default function UserDropdown() {
     }
   };
 
-  // Don't render if we're on server side or no user
-  if (typeof window === 'undefined' || !user) return null;
+  // Don't render if no user or component hasn't mounted yet
+  if (!hasMounted || !user) return null;
 
   // Get user's display name or email
-  const displayName = user.displayName || user.email?.split('@')[0] || 'User';
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
   const initials = displayName.charAt(0).toUpperCase();
-
-  // Debug: Log user photo URL
-  console.log('User photo URL:', user.photoURL);
-  console.log('User display name:', displayName);
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -186,10 +189,10 @@ export default function UserDropdown() {
               Account Settings
             </button>
             
-            <button
+            <Link
+              href="/billing"
               onClick={() => {
                 setIsOpen(false);
-                // Add navigation to billing page if needed
               }}
               className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-3"
             >
@@ -197,7 +200,7 @@ export default function UserDropdown() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
               </svg>
               Billing
-            </button>
+            </Link>
 
             <div className="border-t border-gray-100 mt-2 pt-2">
               <button

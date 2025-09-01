@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import HomePricingSection from '@/components/HomePricingSection';
 
 export default function Home() {
   const router = useRouter();
@@ -160,6 +161,9 @@ export default function Home() {
           })}
         </div>
 
+        {/* Pricing Section */}
+        <HomePricingSection className="mt-20 text-white" />
+        
         {/* Additional CTA section */}
         <div className="mt-16 text-center">
           <p className="text-gray-500 text-sm">

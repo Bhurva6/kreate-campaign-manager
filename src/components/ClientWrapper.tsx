@@ -2,7 +2,22 @@
 
 import { AuthProvider } from '../lib/auth';
 import { CreditProvider } from '../lib/credits';
+import { UIProvider } from '../lib/ui';
+import PricingModal from './PricingModal';
 import { useEffect, useState } from 'react';
+import { useUI } from '../lib/ui';
+
+// Component to include modals
+function PricingModalWrapper() {
+  const { isPricingModalOpen, closePricingModal } = useUI();
+  
+  return (
+    <PricingModal 
+      isOpen={isPricingModalOpen} 
+      onClose={closePricingModal} 
+    />
+  );
+}
 
 export default function ClientWrapper({ children }: { children: React.ReactNode }) {
   const [isClient, setIsClient] = useState(false);
@@ -18,9 +33,12 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
 
   return (
     <AuthProvider>
-      <CreditProvider>
-        {children}
-      </CreditProvider>
+      <UIProvider>
+        <CreditProvider>
+          {children}
+          <PricingModalWrapper />
+        </CreditProvider>
+      </UIProvider>
     </AuthProvider>
   );
 }
