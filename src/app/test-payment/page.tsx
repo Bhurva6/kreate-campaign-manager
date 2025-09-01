@@ -11,7 +11,7 @@ export default function TestRazorpayPage() {
 
   // Check if Razorpay script is loaded
   useEffect(() => {
-    // Check immediately if it's already loaded
+    // Check immediately if it&apos;s already loaded
     if ((window as any).Razorpay) {
       setIsScriptLoaded(true);
       return;
@@ -80,7 +80,7 @@ export default function TestRazorpayPage() {
         <div className="mb-6 p-4 bg-gray-200 rounded-lg text-sm">
           <h2 className="font-bold mb-2">Debug Information:</h2>
           <p>1. Open your browser console (F12 or Ctrl+Shift+J) to see detailed error messages.</p>
-          <p>2. If the payment popup doesn't open, check for any errors in the console.</p>
+          <p>2. If the payment popup doesn&apos;t open, check for any errors in the console.</p>
           <p>3. Make sure your Razorpay key is correct and working.</p>
         </div>
         
@@ -93,13 +93,13 @@ export default function TestRazorpayPage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-xl font-bold mb-4">Option 2: Minimal Test</h2>
-              <p className="mb-4 text-gray-600">Try this if the comprehensive test isn't working.</p>
+              <p className="mb-4 text-gray-600">Try this if the comprehensive test isn&apos;t working.</p>
               <MinimalTest />
             </div>
             
             <div>
               <h2 className="text-xl font-bold mb-4">Option 3: UPI Test</h2>
-              <p className="mb-4 text-gray-600">If you're in India, try UPI payment instead.</p>
+              <p className="mb-4 text-gray-600">If you&apos;re in India, try UPI payment instead.</p>
               <UPITest />
             </div>
           </div>

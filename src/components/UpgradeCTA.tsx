@@ -50,7 +50,7 @@ export default function UpgradeCTA({
     <div className={className}>
       {showDescription && (
         <p className="mb-3 text-sm text-gray-600 dark:text-gray-400">
-          You've used {imageGenerationsUsed} of 3 free generations and {imageEditsUsed} of 7 free edits.
+          You&apos;ve used {imageGenerationsUsed} of 3 free generations and {imageEditsUsed} of 7 free edits.
         </p>
       )}
       <RazorpayHandler

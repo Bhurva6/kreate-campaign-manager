@@ -27,11 +27,9 @@ export default function HomePricingSection({ className = '' }: HomePricingSectio
           </span>
         </div>
         <h2 className="text-3xl md:text-4xl font-bold mb-6">Unlock Your Creative Potential</h2>
-        <p className="text-lg text-gray-400 mb-12 max-w-3xl mx-auto">
-          Choose the plan that's right for you and start creating amazing visuals today
-        </p>
-        
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <p className="text-lg text-gray-400 mb-12 max-w-3xl mx-auto">
+          Choose the plan that&apos;s right for you and start creating amazing visuals today
+        </p>        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {PLANS.map((plan) => (
             <div 
               key={plan.id}
