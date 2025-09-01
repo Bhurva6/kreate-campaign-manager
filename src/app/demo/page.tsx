@@ -381,40 +381,6 @@ export default function DemoPage() {
                   </div>
                 )}
               </div>
-
-              {/* Demo Buttons */}
-              <div className="flex flex-col gap-3">
-                <button
-                  onClick={() => {
-                    if (consumeImageGeneration()) {
-                      alert('🎨 Image generation used! This would normally generate an image.');
-                    }
-                  }}
-                  disabled={!canUseImageGeneration && !isUnlimitedUser}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                    canUseImageGeneration || isUnlimitedUser
-                      ? 'bg-[#0171B9] text-white hover:bg-[#004684] hover:scale-105'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  🎨 Try Generation {!canUseImageGeneration && !isUnlimitedUser && '(0 left)'}
-                </button>
-                <button
-                  onClick={() => {
-                    if (consumeImageEdit()) {
-                      alert('✨ Image edit used! This would normally edit an image.');
-                    }
-                  }}
-                  disabled={!canUseImageEdit && !isUnlimitedUser}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                    canUseImageEdit || isUnlimitedUser
-                      ? 'bg-[#004684] text-white hover:bg-[#E72C19] hover:scale-105'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  }`}
-                >
-                  ✨ Try Edit {!canUseImageEdit && !isUnlimitedUser && '(0 left)'}
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -510,7 +476,7 @@ export default function DemoPage() {
               </div>
             )}
 
-            {/* Generation and Upload Section */}
+            {/* Generation and Upload/Edit Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 mb-8 md:mb-12">
               {/* Generate Image */}
               <div className="space-y-6">
@@ -558,139 +524,146 @@ export default function DemoPage() {
                 </div>
               </div>
 
-              {/* Upload Image */}
-              <div className="space-y-6">
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-2 mb-4">
-                    <span className="text-xl">📤</span>
-                    <h3 className="text-xl md:text-2xl font-bold text-[#F53057]">Upload Image</h3>
-                  </div>
-                  <p className={`text-sm md:text-base transition-colors duration-300 ${
-                    isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                  }`}>
-                    Have an image? Upload it to start editing
-                  </p>
-                </div>
-                
-                <div 
-                  className={`relative border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all duration-300 cursor-pointer group min-h-[200px] flex flex-col justify-center ${
-                    isDragOver 
-                      ? 'border-[#F53057] bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 scale-105 shadow-lg shadow-[#F53057]/20' 
-                      : isDarkMode 
-                        ? 'border-[#F53057]/30 hover:border-[#F53057] hover:bg-[#F53057]/5 hover:scale-102' 
-                        : 'border-[#F53057]/30 hover:border-[#F53057] hover:bg-[#F53057]/5 hover:scale-102'
-                  }`}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  
-                  <div className={`transition-all duration-300 ${isDragOver ? 'animate-bounce' : 'group-hover:scale-110'}`}>
-                    <div className={`text-5xl md:text-6xl mb-4 transition-all duration-300 ${
-                      isDragOver ? 'animate-pulse text-6xl md:text-7xl' : ''
-                    }`}>
-                      {isDragOver ? '🎯' : '📁'}
+              {/* Upload Image or Edit Image based on whether an image is present */}
+              {!demoImage ? (
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-2 mb-4">
+                      <span className="text-xl">📤</span>
+                      <h3 className="text-xl md:text-2xl font-bold text-[#F53057]">Upload Image</h3>
                     </div>
-                    <p className={`font-bold text-lg md:text-xl mb-2 transition-colors duration-300 ${
-                      isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                    } ${isDragOver ? 'text-[#F53057]' : ''}`}>
-                      {isDragOver ? 'Perfect! Drop it here!' : 'Upload Your Image'}
-                    </p>
-                    <p className={`text-sm md:text-base mb-4 transition-colors duration-300 ${
+                    <p className={`text-sm md:text-base transition-colors duration-300 ${
                       isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
                     }`}>
-                      {isDragOver ? 'Release to upload and start editing' : 'Drag & drop your image here or click to browse'}
+                      Have an image? Upload it to start editing
                     </p>
-                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all duration-300 ${
-                      isDragOver 
-                        ? 'bg-[#F53057] text-white' 
-                        : isDarkMode 
-                          ? 'bg-white/10 text-white opacity-70' 
-                          : 'bg-black/10 text-black opacity-70'
-                    }`}>
-                      <span>✨</span>
-                      <span>Supports JPG, PNG, GIF, WebP</span>
-                    </div>
                   </div>
                   
-                  {/* Animated border effect when dragging */}
-                  {isDragOver && (
-                    <div className="absolute inset-0 rounded-xl pointer-events-none">
-                      <div className="absolute inset-0 rounded-xl border-2 border-[#F53057] animate-pulse"></div>
-                      <div className="absolute inset-2 rounded-lg border-2 border-[#F53057]/50 animate-ping"></div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Edit Section */}
-            {demoImage && (
-              <div className={`rounded-2xl p-6 md:p-8 border-2 transition-colors duration-300 ${
-                isDarkMode 
-                  ? 'bg-gradient-to-br from-[#A20222]/10 to-[#F3752A]/10 border-[#A20222]/20' 
-                  : 'bg-gradient-to-br from-[#A20222]/5 to-[#F3752A]/5 border-[#A20222]/20'
-              }`}>
-                <div className="text-center mb-6">
-                  <h3 className="text-xl md:text-2xl font-bold text-[#A20222] mb-2">Edit Your Image</h3>
-                  <p className={`text-sm md:text-base transition-colors duration-300 ${
-                    isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                  }`}>
-                    Describe how you want to change your image
-                  </p>
-                </div>
-                
-                <div className="space-y-4">
-                  <textarea
-                    value={demoEditPrompt}
-                    onChange={(e) => setDemoEditPrompt(e.target.value)}
-                    placeholder="Tell me what to change... (e.g., 'make the sky purple and add stars' or 'add sunglasses to the person')"
-                    className={`w-full h-24 text-base md:text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#A20222] transition resize-none ${
-                      isDarkMode 
-                        ? 'bg-white/10 text-white border-[#A20222]/20 placeholder:text-white/50' 
-                        : 'bg-white text-[#1E1E1E] border-[#A20222]/20 placeholder:text-black/50'
+                  <div 
+                    className={`relative border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all duration-300 cursor-pointer group min-h-[200px] flex flex-col justify-center ${
+                      isDragOver 
+                        ? 'border-[#F53057] bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 scale-105 shadow-lg shadow-[#F53057]/20' 
+                        : isDarkMode 
+                          ? 'border-[#F53057]/30 hover:border-[#F53057] hover:bg-[#F53057]/5 hover:scale-102' 
+                          : 'border-[#F53057]/30 hover:border-[#F53057] hover:bg-[#F53057]/5 hover:scale-102'
                     }`}
-                    disabled={demoEditing}
-                  />
-                  <button
-                    onClick={handleDemoEdit}
-                    disabled={demoEditing || !demoEditPrompt.trim() || imageEditsUsed >= 7}
-                    className="w-full px-6 py-4 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base md:text-lg shadow-lg hover:shadow-xl"
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    {demoEditing ? (
-                      <>
-                        <div className="animate-spin text-xl">🔄</div>
-                        {editingProgress || "Editing..."}
-                      </>
-                    ) : imageEditsUsed >= 7 ? (
-                      <>
-                        <span>💎</span>
-                        Upgrade for More Edits
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-lg">🪄</span>
-                        Edit Image ({7 - imageEditsUsed} remaining)
-                      </>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    
+                    <div className={`transition-all duration-300 ${isDragOver ? 'animate-bounce' : 'group-hover:scale-110'}`}>
+                      <div className={`text-5xl md:text-6xl mb-4 transition-all duration-300 ${
+                        isDragOver ? 'animate-pulse text-6xl md:text-7xl' : ''
+                      }`}>
+                        {isDragOver ? '🎯' : '📁'}
+                      </div>
+                      <p className={`font-bold text-lg md:text-xl mb-2 transition-colors duration-300 ${
+                        isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                      } ${isDragOver ? 'text-[#F53057]' : ''}`}>
+                        {isDragOver ? 'Perfect! Drop it here!' : 'Upload Your Image'}
+                      </p>
+                      <p className={`text-sm md:text-base mb-4 transition-colors duration-300 ${
+                        isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                      }`}>
+                        {isDragOver ? 'Release to upload and start editing' : 'Drag & drop your image here or click to browse'}
+                      </p>
+                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all duration-300 ${
+                        isDragOver 
+                          ? 'bg-[#F53057] text-white' 
+                          : isDarkMode 
+                            ? 'bg-white/10 text-white opacity-70' 
+                            : 'bg-black/10 text-black opacity-70'
+                      }`}>
+                        <span>✨</span>
+                        <span>Supports JPG, PNG, GIF, WebP</span>
+                      </div>
+                    </div>
+                    
+                    {/* Animated border effect when dragging */}
+                    {isDragOver && (
+                      <div className="absolute inset-0 rounded-xl pointer-events-none">
+                        <div className="absolute inset-0 rounded-xl border-2 border-[#F53057] animate-pulse"></div>
+                        <div className="absolute inset-2 rounded-lg border-2 border-[#F53057]/50 animate-ping"></div>
+                      </div>
                     )}
-                  </button>
+                  </div>
                 </div>
-                
-                {imageEditsUsed >= 1 && imageEditsUsed < 7 && !demoEditing && (
-                  <div className="mt-4 p-3 bg-[#F53057]/10 border border-[#F53057]/20 rounded-xl text-center">
-                    <p className="text-sm text-[#F53057] font-semibold">
-                      🎯 {7 - imageEditsUsed} free edit remaining! Make it count ✨
+              ) : (
+                /* Show Edit Image area instead of Upload when image is present */
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-2 mb-4">
+                      <span className="text-xl">✏️</span>
+                      <h3 className="text-xl md:text-2xl font-bold text-[#A20222]">Edit Your Image</h3>
+                    </div>
+                    <p className={`text-sm md:text-base transition-colors duration-300 ${
+                      isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                    }`}>
+                      Describe how you want to change your image
                     </p>
                   </div>
-                )}
+                  
+                  <div className="space-y-4">
+                    <textarea
+                      value={demoEditPrompt}
+                      onChange={(e) => setDemoEditPrompt(e.target.value)}
+                      placeholder="Tell me what to change... (e.g., 'make the sky purple and add stars' or 'add sunglasses to the person')"
+                      className={`w-full h-24 text-base md:text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#A20222] transition resize-none ${
+                        isDarkMode 
+                          ? 'bg-white/10 text-white border-[#A20222]/20 placeholder:text-white/50' 
+                          : 'bg-white text-[#1E1E1E] border-[#A20222]/20 placeholder:text-black/50'
+                      }`}
+                      disabled={demoEditing}
+                    />
+                    <button
+                      onClick={handleDemoEdit}
+                      disabled={demoEditing || !demoEditPrompt.trim() || imageEditsUsed >= 7}
+                      className="w-full px-6 py-4 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base md:text-lg shadow-lg hover:shadow-xl"
+                    >
+                      {demoEditing ? (
+                        <>
+                          <div className="animate-spin text-xl">🔄</div>
+                          {editingProgress || "Editing..."}
+                        </>
+                      ) : imageEditsUsed >= 7 ? (
+                        <>
+                          <span>💎</span>
+                          Upgrade for More Edits
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-lg">🪄</span>
+                          Edit Image ({7 - imageEditsUsed} remaining)
+                        </>
+                      )}
+                    </button>
+                    
+                    {imageEditsUsed >= 1 && imageEditsUsed < 7 && !demoEditing && (
+                      <div className="mt-2 p-3 bg-[#F53057]/10 border border-[#F53057]/20 rounded-xl text-center">
+                        <p className="text-sm text-[#F53057] font-semibold">
+                          🎯 {7 - imageEditsUsed} free edit{7 - imageEditsUsed === 1 ? '' : 's'} remaining! Make it count ✨
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Additional Edit Section - Only shown in wider screens on larger devices */}
+            {demoImage && (
+              <div className="lg:hidden mt-2 mb-8">
+                {/* This is intentionally empty, since the edit functionality is now in the grid above for all screen sizes */}
+                {/* We keep this to maintain the spacing and layout */}
               </div>
             )}
 
