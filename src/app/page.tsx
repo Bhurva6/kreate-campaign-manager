@@ -473,6 +473,15 @@ export default function LandingPage() {
               </span>
             </button>
             
+            {/* Chat with Loco Button */}
+            <button
+              onClick={() => router.push("/chat")}
+              className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-[#004684] text-white font-semibold hover:bg-[#0171B9] transition-all duration-300 text-sm md:text-base flex items-center gap-2"
+            >
+              <span>💬</span>
+              Chat with Loco
+            </button>
+            
             {/* Authentication Section */}
             {loading ? (
               <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
@@ -481,16 +490,16 @@ export default function LandingPage() {
             ) : (
               <>
                 <button
-                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg font-semibold text-sm md:text-base transition-all duration-300 bg-white/10 text-white hover:bg-white/20 backdrop-blur-sm border border-white/20"
-                  onClick={() => setShowAuthModal(true)}
-                >
-                  Sign In
-                </button>
-                <button
                   className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-gradient-to-r from-[#0171B9] via-[#004684] to-[#E72C19] text-white font-semibold hover:shadow-lg hover:shadow-[#0171B9]/25 transition-all duration-300 text-sm md:text-base"
                   onClick={() => setShowAuthModal(true)}
                 >
                   Sign Up
+                </button>
+                <button
+                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-[#004684] text-white font-semibold hover:bg-[#0171B9] transition-all duration-300 text-sm md:text-base"
+                  onClick={() => setShowAuthModal(true)}
+                >
+                  Sign In
                 </button>
               </>
             )}
@@ -1501,6 +1510,7 @@ export default function LandingPage() {
               <h3 className="text-xl font-bold text-[#0171B9] mb-2">Max</h3>
               <p className="text-[#004684] font-semibold text-sm mb-4">&quot;Power user&quot;</p>
               
+                           
               <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
                 isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
               }`}>₹6,000</div>
