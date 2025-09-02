@@ -85,13 +85,47 @@ export default function ChatPage() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      
+      // Check file size (limit to 10MB)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`File is too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.`);
+        return;
+      }
+      
+      // Check file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert('Unsupported file type. Please upload JPEG, PNG, GIF, or WebP images.');
+        return;
+      }
+      
       setIsUploading(true);
       
       const reader = new FileReader();
       reader.onloadend = () => {
-        setUploadedImage(reader.result as string);
+        try {
+          const result = reader.result as string;
+          // Basic validation that we have a valid data URL
+          if (typeof result === 'string' && result.startsWith('data:image/')) {
+            setUploadedImage(result);
+          } else {
+            throw new Error('Invalid image data');
+          }
+        } catch (error) {
+          console.error('Error processing uploaded file:', error);
+          alert('There was an error processing your image. Please try another file.');
+        } finally {
+          setIsUploading(false);
+        }
+      };
+      
+      reader.onerror = () => {
+        console.error('FileReader error:', reader.error);
+        alert('Error reading the file. Please try again.');
         setIsUploading(false);
       };
+      
       reader.readAsDataURL(file);
     }
   };
@@ -154,8 +188,15 @@ export default function ChatPage() {
             }
             
             const data = await response.json();
+            console.log("Image edit API response:", data);
             responseContent = 'I\'ve edited your image based on your prompt.';
-            generatedImageUrl = data.image || data.result?.sample || '/jaynitog.jpeg';
+            // Only use the image from the API response, without fallback to hardcoded image
+            generatedImageUrl = data.image || data.result?.sample;
+            
+            if (!generatedImageUrl) {
+              throw new Error('No image URL returned from the API');
+            }
+            
             consumeImageEdit();
           } catch (error) {
             console.error("Image edit error:", error);
@@ -186,8 +227,15 @@ export default function ChatPage() {
             }
             
             const data = await response.json();
+            console.log("Image generation API response:", data);
             responseContent = 'Here\'s the image I generated based on your prompt.';
-            generatedImageUrl = data.image || data.result?.sample || '/cherryblossoms.jpeg';
+            // Only use the image from the API response, without fallback to hardcoded image
+            generatedImageUrl = data.image || data.result?.sample;
+            
+            if (!generatedImageUrl) {
+              throw new Error('No image URL returned from the API');
+            }
+            
             consumeImageGeneration();
           } catch (error) {
             console.error("Image generation error:", error);
@@ -198,13 +246,22 @@ export default function ChatPage() {
         }
       }
       
-      // Add assistant response
-      addMessage({
-        role: 'assistant',
-        content: responseContent,
-        timestamp: new Date(),
-        imageUrl: generatedImageUrl || undefined
-      });
+      // Only add the assistant response with an image URL if we actually have one
+      if (generatedImageUrl) {
+        addMessage({
+          role: 'assistant',
+          content: responseContent,
+          timestamp: new Date(),
+          imageUrl: generatedImageUrl
+        });
+      } else {
+        // If no image URL was generated but we didn't hit an error case earlier
+        addMessage({
+          role: 'assistant',
+          content: 'Sorry, I wasn\'t able to process the image correctly.',
+          timestamp: new Date()
+        });
+      }
       
     } catch (error) {
       console.error('Error processing request:', error);

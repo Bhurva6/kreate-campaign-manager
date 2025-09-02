@@ -610,7 +610,7 @@ export default function LandingPage() {
           >
             <div className="w-48 h-60 md:w-56 md:h-72 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
               <img
-                src="/artistic.jpeg"
+                src="/stone.jpg"
                 alt="Creative process"
                 className="w-full h-full object-cover"
               />
@@ -636,7 +636,7 @@ export default function LandingPage() {
           >
             <div className="w-50 h-62 md:w-58 md:h-74 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
               <img
-                src="/vibrant.jpeg"
+                src="/stair.jpg"
                 alt="AI editing"
                 className="w-full h-full object-cover"
               />
@@ -662,7 +662,7 @@ export default function LandingPage() {
           >
             <div className="w-56 h-68 md:w-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/30 hover:scale-105 transition-transform duration-300">
               <img
-                src="/minimalist.jpeg"
+                src="/room.jpg"
                 alt="Perfect creation"
                 className="w-full h-full object-cover"
               />
@@ -688,7 +688,7 @@ export default function LandingPage() {
           >
             <div className="w-50 h-62 md:w-58 md:h-74 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
               <img
-                src="/photorealistic.jpeg"
+                src="/purple.jpg"
                 alt="Share creation"
                 className="w-full h-full object-cover"
               />
@@ -714,7 +714,7 @@ export default function LandingPage() {
           >
             <div className="w-46 h-58 md:w-54 md:h-70 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
               <img
-                src="/illustration.jpeg"
+                src="/person.jpg"
                 alt="Endless possibilities"
                 className="w-full h-full object-cover"
               />

@@ -37,8 +37,16 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await res.json();
+    console.log("Flux Kontext API response:", data);
+    
     if (!res.ok) {
       return NextResponse.json({ error: data.error || "Failed to edit image" }, { status: 500 });
+    }
+    
+    // Check if we have the expected output image
+    if (!data.output_image && !data.image) {
+      console.error("No image data in API response:", data);
+      return NextResponse.json({ error: "No image data received from image editing service" }, { status: 500 });
     }
 
     // Format the response to match what the chat interface expects
