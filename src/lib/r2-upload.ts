@@ -1,4 +1,4 @@
-import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, GetObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { r2Client, R2_BUCKET_NAME, IMAGE_CATEGORIES, type ImageCategory } from "./r2-config";
 import { randomUUID } from "crypto";
@@ -15,6 +15,11 @@ interface UploadResult {
   key: string;
   url: string;
   publicUrl: string;
+  metadata?: {
+    prompt?: string;
+    category?: string;
+    uploadedAt?: string;
+  };
 }
 
 /**
@@ -98,6 +103,70 @@ export async function uploadImageToR2({
   } catch (error) {
     console.error('Error uploading to R2:', error);
     throw new Error(`Failed to upload image to R2: ${error}`);
+  }
+}
+
+/**
+ * Fetch all images for a specific user
+ */
+export async function fetchUserImages(userId: string): Promise<UploadResult[]> {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    // ListObjectsV2 doesn't support metadata filtering, so we need to list all objects
+    // and filter them based on metadata after retrieving
+    const listCommand = new ListObjectsV2Command({
+      Bucket: R2_BUCKET_NAME,
+      // We can't filter by metadata directly in R2/S3 API, so we'll filter later
+    });
+
+    const response = await r2Client.send(listCommand);
+    const objectKeys = response.Contents?.map(item => item.Key) || [];
+    
+    // Fetch metadata for each object to check userId
+    const userImagesPromises = objectKeys.map(async key => {
+      if (!key) return null;
+      
+      const getCommand = new GetObjectCommand({
+        Bucket: R2_BUCKET_NAME,
+        Key: key,
+      });
+      
+      const objectResponse = await r2Client.send(getCommand);
+      const metadata = objectResponse.Metadata || {};
+      
+      // Only include images that belong to this user
+      if (metadata.userid === userId) {
+        // Generate signed URL
+        const signedUrl = await getSignedUrl(r2Client, getCommand, { 
+          expiresIn: 3600 * 24 // 24 hours
+        });
+        
+        // Generate public URL
+        const publicUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${key}`;
+        
+        return {
+          key,
+          url: signedUrl,
+          publicUrl,
+          metadata: {
+            prompt: metadata.prompt || '',
+            category: metadata.category || '',
+            uploadedAt: metadata.uploadedat || '',
+          }
+        };
+      }
+      
+      return null;
+    });
+    
+    const results = await Promise.all(userImagesPromises);
+    return results.filter(item => item !== null) as UploadResult[];
+  } catch (error) {
+    console.error('Error fetching user images:', error);
+    throw new Error(`Failed to fetch user images: ${error}`);
   }
 }
 
