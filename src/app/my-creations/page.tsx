@@ -11,6 +11,8 @@ interface UserImage {
   metadata?: {
     prompt?: string;
     uploadedAt?: string;
+    category?: string;
+    type?: 'generated' | 'edited';
     [key: string]: any;
   };
 }
@@ -24,6 +26,8 @@ export default function MyCreationsPage() {
   
   // State for user images
   const [userImages, setUserImages] = useState<UserImage[]>([]);
+  const [filteredImages, setFilteredImages] = useState<UserImage[]>([]);
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'generated' | 'edited'>('all');
   const [loadingUserImages, setLoadingUserImages] = useState(false);
   const [demoSuccess, setDemoSuccess] = useState<string | null>(null);
   const [demoError, setDemoError] = useState<string | null>(null);
@@ -83,12 +87,23 @@ export default function MyCreationsPage() {
     return () => clearInterval(intervalId);
   }, []);
   
-  // Fetch user images when component mounts or lastUpdate changes
+    // Fetch images when component loads or after an update notification
   useEffect(() => {
     if (user) {
       fetchUserImages();
     }
   }, [user, lastUpdate]);
+  
+  // Filter images based on selected filter
+  useEffect(() => {
+    if (selectedFilter === 'all') {
+      setFilteredImages(userImages);
+    } else {
+      setFilteredImages(userImages.filter(img => 
+        img.metadata?.type === selectedFilter
+      ));
+    }
+  }, [userImages, selectedFilter]);
 
   // Handle delete user image
   const handleImageDelete = async (key: string) => {
@@ -210,6 +225,54 @@ export default function MyCreationsPage() {
             </div>
           )}
           
+          {/* Filter Controls */}
+          <div className={`mb-6 flex items-center justify-center gap-4 ${
+            isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+          }`}>
+            <button
+              onClick={() => setSelectedFilter('all')}
+              className={`px-4 py-2 rounded-md transition-colors duration-200 ${
+                selectedFilter === 'all' 
+                  ? isDarkMode 
+                    ? 'bg-white text-black' 
+                    : 'bg-black text-white'
+                  : isDarkMode 
+                    ? 'bg-gray-800 hover:bg-gray-700' 
+                    : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+            >
+              All Images
+            </button>
+            <button
+              onClick={() => setSelectedFilter('generated')}
+              className={`px-4 py-2 rounded-md transition-colors duration-200 ${
+                selectedFilter === 'generated' 
+                  ? isDarkMode 
+                    ? 'bg-white text-black' 
+                    : 'bg-black text-white'
+                  : isDarkMode 
+                    ? 'bg-gray-800 hover:bg-gray-700' 
+                    : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+            >
+              Generated
+            </button>
+            <button
+              onClick={() => setSelectedFilter('edited')}
+              className={`px-4 py-2 rounded-md transition-colors duration-200 ${
+                selectedFilter === 'edited' 
+                  ? isDarkMode 
+                    ? 'bg-white text-black' 
+                    : 'bg-black text-white'
+                  : isDarkMode 
+                    ? 'bg-gray-800 hover:bg-gray-700' 
+                    : 'bg-gray-200 hover:bg-gray-300'
+              }`}
+            >
+              Edited
+            </button>
+          </div>
+          
           {/* Images Grid */}
           <div>
             {loadingUserImages ? (
@@ -219,10 +282,10 @@ export default function MyCreationsPage() {
                   isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
                 }`}>Loading your creations...</span>
               </div>
-            ) : userImages.length > 0 ? (
+            ) : filteredImages.length > 0 ? (
               <div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {userImages.map((image) => (
+                  {filteredImages.map((image) => (
                     <div 
                       key={image.key} 
                       className={`relative group rounded-xl overflow-hidden border-2 transition-all duration-300 ${
@@ -239,13 +302,24 @@ export default function MyCreationsPage() {
                       
                       {/* Image Actions Overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                        {/* Image Metadata */}
-                        {image.metadata?.prompt && (
-                          <div className="text-white text-xs truncate mb-2">
-                            {image.metadata.prompt.substring(0, 50)}
-                            {image.metadata.prompt.length > 50 ? '...' : ''}
-                          </div>
-                        )}
+                        {/* Image Type Badge */}
+                      <div className="absolute top-2 right-2">
+                        <span className={`text-xs py-1 px-2 rounded-full ${
+                          image.metadata?.type === 'generated' 
+                            ? 'bg-purple-500/80 text-white' 
+                            : 'bg-blue-500/80 text-white'
+                        }`}>
+                          {image.metadata?.type === 'generated' ? 'AI Generated' : 'Edited'}
+                        </span>
+                      </div>
+                        
+                      {/* Image Metadata */}
+                      {image.metadata?.prompt && (
+                        <div className="text-white text-xs truncate mb-2">
+                          {image.metadata.prompt.substring(0, 50)}
+                          {image.metadata.prompt.length > 50 ? '...' : ''}
+                        </div>
+                      )}
                         
                         {/* Action Buttons */}
                         <div className="flex justify-between items-center">
@@ -278,9 +352,18 @@ export default function MyCreationsPage() {
               <div className={`text-center py-12 ${
                 isDarkMode ? 'text-white/70' : 'text-black/70'
               }`}>
-                <div className="text-6xl mb-4">🖼️</div>
-                <h3 className="text-xl font-semibold mb-2">No images yet</h3>
-                <p>Generate or upload images to see them here</p>
+                <div className="text-6xl mb-4">
+                  {selectedFilter === 'all' ? '🖼️' : 
+                   selectedFilter === 'generated' ? '✨' : '🖌️'}
+                </div>
+                <h3 className="text-xl font-semibold mb-2">
+                  {selectedFilter === 'all' ? 'No images yet' : 
+                   selectedFilter === 'generated' ? 'No generated images yet' : 'No edited images yet'}
+                </h3>
+                <p>
+                  {selectedFilter === 'all' ? 'Generate or upload images to see them here' :
+                   selectedFilter === 'generated' ? 'Generate AI images to see them here' : 'Upload and edit images to see them here'}
+                </p>
                 <button
                   onClick={() => router.push('/demo')}
                   className={`mt-6 px-6 py-3 rounded-xl transition-colors ${
@@ -289,7 +372,8 @@ export default function MyCreationsPage() {
                       : 'bg-black/10 hover:bg-black/20 text-black'
                   }`}
                 >
-                  Create Your First Image
+                  {selectedFilter === 'all' ? 'Create Your First Image' :
+                   selectedFilter === 'generated' ? 'Generate an Image' : 'Upload an Image'}
                 </button>
               </div>
             )}

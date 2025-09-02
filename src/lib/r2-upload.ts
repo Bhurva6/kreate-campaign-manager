@@ -19,6 +19,7 @@ interface UploadResult {
     prompt?: string;
     category?: string;
     uploadedAt?: string;
+    type?: 'generated' | 'edited';
   };
 }
 
@@ -155,6 +156,7 @@ export async function fetchUserImages(userId: string): Promise<UploadResult[]> {
             prompt: metadata.prompt || '',
             category: metadata.category || '',
             uploadedAt: metadata.uploadedat || '',
+            type: metadata.category === 'generated' ? 'generated' : 'edited',
           }
         };
       }

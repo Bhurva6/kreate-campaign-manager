@@ -15,9 +15,15 @@ export async function GET(req: NextRequest) {
     // Fetch images for this user
     const images = await fetchUserImages(userId);
 
+    // Extract type counts for the response
+    const generatedCount = images.filter(img => img.metadata?.type === 'generated').length;
+    const editedCount = images.filter(img => img.metadata?.type === 'edited').length;
+
     return NextResponse.json({ 
       images,
       count: images.length,
+      generatedCount,
+      editedCount
     }, { status: 200 });
   } catch (error) {
     console.error("Error fetching user images:", error);
