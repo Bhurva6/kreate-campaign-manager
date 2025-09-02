@@ -142,11 +142,16 @@ export default function ChatPage() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
                 prompt: currentInputValue, 
-                input_image: currentUploadedImage 
+                input_image: currentUploadedImage,
+                userId: user?.uid || undefined
               })
             });
             
-            if (!response.ok) throw new Error('Failed to edit image');
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              console.error("API error response:", response.status, errorData);
+              throw new Error(`Failed to edit image: ${response.status} ${errorData.error || ''}`);
+            }
             
             const data = await response.json();
             responseContent = 'I\'ve edited your image based on your prompt.';
@@ -154,7 +159,7 @@ export default function ChatPage() {
             consumeImageEdit();
           } catch (error) {
             console.error("Image edit error:", error);
-            responseContent = 'Sorry, there was an error editing your image.';
+            responseContent = 'Sorry, there was an error editing your image: ' + (error instanceof Error ? error.message : 'Unknown error');
           }
         } else {
           responseContent = 'You\'ve used up all your image edits. Please upgrade your plan to continue.';
@@ -168,10 +173,17 @@ export default function ChatPage() {
             const response = await fetch('/api/chat-generate-image', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ prompt: currentInputValue })
+              body: JSON.stringify({ 
+                prompt: currentInputValue,
+                userId: user?.uid || undefined 
+              })
             });
             
-            if (!response.ok) throw new Error('Failed to generate image');
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              console.error("API error response:", response.status, errorData);
+              throw new Error(`Failed to generate image: ${response.status} ${errorData.error || ''}`);
+            }
             
             const data = await response.json();
             responseContent = 'Here\'s the image I generated based on your prompt.';
@@ -179,7 +191,7 @@ export default function ChatPage() {
             consumeImageGeneration();
           } catch (error) {
             console.error("Image generation error:", error);
-            responseContent = 'Sorry, there was an error generating your image.';
+            responseContent = 'Sorry, there was an error generating your image: ' + (error instanceof Error ? error.message : 'Unknown error');
           }
         } else {
           responseContent = 'You\'ve used up all your image generations. Please upgrade your plan to continue.';
