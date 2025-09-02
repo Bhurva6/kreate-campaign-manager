@@ -4,8 +4,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../lib/auth";
 import { useCredits } from "../../lib/credits";
 
-// Define tab types
-type DemoTab = 'create' | 'my-creations';
+// No longer need tab types since we're using a separate page for My Creations
 
 // Type for user images
 interface UserImage {
@@ -115,48 +114,55 @@ export default function DemoPage() {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // New state for My Creations tab
-  const [activeTab, setActiveTab] = useState<DemoTab>('create');
-  const [userImages, setUserImages] = useState<UserImage[]>([]);
-  const [loadingUserImages, setLoadingUserImages] = useState(false);
-  
-  // Function to fetch user's images
-  const fetchUserImages = async () => {
-    if (!user) return;
-    
-    try {
-      setLoadingUserImages(true);
-      const res = await fetch(`/api/user-images?userId=${user.uid}`);
-      const data = await res.json();
-      
-      if (res.ok && data.images) {
-        setUserImages(data.images);
-      } else {
-        console.error("Failed to fetch user images:", data.error);
-      }
-    } catch (error) {
-      console.error("Error fetching user images:", error);
-    } finally {
-      setLoadingUserImages(false);
-    }
-  };
-  
-  // Fetch user images when user logs in or changes tab
+  // Check if there's an image URL in localStorage for editing
   useEffect(() => {
-    if (user && activeTab === 'my-creations') {
-      fetchUserImages();
+    if (typeof window !== 'undefined') {
+      const editImageUrl = localStorage.getItem('editImageUrl');
+      if (editImageUrl) {
+        setDemoImage(editImageUrl);
+        localStorage.removeItem('editImageUrl');
+      }
     }
-  }, [user, activeTab]);
+  }, []);
 
   // Demo functions
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setDemoImage(e.target?.result as string);
+      reader.onload = async (e) => {
+        const imageDataUrl = e.target?.result as string;
+        setDemoImage(imageDataUrl);
         setDemoError(null);
         setDemoSuccess("Image uploaded successfully! ✨");
+        
+        // If user is logged in, save the uploaded image to their collection
+        if (user) {
+          try {
+            // Convert data URL to blob for upload
+            const response = await fetch(imageDataUrl);
+            const blob = await response.blob();
+            
+            // Create form data for upload
+            const formData = new FormData();
+            formData.append('image', blob, file.name);
+            formData.append('userId', user.uid);
+            formData.append('prompt', 'Uploaded image');
+            
+            // Upload to server
+            const uploadRes = await fetch('/api/upload-image', {
+              method: 'POST',
+              body: formData,
+            });
+            
+            if (uploadRes.ok) {
+              // Notify that a new image was created (for My Creations refresh)
+              localStorage.setItem('newImageCreated', Date.now().toString());
+            }
+          } catch (error) {
+            console.error('Failed to save uploaded image:', error);
+          }
+        }
         
         // Clear success message after 3 seconds
         setTimeout(() => setDemoSuccess(null), 3000);
@@ -187,10 +193,39 @@ export default function DemoPage() {
       const file = files[0];
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
-        reader.onload = (e) => {
-          setDemoImage(e.target?.result as string);
+        reader.onload = async (e) => {
+          const imageDataUrl = e.target?.result as string;
+          setDemoImage(imageDataUrl);
           setDemoError(null);
           setDemoSuccess("Image uploaded successfully! ✨");
+          
+          // If user is logged in, save the uploaded image to their collection
+          if (user) {
+            try {
+              // Convert data URL to blob for upload
+              const response = await fetch(imageDataUrl);
+              const blob = await response.blob();
+              
+              // Create form data for upload
+              const formData = new FormData();
+              formData.append('image', blob, file.name);
+              formData.append('userId', user.uid);
+              formData.append('prompt', 'Uploaded image');
+              
+              // Upload to server
+              const uploadRes = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData,
+              });
+              
+              if (uploadRes.ok) {
+                // Notify that a new image was created (for My Creations refresh)
+                localStorage.setItem('newImageCreated', Date.now().toString());
+              }
+            } catch (error) {
+              console.error('Failed to save uploaded image:', error);
+            }
+          }
           
           // Clear success message after 3 seconds
           setTimeout(() => setDemoSuccess(null), 3000);
@@ -217,6 +252,10 @@ export default function DemoPage() {
       const url = await callGenerateImage(demoPrompt, user?.uid);
       setDemoImage(url);
       setDemoSuccess("Image generated successfully! ✨");
+      
+      // Notify that a new image was created (for My Creations refresh)
+      localStorage.setItem('newImageCreated', Date.now().toString());
+      
       setTimeout(() => setDemoSuccess(null), 3000);
     } catch (err: any) {
       setDemoError(err.message);
@@ -259,6 +298,10 @@ export default function DemoPage() {
       setDemoImage(url);
       setDemoEditPrompt("");
       setDemoSuccess(`Edit applied successfully! ${7 - imageEditsUsed - 1} free edit${7 - imageEditsUsed - 1 === 1 ? '' : 's'} remaining ✨`);
+      
+      // Notify that a new image was created (for My Creations refresh)
+      localStorage.setItem('newImageCreated', Date.now().toString());
+      
       setTimeout(() => setDemoSuccess(null), 3000);
     } catch (err: any) {
       setDemoError(err.message);
@@ -289,31 +332,7 @@ export default function DemoPage() {
     link.click();
   };
 
-  // Handle delete user image
-  const handleImageDelete = async (key: string) => {
-    if (confirm("Are you sure you want to delete this image?")) {
-      try {
-        const res = await fetch('/api/delete-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setUserImages(userImages.filter(image => image.key !== key));
-          setDemoSuccess("Image deleted successfully.");
-          setTimeout(() => setDemoSuccess(null), 3000);
-        } else {
-          setDemoError(data.error || "Failed to delete image.");
-          setTimeout(() => setDemoError(null), 3000);
-        }
-      } catch (error) {
-        console.error('Error deleting image:', error);
-        setDemoError("An error occurred while deleting the image.");
-        setTimeout(() => setDemoError(null), 3000);
-      }
-    }
-  };
+  // No longer need handleImageDelete function in demo page as we moved it to my-creations page
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
@@ -343,6 +362,20 @@ export default function DemoPage() {
         </div>
         
         <div className="flex items-center gap-2 md:gap-4">
+          {user && (
+            <button
+              onClick={() => router.push('/my-creations')}
+              className={`px-3 py-2 md:px-4 md:py-2 rounded-lg transition-all duration-300 hover:scale-105 ${
+                isDarkMode 
+                  ? 'bg-[#F3752A]/20 text-white hover:bg-[#F3752A]/40' 
+                  : 'bg-[#F3752A]/20 text-black hover:bg-[#F3752A]/40'
+              } backdrop-blur-sm flex items-center gap-2`}
+              title="View Your Creations"
+            >
+              <span className="text-sm">🖼️</span>
+              <span className="hidden md:inline">My Creations</span>
+            </button>
+          )}
           <button
             onClick={() => setIsDarkMode(!isDarkMode)}
             className={`p-2 md:p-3 rounded-full transition-all duration-300 hover:scale-110 ${
@@ -400,200 +433,62 @@ export default function DemoPage() {
             : 'bg-[#FDFBF7] border-b border-[#0171B9]/20'
         }`}>
           <div className="max-w-4xl mx-auto">
-            {/* Tab Navigation */}
-            <div className={`flex mb-6 border-b ${isDarkMode ? 'border-white/20' : 'border-black/10'}`}>
-              <button
-                onClick={() => setActiveTab('create')}
-                className={`px-6 py-3 text-sm md:text-base font-medium transition-all duration-300 relative ${
-                  activeTab === 'create'
-                    ? isDarkMode 
-                      ? 'text-white' 
-                      : 'text-[#1E1E1E]'
-                    : isDarkMode 
-                      ? 'text-white/50 hover:text-white/80' 
-                      : 'text-black/50 hover:text-black/80'
-                }`}
-              >
-                Create New
-                {activeTab === 'create' && (
-                  <span className={`absolute bottom-0 left-0 w-full h-0.5 ${isDarkMode ? 'bg-white' : 'bg-[#1E1E1E]'}`}></span>
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab('my-creations')}
-                className={`px-6 py-3 text-sm md:text-base font-medium transition-all duration-300 relative flex items-center gap-2 ${
-                  activeTab === 'my-creations'
-                    ? isDarkMode 
-                      ? 'text-white' 
-                      : 'text-[#1E1E1E]'
-                    : isDarkMode 
-                      ? 'text-white/50 hover:text-white/80' 
-                      : 'text-black/50 hover:text-black/80'
-                }`}
-              >
-                <span>My Creations</span>
-                {userImages.length > 0 && (
-                  <span className={`inline-flex items-center justify-center w-5 h-5 text-xs rounded-full ${
-                    isDarkMode ? 'bg-white/20 text-white' : 'bg-black/20 text-black'
-                  }`}>
-                    {userImages.length}
-                  </span>
-                )}
-                {activeTab === 'my-creations' && (
-                  <span className={`absolute bottom-0 left-0 w-full h-0.5 ${isDarkMode ? 'bg-white' : 'bg-[#1E1E1E]'}`}></span>
-                )}
-              </button>
-            </div>
-            
-            {/* Create Content */}
-            {activeTab === 'create' && (
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                {/* Usage Display */}
-                <div className={`flex-1 p-4 rounded-2xl border-2 transition-colors duration-300 ${
-                  isDarkMode 
-                    ? 'bg-[#333] border-[#0171B9]/20' 
-                    : 'bg-white border-[#0171B9]/20'
+            {/* Usage Display */}
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className={`flex-1 p-4 rounded-2xl border-2 transition-colors duration-300 ${
+                isDarkMode 
+                  ? 'bg-[#333] border-[#0171B9]/20' 
+                  : 'bg-white border-[#0171B9]/20'
+              }`}>
+              <h3 className={`text-lg font-bold mb-3 transition-colors duration-300 ${
+                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+              }`}>
+                {isUnlimitedUser ? '✨ Unlimited Access' : '🎯 Your Free Credits'}
+              </h3>
+              {isUnlimitedUser ? (
+                <p className={`text-sm transition-colors duration-300 ${
+                  isDarkMode ? 'text-green-400' : 'text-green-600'
                 }`}>
-                <h3 className={`text-lg font-bold mb-3 transition-colors duration-300 ${
-                  isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                }`}>
-                  {isUnlimitedUser ? '✨ Unlimited Access' : '🎯 Your Free Credits'}
-                </h3>
-                {isUnlimitedUser ? (
-                  <p className={`text-sm transition-colors duration-300 ${
-                    isDarkMode ? 'text-green-400' : 'text-green-600'
-                  }`}>
-                    You have unlimited access to all features!
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className={`text-sm transition-colors duration-300 ${
-                          isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                        }`}>Image Generations</span>
-                        <span className={`text-sm font-bold transition-colors duration-300 ${
-                          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                        }`}>{imageGenerationsUsed}/3</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-[#0171B9] h-2 rounded-full transition-all duration-300" 
-                          style={{ width: `${(imageGenerationsUsed / 3) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between items-center mb-1">
-                        <span className={`text-sm transition-colors duration-300 ${
-                          isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                        }`}>Image Edits</span>
-                        <span className={`text-sm font-bold transition-colors duration-300 ${
-                          isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                        }`}>{imageEditsUsed}/7</span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-[#004684] h-2 rounded-full transition-all duration-300" 
-                          style={{ width: `${(imageEditsUsed / 7) * 100}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                </div>
-              </div>
-            )}
-            
-            {/* My Creations Content */}
-            {activeTab === 'my-creations' && (
-              <div>
-                {loadingUserImages ? (
-                  <div className="flex justify-center items-center py-12">
-                    <div className="animate-spin text-4xl md:text-5xl mb-4">⚡</div>
-                    <span className={`ml-3 font-semibold ${
-                      isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                    }`}>Loading your creations...</span>
-                  </div>
-                ) : userImages.length > 0 ? (
+                  You have unlimited access to all features!
+                </p>
+              ) : (
+                <div className="space-y-3">
                   <div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {userImages.map((image) => (
-                        <div 
-                          key={image.key} 
-                          className={`relative group rounded-xl overflow-hidden border-2 transition-all duration-300 ${
-                            isDarkMode 
-                              ? 'border-white/10 hover:border-white/30' 
-                              : 'border-black/10 hover:border-black/30'
-                          }`}
-                        >
-                          <img 
-                            src={image.publicUrl || image.url} 
-                            alt={image.metadata?.prompt || "AI generated image"}
-                            className="w-full aspect-square object-cover" 
-                          />
-                          
-                          {/* Image Actions Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                            {/* Image Metadata */}
-                            {image.metadata?.prompt && (
-                              <div className="text-white text-xs truncate mb-2">
-                                {image.metadata.prompt.substring(0, 50)}
-                                {image.metadata.prompt.length > 50 ? '...' : ''}
-                              </div>
-                            )}
-                            
-                            {/* Action Buttons */}
-                            <div className="flex justify-between items-center">
-                              <div className="text-xs text-white/70">
-                                {image.metadata?.uploadedAt ? new Date(image.metadata.uploadedAt).toLocaleDateString() : ''}
-                              </div>
-                              <div className="flex gap-1">
-                                <button 
-                                  onClick={() => {
-                                    setDemoImage(image.publicUrl || image.url);
-                                    setActiveTab('create');
-                                  }}
-                                  className="p-1 bg-white/20 rounded-full hover:bg-white/40 transition"
-                                  title="Edit This Image"
-                                >
-                                  <span className="text-xs">✏️</span>
-                                </button>
-                                <button 
-                                  onClick={() => handleImageDelete(image.key)}
-                                  className="p-1 bg-white/20 rounded-full hover:bg-[#A20222] transition"
-                                  title="Delete Image"
-                                >
-                                  <span className="text-xs">🗑️</span>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={`text-sm transition-colors duration-300 ${
+                        isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                      }`}>Image Generations</span>
+                      <span className={`text-sm font-bold transition-colors duration-300 ${
+                        isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                      }`}>{imageGenerationsUsed}/3</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-[#0171B9] h-2 rounded-full transition-all duration-300" 
+                        style={{ width: `${(imageGenerationsUsed / 3) * 100}%` }}
+                      ></div>
                     </div>
                   </div>
-                ) : (
-                  <div className={`text-center py-12 ${
-                    isDarkMode ? 'text-white/70' : 'text-black/70'
-                  }`}>
-                    <div className="text-6xl mb-4">🖼️</div>
-                    <h3 className="text-xl font-semibold mb-2">No images yet</h3>
-                    <p>Generate or upload images to see them here</p>
-                    <button
-                      onClick={() => setActiveTab('create')}
-                      className={`mt-6 px-6 py-3 rounded-xl transition-colors ${
-                        isDarkMode 
-                          ? 'bg-white/10 hover:bg-white/20 text-white' 
-                          : 'bg-black/10 hover:bg-black/20 text-black'
-                      }`}
-                    >
-                      Create Your First Image
-                    </button>
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={`text-sm transition-colors duration-300 ${
+                        isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
+                      }`}>Image Edits</span>
+                      <span className={`text-sm font-bold transition-colors duration-300 ${
+                        isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
+                      }`}>{imageEditsUsed}/7</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-[#004684] h-2 rounded-full transition-all duration-300" 
+                        style={{ width: `${(imageEditsUsed / 7) * 100}%` }}
+                      ></div>
+                    </div>
                   </div>
-                )}
+                </div>
+              )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}          {/* Main Demo Interface */}
