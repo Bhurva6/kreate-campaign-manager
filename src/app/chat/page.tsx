@@ -100,6 +100,7 @@ export default function ChatPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Require at least text input or an uploaded image
     if (!inputValue.trim() && !uploadedImage) return;
     
     // Create a new session if none exists
@@ -121,25 +122,28 @@ export default function ChatPage() {
       imageUrl: currentUploadedImage || undefined
     });
     
+    // Clear input and start processing state
     setInputValue('');
     setIsProcessing(true);
     
     try {
-      // TODO: Replace with actual API call for image generation or editing
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
       let responseContent = '';
       let generatedImageUrl = '';
       
+      // Determine which API to call based on whether an image was uploaded
       if (currentUploadedImage) {
-        // Image editing flow
+        // IMAGE EDITING FLOW - User uploaded an image
         if (canUseImageEdit) {
           try {
+            console.log("Calling image edit API...");
             // Call the API to edit the image
             const response = await fetch('/api/chat-edit-image', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ prompt: currentInputValue, input_image: currentUploadedImage })
+              body: JSON.stringify({ 
+                prompt: currentInputValue, 
+                input_image: currentUploadedImage 
+              })
             });
             
             if (!response.ok) throw new Error('Failed to edit image');
@@ -149,15 +153,17 @@ export default function ChatPage() {
             generatedImageUrl = data.image || data.result?.sample || '/jaynitog.jpeg';
             consumeImageEdit();
           } catch (error) {
+            console.error("Image edit error:", error);
             responseContent = 'Sorry, there was an error editing your image.';
           }
         } else {
           responseContent = 'You\'ve used up all your image edits. Please upgrade your plan to continue.';
         }
       } else {
-        // Image generation flow
+        // IMAGE GENERATION FLOW - User only provided text
         if (canUseImageGeneration) {
           try {
+            console.log("Calling image generation API...");
             // Call the API to generate the image
             const response = await fetch('/api/chat-generate-image', {
               method: 'POST',
@@ -172,6 +178,7 @@ export default function ChatPage() {
             generatedImageUrl = data.image || data.result?.sample || '/cherryblossoms.jpeg';
             consumeImageGeneration();
           } catch (error) {
+            console.error("Image generation error:", error);
             responseContent = 'Sorry, there was an error generating your image.';
           }
         } else {
@@ -406,7 +413,10 @@ export default function ChatPage() {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 disabled={isProcessing}
-                placeholder={uploadedImage ? "Describe how to edit this image..." : "Describe the image you want..."}
+                placeholder={uploadedImage 
+                  ? "Enter prompt to edit this image..." 
+                  : "Describe the image you want to generate..."
+                }
                 className={`flex-1 p-3 rounded-lg ${
                   isDarkMode 
                     ? 'bg-white/10 text-white placeholder:text-white/50 border border-white/10' 
@@ -417,24 +427,30 @@ export default function ChatPage() {
               <button
                 type="submit"
                 disabled={(!inputValue.trim() && !uploadedImage) || isProcessing}
-                className={`p-3 rounded-full ${
+                className={`p-3 rounded-lg ${
                   isDarkMode 
                     ? 'bg-[#0171B9] text-white hover:bg-[#004684]' 
                     : 'bg-[#0171B9] text-white hover:bg-[#004684]'
-                } transition-colors disabled:opacity-50`}
+                } transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2`}
+                title={uploadedImage ? "Edit image with this prompt" : "Generate image from prompt"}
               >
                 {isProcessing ? (
                   <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  <FaPaperPlane />
+                  <>
+                    <FaPaperPlane />
+                    <span className="text-xs hidden sm:inline">
+                      {uploadedImage ? "Edit Image" : "Generate Image"}
+                    </span>
+                  </>
                 )}
               </button>
             </form>
             
             <div className={`text-xs mt-2 ${isDarkMode ? 'text-white/50' : 'text-black/50'}`}>
               {uploadedImage 
-                ? 'Upload complete! Now describe how you want to edit this image.' 
-                : 'Describe the image you want to generate or upload an existing image to edit.'}
+                ? 'Image uploaded! Enter a prompt to edit this image, then click "Edit Image".' 
+                : 'Enter a detailed description of the image you want to generate, or upload an image to edit.'}
             </div>
           </div>
         </div>
