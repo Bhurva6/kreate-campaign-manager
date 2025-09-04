@@ -473,14 +473,7 @@ export default function LandingPage() {
               </span>
             </button>
             
-            {/* Chat with Loco Button */}
-            <button
-              onClick={() => router.push("/chat")}
-              className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-[#004684] text-white font-semibold hover:bg-[#0171B9] transition-all duration-300 text-sm md:text-base flex items-center gap-2"
-            >
-              <span>💬</span>
-              Chat with Loco
-            </button>
+          
             
             {/* Authentication Section */}
             {loading ? (
