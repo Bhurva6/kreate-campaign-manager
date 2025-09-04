@@ -35,6 +35,10 @@ async function callGenerateImage(prompt: string, userId?: string) {
   throw new Error("No image generated");
 }
 
+/**
+ * Deprecated: This function is replaced by direct API calls in handleDemoEdit.
+ * Keeping it for reference and backward compatibility.
+ */
 async function callEditImage(prompt: string, input_image: string) {
   try {
     // Prepare the request body and validate it
@@ -49,6 +53,8 @@ async function callEditImage(prompt: string, input_image: string) {
     if (!input_image.startsWith('data:image/')) {
       throw new Error("Invalid image format - must be a data URL");
     }
+    
+    console.log("callEditImage is deprecated, use direct API calls instead");
     
     const res = await fetch("/api/edit-image", {
       method: "POST",
@@ -70,7 +76,14 @@ async function callEditImage(prompt: string, input_image: string) {
       throw new Error("Failed to parse server response");
     }
     
-    if (!res.ok) throw new Error(data.error || "Failed to edit image");
+    if (!res.ok) {
+      // Handle rate limiting specially
+      if (res.status === 429) {
+        console.log("Rate limited - duplicate request detected");
+        throw new Error("Duplicate request detected. Please wait before trying again.");
+      }
+      throw new Error(data.error || "Failed to edit image");
+    }
     
     // If we get a polling_url, we need to poll for results
     if (data.polling_url) {
@@ -85,55 +98,120 @@ async function callEditImage(prompt: string, input_image: string) {
   }
 }
 
-async function pollEditResult(polling_url: string, prompt: string): Promise<string> {
-  const maxAttempts = 30; // 30 seconds max
+// Global state to track active pollings and avoid duplicate requests
+const activePollings = new Set<string>();
+
+// Improved polling with exponential backoff and better status updates
+async function pollEditResult(polling_url: string, prompt: string, onProgress?: (message: string) => void): Promise<string> {
+  const maxAttempts = 30; // Maximum number of attempts
   let attempts = 0;
   
-  while (attempts < maxAttempts) {
-    try {
-      const res = await fetch("/api/poll-edit-result", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ polling_url, prompt }),
-      });
-      
-      // Handle non-JSON responses
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Server returned non-JSON response during polling");
-      }
-      
-      // Parse JSON with error handling
-      let data;
-      try {
-        data = await res.json();
-      } catch (jsonError) {
-        throw new Error("Failed to parse polling response");
-      }
-      
-      if (!res.ok) throw new Error(data.error || "Failed to poll edit result");
-      
-      if (data.status === "Ready" && data.result?.sample) {
-        // Return R2 URL if available, otherwise the original URL
-        return data.r2?.publicUrl || data.result.sample;
-      }
-      
-      if (data.status === "Error") {
-        const errorMessage = data.error || "Image editing failed";
-        console.error("Edit processing error:", errorMessage);
-        throw new Error(errorMessage);
-      }
-      
-      // Wait 1 second before polling again
+  // Use URL as unique identifier for this polling session
+  const pollingId = polling_url.split('?')[0]; // Remove query params for cleaner ID
+  
+  // Check if we're already polling this URL to avoid duplicate polling sequences
+  if (activePollings.has(pollingId)) {
+    console.log(`Already polling ${pollingId}, using existing poll`);
+    
+    // Wait for existing polling to complete or timeout after 30 seconds
+    let waitAttempts = 0;
+    while (activePollings.has(pollingId) && waitAttempts < 30) {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      attempts++;
-    } catch (error: any) {
-      console.error("Polling error:", error);
-      throw error;
+      waitAttempts++;
     }
+    
+    // If we're still polling, something went wrong
+    if (activePollings.has(pollingId)) {
+      activePollings.delete(pollingId);
+      throw new Error("Polling timed out - please try again");
+    }
+    
+    // The other polling process should have updated the UI
+    throw new Error("Another edit operation completed");
   }
   
-  throw new Error("Image editing timed out - please try again");
+  // Mark this URL as being polled
+  activePollings.add(pollingId);
+  console.log(`Started polling ${pollingId}`);
+  
+  try {
+    while (attempts < maxAttempts) {
+      try {
+        // Calculate wait time with exponential backoff (1s, 1.5s, 2s, 2.5s...)
+        // This reduces server load while still being responsive
+        const waitTime = Math.min(1000 + (attempts * 500), 3000);
+        
+        // Update progress with attempt count
+        if (onProgress) {
+          const progressStage = attempts <= 1 ? "Initiating edit..." : 
+                               attempts < 5 ? "Processing your edit..." :
+                               attempts < 15 ? "Working on details..." : 
+                               "Finalizing your image...";
+          onProgress(progressStage);
+        }
+        
+        const res = await fetch("/api/poll-edit-result", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ polling_url, prompt }),
+        });
+        
+        // Handle non-JSON responses
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Server returned non-JSON response during polling");
+        }
+        
+        // Parse JSON with error handling
+        let data;
+        try {
+          data = await res.json();
+        } catch (jsonError) {
+          throw new Error("Failed to parse polling response");
+        }
+        
+        if (!res.ok) throw new Error(data.error || "Failed to poll edit result");
+        
+        // Success case
+        if (data.status === "Ready" && data.result?.sample) {
+          console.log(`Polling completed successfully for ${pollingId} after ${attempts + 1} attempts`);
+          // Return R2 URL if available, otherwise the original URL
+          return data.r2?.publicUrl || data.result.sample;
+        }
+        
+        // Error case
+        if (data.status === "Error") {
+          const errorMessage = data.error || "Image editing failed";
+          console.error(`Edit processing error for ${pollingId}:`, errorMessage);
+          throw new Error(errorMessage);
+        }
+        
+        // Progress update if available
+        if (data.progress && onProgress) {
+          onProgress(`${data.progress}...`);
+        }
+        
+        // Wait before polling again (with exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        attempts++;
+      } catch (error: any) {
+        if (error.message.includes("Failed to fetch")) {
+          // Network error, wait and retry
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          attempts++;
+          continue;
+        }
+        throw error;
+      }
+    }
+    
+    // If we reached max attempts, throw timeout error
+    throw new Error("Image editing timed out - please try again");
+  } finally {
+    // Always clean up the active polling entry
+    activePollings.delete(pollingId);
+    console.log(`Finished polling ${pollingId} (success or failure)`);
+  }
 }
 
 export default function DemoPage() {
@@ -316,14 +394,34 @@ export default function DemoPage() {
     }
   };
 
-  // Replace handleDemoEdit
+  // Track last edit time to prevent duplicate submissions
+  const [lastEditTime, setLastEditTime] = useState(0);
+
+  // Debounced handleDemoEdit to prevent multiple rapid calls
   const handleDemoEdit = async () => {
+    // Prevent duplicate submissions within 2 seconds
+    const now = Date.now();
+    if (now - lastEditTime < 2000) {
+      console.log("Edit request prevented - too soon after last request");
+      return;
+    }
+    setLastEditTime(now);
+    
+    // Standard validation checks
     if (!demoImage || !demoEditPrompt.trim()) return;
     if (!canUseImageEdit && !isUnlimitedUser) {
       setShowPricingModal(true);
       return;
     }
     if (!consumeImageEdit()) return;
+    
+    // Prevent concurrent edit operations
+    if (demoEditing) {
+      console.log("Edit already in progress, ignoring duplicate request");
+      return;
+    }
+    
+    console.log("Edit image request initiated:", now);
     setDemoEditing(true);
     setDemoError(null);
     setDemoSuccess(null);
@@ -335,7 +433,19 @@ export default function DemoPage() {
       if (!demoImage.startsWith('data:')) {
         try {
           setEditingProgress("Converting image format...");
-          const response = await fetch(demoImage);
+          
+          // Use our proxy API for R2 images to avoid CORS issues
+          const isR2Image = demoImage.includes('r2.cloudflarestorage.com') || 
+                            demoImage.includes('.r2.') ||
+                            demoImage.includes('cloudflare');
+          
+          let imageToFetch = demoImage;
+          if (isR2Image) {
+            // Use our proxy API to avoid CORS issues
+            imageToFetch = `/api/proxy-image?url=${encodeURIComponent(demoImage)}`;
+          }
+          
+          const response = await fetch(imageToFetch);
           if (!response.ok) throw new Error("Failed to fetch image");
           
           const blob = await response.blob();
@@ -366,17 +476,71 @@ export default function DemoPage() {
       }
       
       setEditingProgress("Processing your edit...");
-      const url = await callEditImage(demoEditPrompt, imageUrl);
-      setDemoImage(url);
-      setDemoEditPrompt("");
-      setDemoSuccess(`Edit applied successfully! ${7 - imageEditsUsed - 1} free edit${7 - imageEditsUsed - 1 === 1 ? '' : 's'} remaining ✨`);
       
-      // Notify that a new image was created (for My Creations refresh)
-      localStorage.setItem('newImageCreated', Date.now().toString());
+      try {
+        // Step 1: Call the edit API to start the process
+        const editResult = await fetch("/api/edit-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            prompt: demoEditPrompt, 
+            input_image: imageUrl,
+            userId: user?.uid
+          }),
+        });
+        
+        // Handle errors
+        if (!editResult.ok) {
+          const errorData = await editResult.json();
+          throw new Error(errorData.error || "Failed to start edit process");
+        }
+        
+        // Parse response
+        const data = await editResult.json();
+        
+        // If we have a polling URL, use our improved polling function with progress updates
+        let url;
+        if (data.polling_url) {
+          url = await pollEditResult(
+            data.polling_url, 
+            demoEditPrompt,
+            // This callback will update the editing progress state
+            (progressMessage) => setEditingProgress(progressMessage)
+          );
+        } else {
+          // If we got a direct result
+          url = data.image || (data.result && data.result.sample);
+        }
+        
+        // Update UI with result
+        setDemoImage(url);
+        setDemoEditPrompt("");
+        setDemoSuccess(`Edit applied successfully! ${7 - imageEditsUsed - 1} free edit${7 - imageEditsUsed - 1 === 1 ? '' : 's'} remaining ✨`);
+        
+        // Notify that a new image was created (for My Creations refresh)
+        localStorage.setItem('newImageCreated', Date.now().toString());
+      } catch (editError: any) {
+        // If there's a specific polling error or other issue, handle it here
+        if (editError.message === "Another edit operation completed") {
+          // This is actually a success case - another polling operation completed
+          console.log("Used result from another polling operation");
+          return;
+        }
+        
+        throw editError; // Rethrow to be caught by the outer catch block
+      }
       
       setTimeout(() => setDemoSuccess(null), 3000);
     } catch (err: any) {
-      setDemoError(err.message);
+      console.error("Edit operation failed:", err.message);
+      
+      // Special handling for duplicate request errors
+      if (err.message.includes("Duplicate request")) {
+        // Just reset the UI without showing an error
+        setDemoError("Please wait a moment before submitting again");
+      } else {
+        setDemoError(err.message);
+      }
     } finally {
       setDemoEditing(false);
       setEditingProgress("");
@@ -398,8 +562,18 @@ export default function DemoPage() {
 
   const handleDownload = () => {
     if (!demoImage) return;
+    
+    // Check if this is an R2 image that needs to be proxied
+    const isR2Image = demoImage.includes('r2.cloudflarestorage.com') || 
+                      demoImage.includes('.r2.') ||
+                      demoImage.includes('cloudflare');
+    
+    const imageUrl = isR2Image 
+      ? `/api/proxy-image?url=${encodeURIComponent(demoImage)}` 
+      : demoImage;
+    
     const link = document.createElement('a');
-    link.href = demoImage;
+    link.href = imageUrl;
     link.download = 'GoLoco-creation.png';
     link.click();
   };
@@ -575,7 +749,9 @@ export default function DemoPage() {
               <div className="flex justify-center mb-8 md:mb-12">
                 <div className="relative group">
                   <img
-                    src={demoImage}
+                    src={demoImage?.includes('r2.cloudflarestorage.com') || demoImage?.includes('.r2.') || demoImage?.includes('cloudflare')
+                      ? `/api/proxy-image?url=${encodeURIComponent(demoImage)}`
+                      : demoImage}
                     alt="Demo Image"
                     className="rounded-2xl shadow-2xl max-w-full w-full object-contain border-4 border-white/20"
                     style={{ maxHeight: '400px', maxWidth: '600px' }}
@@ -802,7 +978,10 @@ export default function DemoPage() {
                       disabled={demoEditing}
                     />
                     <button
-                      onClick={handleDemoEdit}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent event bubbling
+                        handleDemoEdit();
+                      }}
                       disabled={demoEditing || !demoEditPrompt.trim() || imageEditsUsed >= 7}
                       className="w-full px-6 py-4 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base md:text-lg shadow-lg hover:shadow-xl"
                     >
