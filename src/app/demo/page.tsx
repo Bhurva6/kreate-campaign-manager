@@ -36,21 +36,53 @@ async function callGenerateImage(prompt: string, userId?: string) {
 }
 
 async function callEditImage(prompt: string, input_image: string) {
-  const res = await fetch("/api/edit-image", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, input_image }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to edit image");
-  
-  // If we get a polling_url, we need to poll for results
-  if (data.polling_url) {
-    return await pollEditResult(data.polling_url, prompt);
+  try {
+    // Prepare the request body and validate it
+    const requestBody = { prompt, input_image };
+    
+    // Check if the input_image string is reasonable in size
+    if (input_image.length > 20 * 1024 * 1024) { // 20MB limit
+      throw new Error("Image data too large (max 20MB)");
+    }
+    
+    // Validate input_image is a proper data URL
+    if (!input_image.startsWith('data:image/')) {
+      throw new Error("Invalid image format - must be a data URL");
+    }
+    
+    const res = await fetch("/api/edit-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
+    
+    // Handle non-JSON responses
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error("Server returned non-JSON response");
+    }
+    
+    // Parse JSON response with error handling
+    let data;
+    try {
+      data = await res.json();
+    } catch (jsonError) {
+      throw new Error("Failed to parse server response");
+    }
+    
+    if (!res.ok) throw new Error(data.error || "Failed to edit image");
+    
+    // If we get a polling_url, we need to poll for results
+    if (data.polling_url) {
+      return await pollEditResult(data.polling_url, prompt);
+    }
+    
+    // If we get a direct result
+    return data.image || (data.result && data.result.sample);
+  } catch (error: any) {
+    console.error("Edit image error:", error);
+    throw error;
   }
-  
-  // If we get a direct result
-  return data.image || (data.result && data.result.sample);
 }
 
 async function pollEditResult(polling_url: string, prompt: string): Promise<string> {
@@ -58,30 +90,50 @@ async function pollEditResult(polling_url: string, prompt: string): Promise<stri
   let attempts = 0;
   
   while (attempts < maxAttempts) {
-    const res = await fetch("/api/poll-edit-result", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ polling_url, prompt }),
-    });
-    
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Failed to poll edit result");
-    
-    if (data.status === "Ready" && data.result?.sample) {
-      // Return R2 URL if available, otherwise the original URL
-      return data.r2?.publicUrl || data.result.sample;
+    try {
+      const res = await fetch("/api/poll-edit-result", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ polling_url, prompt }),
+      });
+      
+      // Handle non-JSON responses
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Server returned non-JSON response during polling");
+      }
+      
+      // Parse JSON with error handling
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonError) {
+        throw new Error("Failed to parse polling response");
+      }
+      
+      if (!res.ok) throw new Error(data.error || "Failed to poll edit result");
+      
+      if (data.status === "Ready" && data.result?.sample) {
+        // Return R2 URL if available, otherwise the original URL
+        return data.r2?.publicUrl || data.result.sample;
+      }
+      
+      if (data.status === "Error") {
+        const errorMessage = data.error || "Image editing failed";
+        console.error("Edit processing error:", errorMessage);
+        throw new Error(errorMessage);
+      }
+      
+      // Wait 1 second before polling again
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      attempts++;
+    } catch (error: any) {
+      console.error("Polling error:", error);
+      throw error;
     }
-    
-    if (data.status === "Error") {
-      throw new Error("Image editing failed");
-    }
-    
-    // Wait 1 second before polling again
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    attempts++;
   }
   
-  throw new Error("Image editing timed out");
+  throw new Error("Image editing timed out - please try again");
 }
 
 export default function DemoPage() {
@@ -278,21 +330,41 @@ export default function DemoPage() {
     setEditingProgress("Starting edit...");
     try {
       let imageUrl = demoImage;
-      if (demoImage.startsWith('data:')) {
-        imageUrl = demoImage;
-      } else {
+      
+      // Handle image conversion with better error handling
+      if (!demoImage.startsWith('data:')) {
         try {
+          setEditingProgress("Converting image format...");
           const response = await fetch(demoImage);
+          if (!response.ok) throw new Error("Failed to fetch image");
+          
           const blob = await response.blob();
-          imageUrl = await new Promise<string>((resolve) => {
+          if (blob.size === 0) throw new Error("Empty image data");
+          
+          // Size validation - prevent overly large images (>10MB)
+          if (blob.size > 10 * 1024 * 1024) {
+            throw new Error("Image too large (max 10MB)");
+          }
+          
+          imageUrl = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
-            reader.onload = () => resolve(reader.result as string);
+            reader.onload = () => {
+              const result = reader.result as string;
+              // Validate the data URL format
+              if (!result || !result.startsWith('data:image/')) {
+                reject(new Error("Invalid image format"));
+                return;
+              }
+              resolve(result);
+            };
+            reader.onerror = () => reject(new Error("Failed to read image"));
             reader.readAsDataURL(blob);
           });
-        } catch (convertError) {
-          imageUrl = demoImage;
+        } catch (convertError: any) {
+          throw new Error(`Image preparation failed: ${convertError.message || "Unknown error"}`);
         }
       }
+      
       setEditingProgress("Processing your edit...");
       const url = await callEditImage(demoEditPrompt, imageUrl);
       setDemoImage(url);
