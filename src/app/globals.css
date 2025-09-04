@@ -1,17 +1,44 @@
 @import "tailwindcss";
+@import "./theme.css";
+@import "./components.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light Mode Colors */
+  --background-light: #EFE7D4;
+  --foreground-light: #000000;
+  --primary-light: #1A018D;
+  --secondary-light: #FF5E32;
+  --accent-light: #B6CF4F;
+  
+  /* Dark Mode Colors */
+  --background-dark: #000000;
+  --foreground-dark: #EFE7D4;
+  --primary-dark: #1A018D;
+  --secondary-dark: #FF5E32;
+  --accent-dark: #B6CF4F;
+  
+  /* Default to light mode variables */
+  --background: var(--background-light);
+  --foreground: var(--foreground-light);
+  --primary: var(--primary-light);
+  --secondary: var(--secondary-light);
+  --accent: var(--accent-light);
 }
 
-/* Removed @theme inline as it's not a standard CSS rule */
+body.dark-mode {
+  --background: var(--background-dark);
+  --foreground: var(--foreground-dark);
+  --primary: var(--primary-dark);
+  --secondary: var(--secondary-dark);
+  --accent: var(--accent-dark);
+}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body.light-mode {
+  --background: var(--background-light);
+  --foreground: var(--foreground-light);
+  --primary: var(--primary-light);
+  --secondary: var(--secondary-light);
+  --accent: var(--accent-light);
 }
 
 body {

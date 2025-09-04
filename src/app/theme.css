@@ -1,0 +1,35 @@
+.text-theme-foreground {
+  color: var(--foreground);
+}
+
+.bg-theme-background {
+  background-color: var(--background);
+}
+
+.border-theme-primary {
+  border-color: var(--primary);
+}
+
+.bg-theme-primary {
+  background-color: var(--primary);
+}
+
+.text-theme-primary {
+  color: var(--primary);
+}
+
+.bg-theme-secondary {
+  background-color: var(--secondary);
+}
+
+.text-theme-secondary {
+  color: var(--secondary);
+}
+
+.bg-theme-accent {
+  background-color: var(--accent);
+}
+
+.text-theme-accent {
+  color: var(--accent);
+}

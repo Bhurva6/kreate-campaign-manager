@@ -6,6 +6,7 @@ import { UIProvider } from '../lib/ui';
 import PricingModal from './PricingModal';
 import { useEffect, useState } from 'react';
 import { useUI } from '../lib/ui';
+import { ThemeProvider } from '../context/ThemeContext';
 
 // Component to include modals
 function PricingModalWrapper() {
@@ -32,13 +33,15 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
   }
 
   return (
-    <AuthProvider>
-      <UIProvider>
-        <CreditProvider>
-          {children}
-          <PricingModalWrapper />
-        </CreditProvider>
-      </UIProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <UIProvider>
+          <CreditProvider>
+            {children}
+            <PricingModalWrapper />
+          </CreditProvider>
+        </UIProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

@@ -1,0 +1,53 @@
+.text-primary {
+  color: var(--primary);
+}
+
+.text-secondary {
+  color: var(--secondary);
+}
+
+.text-accent {
+  color: var(--accent);
+}
+
+.bg-primary {
+  background-color: var(--primary);
+}
+
+.bg-secondary {
+  background-color: var(--secondary);
+}
+
+.bg-accent {
+  background-color: var(--accent);
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  transition-property: all;
+  transition-duration: 300ms;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background-color: var(--secondary);
+  color: white;
+  transition-property: all;
+  transition-duration: 300ms;
+}
+.btn-secondary:hover {
+  opacity: 0.9;
+}
+
+.btn-accent {
+  background-color: var(--accent);
+  color: black;
+  transition-property: all;
+  transition-duration: 300ms;
+}
+.btn-accent:hover {
+  opacity: 0.9;
+}

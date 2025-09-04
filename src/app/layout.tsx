@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import ClientWrapper from "../components/ClientWrapper";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta-sans",
+const ibmPlexMono = IBM_Plex_Mono({
+  variable: "--font-ibm-plex-mono",
   subsets: ["latin"],
-  weight: ["200", "300", "400", "500", "600", "700", "800"],
+  weight: ["100", "200", "300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${plusJakartaSans.variable} antialiased font-sans`}
+        className={`${ibmPlexMono.variable} antialiased font-mono`}
         suppressHydrationWarning={true}
       >
         <ClientWrapper>

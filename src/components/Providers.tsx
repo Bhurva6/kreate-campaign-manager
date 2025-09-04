@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { UIProvider } from '@/lib/ui';
 import PricingModal from '@/components/PricingModal';
 import { useUI } from '@/lib/ui';
+import { ThemeProvider } from '@/context/ThemeContext';
 
 // Component to include modals
 function Modals() {
@@ -23,9 +24,11 @@ interface ProvidersProps {
 
 export default function Providers({ children }: ProvidersProps) {
   return (
-    <UIProvider>
-      {children}
-      <Modals />
-    </UIProvider>
+    <ThemeProvider>
+      <UIProvider>
+        {children}
+        <Modals />
+      </UIProvider>
+    </ThemeProvider>
   );
 }
