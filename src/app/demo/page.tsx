@@ -831,51 +831,53 @@ export default function DemoPage() {
 
             {/* Generation and Upload/Edit Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 mb-8 md:mb-12">
-              {/* Generate Image */}
-              <div className="space-y-6">
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-2 mb-4">
-                    <span className="text-xl">🪄</span>
-                    <h3 className="text-xl md:text-2xl font-bold text-[#F3752A]">Generate Image</h3>
+              {/* Generate Image - Only shown when no image is present */}
+              {!demoImage && (
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-2 mb-4">
+                      <span className="text-xl">🪄</span>
+                      <h3 className="text-xl md:text-2xl font-bold text-[#F3752A]">Generate Image</h3>
+                    </div>
+                    <p className={`text-sm md:text-base transition-colors duration-300 ${
+                      isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
+                    }`}>
+                      Describe any image and watch AI create it
+                    </p>
                   </div>
-                  <p className={`text-sm md:text-base transition-colors duration-300 ${
-                    isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                  }`}>
-                    Describe any image and watch AI create it
-                  </p>
+                  
+                  <div className="space-y-4">
+                    <textarea
+                      value={demoPrompt}
+                      onChange={(e) => setDemoPrompt(e.target.value)}
+                      placeholder="Describe your image... (e.g., 'a cat wearing sunglasses on a beach at sunset')"
+                      className={`w-full h-24 text-base md:text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#F3752A] transition resize-none ${
+                        isDarkMode 
+                          ? 'bg-white/10 text-white border-[#F3752A]/20 placeholder:text-white/50' 
+                          : 'bg-white text-[#1E1E1E] border-[#F3752A]/20 placeholder:text-black/50'
+                      }`}
+                      disabled={demoGenerating}
+                    />
+                    <button
+                      onClick={handleDemoGenerate}
+                      disabled={demoGenerating || !demoPrompt.trim()}
+                      className="w-full px-6 py-4 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base md:text-lg shadow-lg hover:shadow-xl"
+                    >
+                      {demoGenerating ? (
+                        <>
+                          <div className="animate-spin text-xl">⚡</div>
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <span className="text-lg">🪄</span>
+                          Generate Image
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                
-                <div className="space-y-4">
-                  <textarea
-                    value={demoPrompt}
-                    onChange={(e) => setDemoPrompt(e.target.value)}
-                    placeholder="Describe your image... (e.g., 'a cat wearing sunglasses on a beach at sunset')"
-                    className={`w-full h-24 text-base md:text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#F3752A] transition resize-none ${
-                      isDarkMode 
-                        ? 'bg-white/10 text-white border-[#F3752A]/20 placeholder:text-white/50' 
-                        : 'bg-white text-[#1E1E1E] border-[#F3752A]/20 placeholder:text-black/50'
-                    }`}
-                    disabled={demoGenerating}
-                  />
-                  <button
-                    onClick={handleDemoGenerate}
-                    disabled={demoGenerating || !demoPrompt.trim()}
-                    className="w-full px-6 py-4 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base md:text-lg shadow-lg hover:shadow-xl"
-                  >
-                    {demoGenerating ? (
-                      <>
-                        <div className="animate-spin text-xl">⚡</div>
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <span className="text-lg">🪄</span>
-                        Generate Image
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
+              )}
 
               {/* Upload Image or Edit Image based on whether an image is present */}
               {!demoImage ? (
@@ -952,7 +954,7 @@ export default function DemoPage() {
                 </div>
               ) : (
                 /* Show Edit Image area instead of Upload when image is present */
-                <div className="space-y-6">
+                <div className={`space-y-6 ${demoImage ? 'lg:col-span-2' : ''}`}>
                   <div className="text-center">
                     <div className="inline-flex items-center gap-2 mb-4">
                       <span className="text-xl">✏️</span>
@@ -982,7 +984,7 @@ export default function DemoPage() {
                         e.stopPropagation(); // Prevent event bubbling
                         handleDemoEdit();
                       }}
-                      disabled={demoEditing || !demoEditPrompt.trim() || imageEditsUsed >= 7}
+                      disabled={demoEditing || !demoEditPrompt.trim() || (imageEditsUsed >= 7 && !isUnlimitedUser)}
                       className="w-full px-6 py-4 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base md:text-lg shadow-lg hover:shadow-xl"
                     >
                       {demoEditing ? (
@@ -990,7 +992,7 @@ export default function DemoPage() {
                           <div className="animate-spin text-xl">🔄</div>
                           {editingProgress || "Editing..."}
                         </>
-                      ) : imageEditsUsed >= 7 ? (
+                      ) : imageEditsUsed >= 7 && !isUnlimitedUser ? (
                         <>
                           <span>💎</span>
                           Upgrade for More Edits
@@ -998,7 +1000,7 @@ export default function DemoPage() {
                       ) : (
                         <>
                           <span className="text-lg">🪄</span>
-                          Edit Image ({7 - imageEditsUsed} remaining)
+                          {isUnlimitedUser ? "Edit Image (Unlimited)" : `Edit Image (${7 - imageEditsUsed} remaining)`}
                         </>
                       )}
                     </button>
