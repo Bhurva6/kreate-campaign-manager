@@ -6,6 +6,6 @@
  * @returns The imported module
  */
 export async function importDynamic<T>(modulePath: string): Promise<T> {
-  const module = await import(modulePath);
-  return module.default || module;
+  const importedModule = await import(modulePath);
+  return importedModule.default || importedModule;
 }
