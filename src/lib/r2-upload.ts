@@ -47,7 +47,9 @@ export function generateR2Key(category: ImageCategory, prompt?: string, mimeType
   // Get file extension from mime type
   const ext = mimeType.includes('jpeg') ? 'jpg' : 
               mimeType.includes('png') ? 'png' : 
-              mimeType.includes('webp') ? 'webp' : 'png';
+              mimeType.includes('webp') ? 'webp' : 
+              mimeType.includes('heic') ? 'heic' :
+              'png';
   
   const folder = IMAGE_CATEGORIES[category];
   return `${folder}/${year}/${month}/${day}/${timestamp}_${uuid}_${sanitizedPrompt}.${ext}`;

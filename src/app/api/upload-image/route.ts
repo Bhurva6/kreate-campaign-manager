@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadImageToR2 } from "@/lib/r2-upload";
+import { isHeicImage, convertHeicImage } from "@/lib/image-utils";
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,10 +17,31 @@ export async function POST(req: NextRequest) {
 
     // Convert the file to buffer
     const arrayBuffer = await image.arrayBuffer();
-    const imageBuffer = Buffer.from(arrayBuffer);
+    let imageBuffer = Buffer.from(arrayBuffer);
 
     // Detect mime type
-    const mimeType = image.type || 'image/png';
+    let mimeType = image.type || 'image/png';
+    
+    // Handle HEIC images - convert to JPEG
+    const isHeic = mimeType.toLowerCase().includes('heic') || 
+                  mimeType.toLowerCase().includes('heif') || 
+                  isHeicImage(imageBuffer);
+    
+    if (isHeic) {
+      try {
+        console.log("Converting HEIC image to JPEG...");
+        const converted = await convertHeicImage(imageBuffer, 'jpeg', 90);
+        imageBuffer = Buffer.from(converted.buffer);
+        mimeType = converted.mimeType;
+        console.log("HEIC conversion successful");
+      } catch (conversionError: any) {
+        console.error("HEIC conversion failed:", conversionError);
+        return NextResponse.json({ 
+          error: "Failed to process HEIC image. Please try with a JPEG or PNG image instead.",
+          details: conversionError.message 
+        }, { status: 400 });
+      }
+    }
 
     // Upload to R2
     const uploadResult = await uploadImageToR2({

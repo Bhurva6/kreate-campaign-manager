@@ -343,7 +343,11 @@ export default function DemoPage() {
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       const file = files[0];
-      if (file.type.startsWith('image/')) {
+      // Support both standard image types and HEIC format
+      if (file.type.startsWith('image/') || 
+          file.name.toLowerCase().endsWith('.heic') ||
+          file.name.toLowerCase().endsWith('.heif') ||
+          file.type.toLowerCase().includes('heic')) {
         const reader = new FileReader();
         reader.onload = async (e) => {
           const imageDataUrl = e.target?.result as string;
@@ -914,7 +918,7 @@ export default function DemoPage() {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.heic,.heif"
                       onChange={handleImageUpload}
                       className="hidden"
                     />

@@ -135,7 +135,7 @@ export default function BrandKitPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.heif"
           onChange={handleLogoUpload}
           className="mb-4 text-white"
         />
