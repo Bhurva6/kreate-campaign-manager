@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { uploadImageToR2 } from "@/lib/r2-upload";
 import { isHeicImage, convertHeicImage } from "@/lib/image-utils";
 
+// Maximum file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+
 export async function POST(req: NextRequest) {
   try {
     // Since FormData is used, we need to parse it differently
@@ -13,6 +16,14 @@ export async function POST(req: NextRequest) {
 
     if (!image || !userId) {
       return NextResponse.json({ error: "Image and userId are required." }, { status: 400 });
+    }
+
+    // Check file size
+    if (image.size > MAX_FILE_SIZE) {
+      console.error("File too large:", image.size, "bytes. Max size is", MAX_FILE_SIZE, "bytes");
+      return NextResponse.json({ 
+        error: `Image file is too large. Maximum size is ${MAX_FILE_SIZE / (1024 * 1024)}MB.` 
+      }, { status: 400 });
     }
 
     // Convert the file to buffer

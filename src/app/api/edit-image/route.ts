@@ -5,12 +5,23 @@ import { uploadImageToR2, base64ToBuffer, getMimeTypeFromDataUrl } from "@/lib/r
 // This helps prevent duplicate API calls
 const recentRequests = new Map<string, number>();
 const DEDUPLICATION_WINDOW = 3000; // 3 seconds window for deduplication
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB maximum size (approximate for base64)
 
 export async function POST(req: NextRequest) {
   try {
     const { prompt, input_image, userId } = await req.json();
     if (!prompt || !input_image) {
       return NextResponse.json({ error: "Prompt and input_image are required." }, { status: 400 });
+    }
+    
+    // Check image size (approximate calculation for base64)
+    // Base64 encoding increases size by ~33%, so this is a conservative estimate
+    const approximateSize = input_image.length * 0.75;
+    if (approximateSize > MAX_IMAGE_SIZE) {
+      console.error("Image too large:", Math.round(approximateSize / (1024 * 1024)), "MB (approx). Max size is", MAX_IMAGE_SIZE / (1024 * 1024), "MB");
+      return NextResponse.json({ 
+        error: `Image is too large. Maximum size is 10MB.` 
+      }, { status: 400 });
     }
     
     // Generate a cache key based on prompt and first 100 chars of image data

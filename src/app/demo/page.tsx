@@ -281,6 +281,13 @@ export default function DemoPage() {
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Check file size on client side too (10MB max)
+      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+      if (file.size > MAX_FILE_SIZE) {
+        setDemoError(`Image file is too large. Maximum size is 10MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`);
+        return;
+      }
+      
       const reader = new FileReader();
       reader.onload = async (e) => {
         const imageDataUrl = e.target?.result as string;
@@ -307,12 +314,19 @@ export default function DemoPage() {
               body: formData,
             });
             
-            if (uploadRes.ok) {
-              // Notify that a new image was created (for My Creations refresh)
-              localStorage.setItem('newImageCreated', Date.now().toString());
+            if (!uploadRes.ok) {
+              const errorData = await uploadRes.json();
+              throw new Error(errorData.error || "Failed to upload image");
             }
-          } catch (error) {
+            
+            // Notify that a new image was created (for My Creations refresh)
+            localStorage.setItem('newImageCreated', Date.now().toString());
+          } catch (error: any) {
             console.error('Failed to save uploaded image:', error);
+            setDemoError(error.message || "Failed to save uploaded image");
+            setDemoSuccess(null);
+            setDemoImage(null);
+            return;
           }
         }
         
@@ -348,6 +362,14 @@ export default function DemoPage() {
           file.name.toLowerCase().endsWith('.heic') ||
           file.name.toLowerCase().endsWith('.heif') ||
           file.type.toLowerCase().includes('heic')) {
+        
+        // Check file size on client side too (10MB max)
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > MAX_FILE_SIZE) {
+          setDemoError(`Image file is too large. Maximum size is 10MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`);
+          return;
+        }
+          
         const reader = new FileReader();
         reader.onload = async (e) => {
           const imageDataUrl = e.target?.result as string;
@@ -374,12 +396,19 @@ export default function DemoPage() {
                 body: formData,
               });
               
-              if (uploadRes.ok) {
-                // Notify that a new image was created (for My Creations refresh)
-                localStorage.setItem('newImageCreated', Date.now().toString());
+              if (!uploadRes.ok) {
+                const errorData = await uploadRes.json();
+                throw new Error(errorData.error || "Failed to upload image");
               }
-            } catch (error) {
+              
+              // Notify that a new image was created (for My Creations refresh)
+              localStorage.setItem('newImageCreated', Date.now().toString());
+            } catch (error: any) {
               console.error('Failed to save uploaded image:', error);
+              setDemoError(error.message || "Failed to save uploaded image");
+              setDemoSuccess(null);
+              setDemoImage(null);
+              return;
             }
           }
           
@@ -947,7 +976,7 @@ export default function DemoPage() {
                             : 'bg-black/10 text-black opacity-70'
                       }`}>
                         <span>✨</span>
-                        <span>Supports JPG, PNG, GIF, WebP</span>
+                        <span>Supports JPG, PNG, GIF, WebP (Max 10MB)</span>
                       </div>
                     </div>
                     
