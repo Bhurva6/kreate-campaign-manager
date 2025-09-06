@@ -516,13 +516,13 @@ function LandingPageContent() {
               <>
                 <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
                 <button
-                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-gradient-to-r from-[#0171B9] via-[#004684] to-[#E72C19] text-white font-semibold hover:shadow-lg hover:shadow-[#0171B9]/25 transition-all duration-300 text-sm md:text-base"
+                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-[#FF5E32] text-white font-semibold hover:shadow-lg hover:shadow-[#1A018D]/25 transition-all duration-300 text-sm md:text-base"
                   onClick={() => setShowAuthModal(true)}
                 >
                   Sign Up
                 </button>
                 <button
-                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-[#004684] text-white font-semibold hover:bg-[#0171B9] transition-all duration-300 text-sm md:text-base"
+                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition-all duration-300 text-sm md:text-base"
                   onClick={() => setShowAuthModal(true)}
                 >
                   Sign In

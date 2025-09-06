@@ -7,6 +7,8 @@ import PricingModal from './PricingModal';
 import { useEffect, useState } from 'react';
 import { useUI } from '../lib/ui';
 import { ThemeProvider } from '../context/ThemeContext';
+// Import our credit store initialization component
+import { CreditStoreInitializer } from '@/components/CreditStoreInitializer';
 
 // Component to include modals
 function PricingModalWrapper() {
@@ -37,6 +39,8 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
       <AuthProvider>
         <UIProvider>
           <CreditProvider>
+            {/* CreditStoreInitializer syncs context with zustand store */}
+            <CreditStoreInitializer />
             {children}
             <PricingModalWrapper />
           </CreditProvider>

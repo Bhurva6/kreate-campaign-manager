@@ -1,8 +1,19 @@
 import { useImageStore, type ImageData } from "@/store/imageStore";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { useCreditManagement } from "./useCreditManagement";
 
 export function useImageOperations() {
+  const { user } = useAuth();
+  const { 
+    consumeImageGeneration, 
+    consumeImageEdit,
+    canUseImageGeneration,
+    canUseImageEdit,
+    setShowPricingModal
+  } = useCreditManagement();
   const { addImage, addImages } = useImageStore();
+  const [error, setError] = useState<string | null>(null);
 
   const generateImages = useCallback(async (
     prompt: string, 
@@ -10,18 +21,37 @@ export function useImageOperations() {
     aspectRatio = "1:1",
     userId?: string
   ) => {
+    // Use user.uid if no userId is provided
+    const userIdentifier = userId || user?.uid;
+    
+    if (!userIdentifier) {
+      setError("You must be logged in to generate images");
+      throw new Error("User not authenticated");
+    }
+    
+    // Check if user has enough credits
+    if (!canUseImageGeneration) {
+      setShowPricingModal(true);
+      setError("You have reached your image generation limit");
+      throw new Error("Image generation limit reached");
+    }
+    
     try {
       const response = await fetch("/api/generate-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, sampleCount, aspectRatio, userId }),
+        body: JSON.stringify({ prompt, sampleCount, aspectRatio, userId: userIdentifier }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate images");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate images");
       }
 
       const data = await response.json();
+      
+      // Only consume credit if API call was successful
+      consumeImageGeneration();
       
       // Convert API response to ImageData format
       const imageData: ImageData[] = data.images.map((img: any, index: number) => ({
@@ -33,49 +63,70 @@ export function useImageOperations() {
         signedUrl: img.signedUrl,
         category: "generated",
         uploadedAt: new Date().toISOString(),
-        userId,
+        userId: userIdentifier,
       }));
 
       // Add to store
       addImages(imageData);
       
       return imageData;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating images:", error);
+      setError(error.message || "Failed to generate images");
       throw error;
     }
-  }, [addImages]);
+  }, [addImages, user, canUseImageGeneration, consumeImageGeneration, setShowPricingModal]);
 
   const editImage = useCallback(async (
     inputImage: string,
     prompt: string,
     userId?: string
   ) => {
+    // Use user.uid if no userId is provided
+    const userIdentifier = userId || user?.uid;
+    
+    if (!userIdentifier) {
+      setError("You must be logged in to edit images");
+      throw new Error("User not authenticated");
+    }
+    
+    // Check if user has enough credits
+    if (!canUseImageEdit) {
+      setShowPricingModal(true);
+      setError("You have reached your image edit limit");
+      throw new Error("Image edit limit reached");
+    }
+    
     try {
       // Start the edit process
       const response = await fetch("/api/edit-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input_image: inputImage, prompt, userId }),
+        body: JSON.stringify({ input_image: inputImage, prompt, userId: userIdentifier }),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to start image editing");
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to start image editing");
       }
 
       const data = await response.json();
       
       if (data.polling_url) {
+        // Only consume credit when we successfully start the edit
+        consumeImageEdit();
+        
         // Poll for results
-        return pollEditResult(data.polling_url, prompt, userId);
+        return pollEditResult(data.polling_url, prompt, userIdentifier);
       }
 
       throw new Error("No polling URL received");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error editing image:", error);
+      setError(error.message || "Failed to edit image");
       throw error;
     }
-  }, []);
+  }, [user, canUseImageEdit, setShowPricingModal, consumeImageEdit]);
 
   const pollEditResult = useCallback(async (
     pollingUrl: string,
@@ -135,5 +186,10 @@ export function useImageOperations() {
     generateImages,
     editImage,
     pollEditResult,
+    canUseImageGeneration,
+    canUseImageEdit,
+    error,
+    setError,
+    clearError: () => setError(null)
   };
 }

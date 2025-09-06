@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../lib/auth";
 import { useCredits } from "../../lib/credits";
+import { useImageOperations } from "../../hooks/useImageOperations";
 
 // No longer need tab types since we're using a separate page for My Creations
 import { getSafeImageUrl, handleImageError } from "@/lib/image-utils";
@@ -221,14 +222,22 @@ export default function DemoPage() {
   const {
     imageGenerationsUsed,
     imageEditsUsed,
-    canUseImageGeneration,
-    canUseImageEdit,
     isUnlimitedUser,
-    consumeImageGeneration,
-    consumeImageEdit,
     showPricingModal,
     setShowPricingModal,
   } = useCredits();
+  
+  // Use our enhanced image operations hook with integrated credit management
+  const {
+    generateImages,
+    editImage,
+    pollEditResult,
+    canUseImageGeneration,
+    canUseImageEdit,
+    error: operationError,
+    setError: setOperationError,
+    clearError: clearOperationError
+  } = useImageOperations();
   
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -380,28 +389,34 @@ export default function DemoPage() {
     }
   };
 
-  // Replace handleDemoGenerate
+  // Updated handleDemoGenerate to use our enhanced hook
   const handleDemoGenerate = async () => {
     if (!demoPrompt.trim()) return;
-    if (!canUseImageGeneration && !isUnlimitedUser) {
-      setShowPricingModal(true);
-      return;
-    }
-    if (!consumeImageGeneration()) return;
+    
     setDemoGenerating(true);
     setDemoError(null);
     setDemoSuccess(null);
+    clearOperationError();
+    
     try {
-      const url = await callGenerateImage(demoPrompt, user?.uid);
-      setDemoImage(url);
-      setDemoSuccess("Image generated successfully! ✨");
+      // generateImages handles credit checking and consumption internally
+      const imageResults = await generateImages(demoPrompt, 1, "1:1", user?.uid);
       
-      // Notify that a new image was created (for My Creations refresh)
-      localStorage.setItem('newImageCreated', Date.now().toString());
-      
-      setTimeout(() => setDemoSuccess(null), 3000);
+      if (imageResults && imageResults.length > 0) {
+        // Get the URL from the returned image data
+        setDemoImage(imageResults[0].url);
+        setDemoSuccess("Image generated successfully! ✨");
+        
+        // Notify that a new image was created (for My Creations refresh)
+        localStorage.setItem('newImageCreated', Date.now().toString());
+        
+        setTimeout(() => setDemoSuccess(null), 3000);
+      } else {
+        throw new Error("No image generated");
+      }
     } catch (err: any) {
-      setDemoError(err.message);
+      // Use error from operation if available, otherwise use the caught error
+      setDemoError(operationError || err.message);
     } finally {
       setDemoGenerating(false);
     }
@@ -410,7 +425,7 @@ export default function DemoPage() {
   // Track last edit time to prevent duplicate submissions
   const [lastEditTime, setLastEditTime] = useState(0);
 
-  // Debounced handleDemoEdit to prevent multiple rapid calls
+  // Updated handleDemoEdit to use our enhanced hook
   const handleDemoEdit = async () => {
     // Prevent duplicate submissions within 2 seconds
     const now = Date.now();
@@ -422,11 +437,6 @@ export default function DemoPage() {
     
     // Standard validation checks
     if (!demoImage || !demoEditPrompt.trim()) return;
-    if (!canUseImageEdit && !isUnlimitedUser) {
-      setShowPricingModal(true);
-      return;
-    }
-    if (!consumeImageEdit()) return;
     
     // Prevent concurrent edit operations
     if (demoEditing) {
@@ -438,6 +448,7 @@ export default function DemoPage() {
     setDemoEditing(true);
     setDemoError(null);
     setDemoSuccess(null);
+    clearOperationError();
     setEditingProgress("Starting edit...");
     try {
       let imageUrl = demoImage;
@@ -491,42 +502,15 @@ export default function DemoPage() {
       setEditingProgress("Processing your edit...");
       
       try {
-        // Step 1: Call the edit API to start the process
-        const editResult = await fetch("/api/edit-image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            prompt: demoEditPrompt, 
-            input_image: imageUrl,
-            userId: user?.uid
-          }),
-        });
+        // Use our enhanced editImage function which handles credit management internally
+        const result = await editImage(demoEditPrompt, imageUrl);
         
-        // Handle errors
-        if (!editResult.ok) {
-          const errorData = await editResult.json();
-          throw new Error(errorData.error || "Failed to start edit process");
-        }
-        
-        // Parse response
-        const data = await editResult.json();
-        
-        // If we have a polling URL, use our improved polling function with progress updates
-        let url;
-        if (data.polling_url) {
-          url = await pollEditResult(
-            data.polling_url, 
-            demoEditPrompt,
-            // This callback will update the editing progress state
-            (progressMessage) => setEditingProgress(progressMessage)
-          );
-        } else {
-          // If we got a direct result
-          url = data.image || (data.result && data.result.sample);
+        if (!result) {
+          throw new Error("Edit operation failed - no result returned");
         }
         
         // Update UI with result
-        setDemoImage(url);
+        setDemoImage(result.url);
         setDemoEditPrompt("");
         setDemoSuccess(`Edit applied successfully! ${7 - imageEditsUsed - 1} free edit${7 - imageEditsUsed - 1 === 1 ? '' : 's'} remaining ✨`);
         
@@ -552,7 +536,8 @@ export default function DemoPage() {
         // Just reset the UI without showing an error
         setDemoError("Please wait a moment before submitting again");
       } else {
-        setDemoError(err.message);
+        // Use error from operation if available, otherwise use the caught error
+        setDemoError(operationError || err.message);
       }
     } finally {
       setDemoEditing(false);
