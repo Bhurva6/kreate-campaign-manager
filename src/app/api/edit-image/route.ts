@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.FLUX_KONTEXT_API_KEY;
     if (!apiKey) {
+      console.error("Missing Flux Kontext API key in environment variables");
       return NextResponse.json({ error: "Missing Flux Kontext API key." }, { status: 500 });
     }
 
@@ -60,23 +61,59 @@ export async function POST(req: NextRequest) {
       safety_tolerance: 2,
     };
 
-    const res = await fetch("https://api.bfl.ai/v1/flux-kontext-pro", {
-      method: "POST",
-      headers: {
-        "x-key": apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      return NextResponse.json({ error: data.error || "Failed to edit image" }, { status: 500 });
+    console.log("Sending request to Flux Kontext API...");
+    
+    let data;
+    try {
+      const res = await fetch("https://api.bfl.ai/v1/flux-kontext-pro", {
+        method: "POST",
+        headers: {
+          "x-key": apiKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+      
+      console.log("Flux Kontext API response status:", res.status);
+      
+      // First try to parse the response as JSON
+      const responseText = await res.text();
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse API response as JSON:", responseText.substring(0, 200));
+        return NextResponse.json({ 
+          error: "Invalid response from image editing API", 
+          details: "Response couldn't be parsed as JSON" 
+        }, { status: 500 });
+      }
+      
+      if (!res.ok) {
+        console.error("API error response:", data);
+        return NextResponse.json({ 
+          error: data.error || "Failed to edit image",
+          details: JSON.stringify(data).substring(0, 200)
+        }, { status: res.status });
+      }
+      
+      console.log("API request successful, returning data");
+      return NextResponse.json({ ...data });
+    } catch (fetchError: any) {
+      console.error("Error fetching from Flux Kontext API:", fetchError.message);
+      return NextResponse.json({ 
+        error: "Error connecting to image editing service", 
+        details: fetchError.message 
+      }, { status: 500 });
     }
-
-    // Return the polling_url or image if available
-    return NextResponse.json({ ...data });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Unknown error" }, { status: 500 });
+    console.error("Edit image error details:", {
+      message: err.message,
+      stack: err.stack,
+      cause: err.cause,
+    });
+    return NextResponse.json({ 
+      error: err.message || "Unknown error",
+      errorType: err.name || "UnknownError"
+    }, { status: 500 });
   }
-} 
+}

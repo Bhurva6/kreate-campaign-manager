@@ -31,21 +31,46 @@ export async function POST(req: NextRequest) {
       clearTimeout(timeoutId);
       
       if (!res.ok) {
+        console.error("Polling error:", res.status, res.statusText);
         return NextResponse.json(
-          { error: `Polling service returned ${res.status}: ${res.statusText}` }, 
+          { 
+            error: `Polling service returned ${res.status}: ${res.statusText}`,
+            details: `Failed to poll results from ${polling_url.substring(0, 30)}...`
+          }, 
           { status: res.status }
         );
       }
       
-      const data = await res.json();
+      // First try to parse the response as JSON
+      let data;
+      const responseText = await res.text();
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error("Failed to parse polling response as JSON:", responseText.substring(0, 200));
+        return NextResponse.json({ 
+          error: "Invalid response from polling service", 
+          details: "Response couldn't be parsed as JSON" 
+        }, { status: 500 });
+      }
     
       // If image is ready and we have the result, upload to R2
       if (data.status === "Ready" && data.result?.sample) {
         try {
+          console.log("Edit is ready, fetching result image");
           // Fetch the image from the URL
           const imageRes = await fetch(data.result.sample);
+          if (!imageRes.ok) {
+            console.error("Failed to fetch result image:", imageRes.status, imageRes.statusText);
+            return NextResponse.json({
+              error: "Failed to fetch edited image result",
+              details: `Image URL returned status ${imageRes.status}`
+            }, { status: 500 });
+          }
+          
           const imageBuffer = Buffer.from(await imageRes.arrayBuffer());
           
+          console.log("Uploading edited image to R2 storage");
           // Upload to R2
           const uploadResult = await uploadImageToR2({
             imageBuffer,
@@ -73,11 +98,16 @@ export async function POST(req: NextRequest) {
             processedUrls.delete(polling_url);
           }, 10 * 60 * 1000);
           
+          console.log("Successfully processed and stored edited image");
           return NextResponse.json(enhancedResponse);
-        } catch (uploadError) {
-          console.error("Failed to upload edited image to R2:", uploadError);
+        } catch (uploadError: any) {
+          console.error("Failed to upload edited image to R2:", uploadError.message, uploadError.stack);
           // Return original response even if upload fails
-          return NextResponse.json(data);
+          return NextResponse.json({
+            ...data,
+            uploadError: "Failed to store edited image",
+            details: uploadError.message
+          });
         }
       }
       
@@ -89,16 +119,21 @@ export async function POST(req: NextRequest) {
       }
       
       return NextResponse.json(data);
-    } catch (fetchError) {
+    } catch (fetchError: any) {
       clearTimeout(timeoutId);
-      console.error("Error fetching polling URL:", fetchError);
+      console.error("Error fetching polling URL:", fetchError.message, fetchError.stack);
       return NextResponse.json({ 
         error: fetchError instanceof Error ? fetchError.message : "Failed to fetch polling result",
+        details: fetchError instanceof Error ? fetchError.stack : undefined,
         status: "Error"
       }, { status: 500 });
     }
   } catch (err: any) {
-    console.error("Poll edit result error:", err);
-    return NextResponse.json({ error: err.message || "Unknown error" }, { status: 500 });
+    console.error("Poll edit result error:", err.message, err.stack);
+    return NextResponse.json({ 
+      error: err.message || "Unknown error",
+      details: err.stack,
+      errorType: err.name || "UnknownError" 
+    }, { status: 500 });
   }
 }

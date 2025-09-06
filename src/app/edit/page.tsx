@@ -10,6 +10,7 @@ export default function EditImagePage() {
   const [finalImage, setFinalImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   if (!img) {
     return <div className="text-center text-red-400">No image selected.</div>;
@@ -19,6 +20,7 @@ export default function EditImagePage() {
   const pollForResult = async (url: string) => {
     setLoading(true);
     setError(null);
+    setErrorDetails(null);
     setFinalImage(null);
     try {
       for (let i = 0; i < 30; i++) {
@@ -28,16 +30,32 @@ export default function EditImagePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ polling_url: url }),
         });
-        const data: { status: string; result?: { sample?: string } } = await res.json();
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          setErrorDetails(errorData.details || "No additional details available");
+          throw new Error(errorData.error || `API error: ${res.status}`);
+        }
+        
+        const data: { status: string; result?: { sample?: string }; details?: string } = await res.json();
+        
         if (data.status === "Ready" && data.result?.sample) {
+          console.log("Edit result received successfully");
           setFinalImage(data.result.sample);
           setLoading(false);
           return;
         }
+        
+        if (data.status === "Error") {
+          setErrorDetails(data.details || null);
+          throw new Error("Error in image processing");
+        }
+        
         await new Promise((resolve) => setTimeout(resolve, 1000)); // wait 1s
       }
       setError("Timed out waiting for image result.");
     } catch (err: unknown) {
+      console.error("Poll error:", err);
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
@@ -84,25 +102,38 @@ export default function EditImagePage() {
   const handleEdit = async () => {
     setLoading(true);
     setError(null);
+    setErrorDetails(null);
     setFinalImage(null);
     setPollingUrl(null);
     try {
+      console.log("Sending edit request...");
       const res = await fetch("/api/edit-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt, input_image: img }),
       });
+      
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to edit image");
+      
+      if (!res.ok) {
+        setErrorDetails(data.details || "No additional details available");
+        throw new Error(data.error || "Failed to edit image");
+      }
+      
+      console.log("Edit request response:", data);
+      
       if (data.polling_url) {
+        console.log("Received polling URL:", data.polling_url);
         setPollingUrl(data.polling_url);
         pollForResult(data.polling_url);
       } else if (data.image) {
         setFinalImage(data.image);
       } else {
         setError("No image or polling URL returned.");
+        setErrorDetails(JSON.stringify(data));
       }
     } catch (err: unknown) {
+      console.error("Edit error:", err);
       setError(err instanceof Error ? err.message : String(err));
       setLoading(false);
     }
@@ -164,8 +195,22 @@ export default function EditImagePage() {
             {loading ? "Editing..." : "Submit"}
           </button>
         </div>
-        {error && <div className="text-red-400 mt-4">{error}</div>}
-        {pollingUrl && !finalImage && (
+        {error && (
+          <div className="text-red-400 mt-4">
+            <div className="font-semibold">Error: {error}</div>
+            {errorDetails && (
+              <div className="text-sm mt-1 text-red-300 max-w-md overflow-auto">
+                <details>
+                  <summary>Technical Details</summary>
+                  <pre className="text-xs mt-2 bg-[#333] p-2 rounded">
+                    {errorDetails}
+                  </pre>
+                </details>
+              </div>
+            )}
+          </div>
+        )}
+        {pollingUrl && !finalImage && !error && (
           <div className="text-gray-400 mt-4">Waiting for edited image...</div>
         )}
       </div>

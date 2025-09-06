@@ -14,6 +14,7 @@ export function useImageOperations() {
   } = useCreditManagement();
   const { addImage, addImages } = useImageStore();
   const [error, setError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
   const generateImages = useCallback(async (
     prompt: string, 
@@ -45,6 +46,7 @@ export function useImageOperations() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        setErrorDetails(errorData.details || null);
         throw new Error(errorData.error || "Failed to generate images");
       }
 
@@ -99,6 +101,7 @@ export function useImageOperations() {
     
     try {
       // Start the edit process
+      console.log("Sending image edit request...");
       const response = await fetch("/api/edit-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -107,10 +110,13 @@ export function useImageOperations() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("Edit image API error:", errorData);
+        setErrorDetails(errorData.details || null);
         throw new Error(errorData.error || "Failed to start image editing");
       }
 
       const data = await response.json();
+      console.log("Edit image response:", data);
       
       if (data.polling_url) {
         // Only consume credit when we successfully start the edit
@@ -136,6 +142,7 @@ export function useImageOperations() {
   ): Promise<ImageData> => {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       try {
+        console.log(`Polling attempt ${attempt + 1}/${maxAttempts}`);
         const response = await fetch("/api/poll-edit-result", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -143,12 +150,17 @@ export function useImageOperations() {
         });
 
         if (!response.ok) {
-          throw new Error("Failed to poll edit result");
+          const errorData = await response.json();
+          console.error("Poll error:", errorData);
+          setErrorDetails(errorData.details || null);
+          throw new Error(errorData.error || "Failed to poll edit result");
         }
 
         const data = await response.json();
+        console.log("Poll response:", data);
 
         if (data.status === "Ready" && data.result?.sample) {
+          console.log("Edit result ready");
           const imageData: ImageData = {
             id: `edited-${Date.now()}`,
             url: data.r2?.publicUrl || data.result.sample, // Prefer R2 URL
@@ -165,12 +177,13 @@ export function useImageOperations() {
         }
 
         if (data.status === "Error") {
+          setErrorDetails(data.details || null);
           throw new Error(data.error || "Image editing failed");
         }
 
         // Wait before next poll (2 seconds)
         await new Promise(resolve => setTimeout(resolve, 2000));
-      } catch (error) {
+      } catch (error: any) {
         console.error(`Poll attempt ${attempt + 1} failed:`, error);
         if (attempt === maxAttempts - 1) {
           throw error;
@@ -189,7 +202,11 @@ export function useImageOperations() {
     canUseImageGeneration,
     canUseImageEdit,
     error,
+    errorDetails,
     setError,
-    clearError: () => setError(null)
+    clearError: () => {
+      setError(null);
+      setErrorDetails(null);
+    }
   };
 }
