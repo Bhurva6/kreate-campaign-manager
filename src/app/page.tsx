@@ -106,15 +106,29 @@ async function pollEditResult(
 // Define the pricing plans for the home page
 const homePlans: Plan[] = [
   {
+    id: "mini",
+    name: "Mini",
+    price: 299,
+    imageGenerations: 50,
+    imageEdits: 50,
+    description: "Try it out",
+    features: [
+      "50 images per month",
+      "Basic editing tools",
+      "HD quality",
+      "Download & share",
+    ],
+  },
+  {
     id: "basic",
     name: "Basic",
     price: 700,
-    imageGenerations: 140,
-    imageEdits: 140,
+    imageGenerations: 150,
+    imageEdits: 150,
     description: "Get started",
     features: [
-      "140 image generations",
-      "Basic editing tools",
+      "150 images per month",
+      "Standard editing tools",
       "HD quality",
       "Download & share",
     ],
@@ -123,11 +137,11 @@ const homePlans: Plan[] = [
     id: "pro",
     name: "Pro",
     price: 2200,
-    imageGenerations: 600,
-    imageEdits: 600,
+    imageGenerations: 525,
+    imageEdits: 525,
     description: "For creators",
     features: [
-      "600 image generations",
+      "525 images per month",
       "Priority processing",
       "Advanced editing tools",
       "4K quality",
@@ -135,14 +149,14 @@ const homePlans: Plan[] = [
     ],
   },
   {
-    id: "max",
-    name: "Max",
+    id: "enterprise",
+    name: "Enterprise",
     price: 6000,
-    imageGenerations: 1000,
-    imageEdits: 1000,
+    imageGenerations: 1400,
+    imageEdits: 1400,
     description: "Power user",
     features: [
-      "1000 image generations",
+      "1400 images per month",
       "Fastest processing",
       "All editing tools",
       "8K quality",
@@ -526,10 +540,10 @@ function LandingPageContent() {
           {/* Content - Centered */}
           <div className="relative z-10 text-center max-w-4xl">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white leading-tight">
-              <span className="bg-gradient-to-r from-[#0171B9] via-[#004684] to-[#E72C19] bg-clip-text text-transparent">
+              <span className="text-[#FF5E32]">
                 Consistent
                </span>{" "}
-               creativity with every image every time.
+               creativity with every image, every time.
             </h1>
             <p className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
              GoLoco changes exactly what you want{" "}
@@ -539,7 +553,7 @@ function LandingPageContent() {
 
             {/* CTA Button */}
             <button
-              className="mx-auto inline-flex items-center gap-3 font-semibold px-8 sm:px-10 py-2.5 sm:py-3 rounded-full text-base sm:text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 bg-gradient-to-r from-[#0171B9] via-[#004684] to-[#E72C19] text-white hover:shadow-[#0171B9]/30"
+              className="mx-auto inline-flex items-center gap-3 font-semibold px-8 sm:px-10 py-2.5 sm:py-3 rounded-full text-base sm:text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 bg-[#B6CF4F] text-white hover:shadow-[#1A018D]/30"
               onClick={() => {
                 if (user) {
                   router.push("/demo");
@@ -1051,11 +1065,11 @@ function LandingPageContent() {
 
                 {/* Slider Handle */}
                 <div
-                  className="slider-handle absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#0171B9] pointer-events-none flex items-center justify-center z-20"
+                  className="slider-handle absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#1A018D] pointer-events-none flex items-center justify-center z-20"
                   style={{ left: "50%", transform: "translate(-50%, -50%)" }}
                 >
-                  <div className="w-1 h-4 bg-[#0171B9] rounded-full"></div>
-                  <div className="w-1 h-4 bg-[#0171B9] rounded-full ml-1"></div>
+                  <div className="w-1 h-4 bg-[#1A018D] rounded-full"></div>
+                  <div className="w-1 h-4 bg-[#1A018D] rounded-full ml-1"></div>
                 </div>
 
                 {/* Labels */}
@@ -1181,11 +1195,11 @@ function LandingPageContent() {
 
                 {/* Slider Handle */}
                 <div
-                  className="slider-handle-2 absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#004684] pointer-events-none flex items-center justify-center z-20"
+                  className="slider-handle-2 absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#B6CF4F] pointer-events-none flex items-center justify-center z-20"
                   style={{ left: "50%", transform: "translate(-50%, -50%)" }}
                 >
-                  <div className="w-1 h-4 bg-[#004684] rounded-full"></div>
-                  <div className="w-1 h-4 bg-[#004684] rounded-full ml-1"></div>
+                  <div className="w-1 h-4 bg-[#B6CF4F] rounded-full"></div>
+                  <div className="w-1 h-4 bg-[#B6CF4F] rounded-full ml-1"></div>
                 </div>
 
                 {/* Labels */}
@@ -1201,7 +1215,7 @@ function LandingPageContent() {
                   Drag to compare
                 </div>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-[#004684] mb-4">
+              <h3 className="text-xl md:text-2xl font-bold text-[#B6CF4F] mb-4">
                 Enhance Instantly
               </h3>
               <p
@@ -1226,7 +1240,7 @@ function LandingPageContent() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-[#E72C19] mb-4">
+              <h3 className="text-xl md:text-2xl font-bold text-[#FF5E32] mb-4">
                 Always On-Brand
               </h3>
               <p
@@ -1274,7 +1288,7 @@ function LandingPageContent() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-[#004684] mb-4">
+              <h3 className="text-xl md:text-2xl font-bold text-[#B6CF4F] mb-4">
                 Find Inspiration Backwards
               </h3>
               <p
@@ -1299,7 +1313,7 @@ function LandingPageContent() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-[#E72C19] mb-4">
+              <h3 className="text-xl md:text-2xl font-bold text-[#FF5E32] mb-4">
                 Create Together
               </h3>
               <p
@@ -1562,7 +1576,7 @@ function LandingPageContent() {
               </div>
             </div>
 
-            {/* Basic Plan */}
+            {/* Mini Plan */}
             <div
               className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#004684]/20 ${
                 isDarkMode
@@ -1571,10 +1585,10 @@ function LandingPageContent() {
               }`}
             >
               <div className="text-center">
-                <div className="text-4xl mb-4">🚀</div>
-                <h3 className="text-xl font-bold text-[#004684] mb-2">Basic</h3>
-                <p className="text-[#E72C19] font-semibold text-sm mb-4">
-                  &quot;Get started&quot;
+                <div className="text-4xl mb-4">🧃</div>
+                <h3 className="text-xl font-bold text-[#B6CF4F] mb-2">Mini</h3>
+                <p className="text-[#FF5E32] font-semibold text-sm mb-4">
+                  &quot;Try it out&quot;
                 </p>
 
                 <div
@@ -1582,7 +1596,7 @@ function LandingPageContent() {
                     isDarkMode ? "text-white" : "text-[#1E1E1E]"
                   }`}
                 >
-                  ₹700
+                  ₹299
                 </div>
                 <div
                   className={`text-xs mb-4 transition-colors duration-300 ${
@@ -1591,7 +1605,7 @@ function LandingPageContent() {
                       : "text-[#1E1E1E] opacity-60"
                   }`}
                 >
-                  140 credits
+                  50 images per month
                 </div>
 
                 <div className="space-y-2 text-left mb-6">
@@ -1604,7 +1618,7 @@ function LandingPageContent() {
                           : "text-[#1E1E1E] opacity-80"
                       }`}
                     >
-                      140 image generations
+                      50 images per month
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1648,17 +1662,17 @@ function LandingPageContent() {
                 {user ? (
                   <RazorpayHandler
                     plan={homePlans[0]}
-                    buttonText="Choose Basic"
-                    customClassName="w-full px-4 py-2 rounded-lg bg-[#004684] text-white font-semibold hover:bg-[#E72C19] transition text-sm"
+                    buttonText="Choose Mini"
+                    customClassName="w-full px-4 py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition text-sm"
                     onSuccess={handlePaymentSuccess}
                     onFailure={handlePaymentFailure}
                   />
                 ) : (
                   <button
-                    className="w-full px-4 py-2 rounded-lg bg-[#004684] text-white font-semibold hover:bg-[#E72C19] transition text-sm"
+                    className="w-full px-4 py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition text-sm"
                     onClick={() => setShowAuthModal(true)}
                   >
-                    Choose Basic
+                    Choose Mini
                   </button>
                 )}
               </div>
@@ -1673,14 +1687,14 @@ function LandingPageContent() {
               }`}
             >
               {/* Popular Badge */}
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#E72C19] text-white px-3 py-1 rounded-full text-xs font-semibold">
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#FF5E32] text-white px-3 py-1 rounded-full text-xs font-semibold">
                 Most Popular
               </div>
 
               <div className="text-center">
-                <div className="text-4xl mb-4">�</div>
-                <h3 className="text-xl font-bold text-[#E72C19] mb-2">Pro</h3>
-                <p className="text-[#0171B9] font-semibold text-sm mb-4">
+                <div className="text-4xl mb-4">🎁</div>
+                <h3 className="text-xl font-bold text-[#FF5E32] mb-2">Pro</h3>
+                <p className="text-[#1A018D] font-semibold text-sm mb-4">
                   &quot;For creators&quot;
                 </p>
 
@@ -1698,7 +1712,7 @@ function LandingPageContent() {
                       : "text-[#1E1E1E] opacity-60"
                   }`}
                 >
-                  600 credits
+                  525 images per month
                 </div>
 
                 <div className="space-y-2 text-left mb-6">
@@ -1711,7 +1725,7 @@ function LandingPageContent() {
                           : "text-[#1E1E1E] opacity-80"
                       }`}
                     >
-                      600 image generations
+                      525 images per month
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1768,13 +1782,13 @@ function LandingPageContent() {
                   <RazorpayHandler
                     plan={homePlans[1]}
                     buttonText="Choose Pro"
-                    customClassName="w-full px-4 py-2 rounded-lg bg-[#E72C19] text-white font-semibold hover:bg-[#0171B9] transition text-sm"
+                    customClassName="w-full px-4 py-2 rounded-lg bg-[#FF5E32] text-white font-semibold hover:bg-[#1A018D] transition text-sm"
                     onSuccess={handlePaymentSuccess}
                     onFailure={handlePaymentFailure}
                   />
                 ) : (
                   <button
-                    className="w-full px-4 py-2 rounded-lg bg-[#E72C19] text-white font-semibold hover:bg-[#0171B9] transition text-sm"
+                    className="w-full px-4 py-2 rounded-lg bg-[#FF5E32] text-white font-semibold hover:bg-[#1A018D] transition text-sm"
                     onClick={() => setShowAuthModal(true)}
                   >
                     Choose Pro
@@ -1783,7 +1797,7 @@ function LandingPageContent() {
               </div>
             </div>
 
-            {/* Max Plan */}
+            {/* Basic Plan */}
             <div
               className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#0171B9]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${
                 isDarkMode
@@ -1793,9 +1807,9 @@ function LandingPageContent() {
             >
               <div className="text-center">
                 <div className="text-4xl mb-4">🌟</div>
-                <h3 className="text-xl font-bold text-[#0171B9] mb-2">Max</h3>
+                <h3 className="text-xl font-bold text-[#0171B9] mb-2">Basic</h3>
                 <p className="text-[#004684] font-semibold text-sm mb-4">
-                  &quot;Power user&quot;
+                  &quot;Get started&quot;
                 </p>
 
                 <div
@@ -1803,7 +1817,7 @@ function LandingPageContent() {
                     isDarkMode ? "text-white" : "text-[#1E1E1E]"
                   }`}
                 >
-                  ₹6,000
+                  ₹700
                 </div>
                 <div
                   className={`text-xs mb-4 transition-colors duration-300 ${
@@ -1812,12 +1826,12 @@ function LandingPageContent() {
                       : "text-[#1E1E1E] opacity-60"
                   }`}
                 >
-                  1000 credits
+                  150 images per month
                 </div>
 
                 <div className="space-y-2 text-left mb-6">
                   <div className="flex items-center gap-2">
-                    <span className="text-[#0171B9] text-sm">�</span>
+                    <span className="text-[#0171B9] text-sm">🖼️</span>
                     <span
                       className={`text-xs transition-colors duration-300 ${
                         isDarkMode
@@ -1825,7 +1839,7 @@ function LandingPageContent() {
                           : "text-[#1E1E1E] opacity-80"
                       }`}
                     >
-                      1000 image generations
+                      150 images per month
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -1841,7 +1855,7 @@ function LandingPageContent() {
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[#0171B9] text-sm">�</span>
+                    <span className="text-[#1A018D] text-sm">🎨</span>
                     <span
                       className={`text-xs transition-colors duration-300 ${
                         isDarkMode
@@ -1893,17 +1907,17 @@ function LandingPageContent() {
                 {user ? (
                   <RazorpayHandler
                     plan={homePlans[2]}
-                    buttonText="Choose Max"
-                    customClassName="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm"
+                    buttonText="Choose Basic"
+                    customClassName="w-full px-4 py-2 rounded-lg bg-[#1A018D] text-white font-semibold hover:bg-[#B6CF4F] transition text-sm"
                     onSuccess={handlePaymentSuccess}
                     onFailure={handlePaymentFailure}
                   />
                 ) : (
                   <button
-                    className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm"
+                    className="w-full px-4 py-2 rounded-lg bg-[#1A018D] text-white font-semibold hover:bg-[#B6CF4F] transition text-sm"
                     onClick={() => setShowAuthModal(true)}
                   >
-                    Choose Max
+                    Choose Basic
                   </button>
                 )}
               </div>
@@ -1931,7 +1945,7 @@ function LandingPageContent() {
                     isDarkMode ? "text-white" : "text-[#1E1E1E]"
                   }`}
                 >
-                  Custom
+                  ₹6,000
                 </div>
                 <div
                   className={`text-xs mb-4 transition-colors duration-300 ${
@@ -1940,12 +1954,12 @@ function LandingPageContent() {
                       : "text-[#1E1E1E] opacity-60"
                   }`}
                 >
-                  Unlimited credits
+                  1400 images per month
                 </div>
 
                 <div className="space-y-2 text-left mb-6">
                   <div className="flex items-center gap-2">
-                    <span className="text-gray-500 text-sm">♾️</span>
+                    <span className="text-gray-500 text-sm">🖼️</span>
                     <span
                       className={`text-xs transition-colors duration-300 ${
                         isDarkMode
@@ -1953,7 +1967,7 @@ function LandingPageContent() {
                           : "text-[#1E1E1E] opacity-80"
                       }`}
                     >
-                      Unlimited generations
+                      1400 images per month
                     </span>
                   </div>
                   <div className="flex items-center gap-2">

@@ -20,29 +20,61 @@ export interface Plan {
 
 export const PLANS: Plan[] = [
   {
+    id: 'mini',
+    name: 'Mini',
+    price: 299,
+    imageGenerations: 50,
+    imageEdits: 50,
+    description: 'Try it out',
+    features: [
+      '50 images per month',
+      'Basic editing tools',
+      'Valid for 30 days'
+    ]
+  },
+  {
     id: 'basic',
     name: 'Basic',
-    price: 699,
-    imageGenerations: 15,
-    imageEdits: 20,
-    description: 'For occasional creative projects',
+    price: 700,
+    imageGenerations: 150,
+    imageEdits: 150,
+    description: 'Get started',
     features: [
-      '15 image generations',
-      '20 image edits',
+      '150 images per month',
+      'Standard editing tools',
+      'HD quality',
       'Valid for 30 days'
     ]
   },
   {
     id: 'pro',
     name: 'Pro',
-    price: 1999,
-    imageGenerations: 50,
-    imageEdits: 100,
-    description: 'For serious creators',
+    price: 2200,
+    imageGenerations: 525,
+    imageEdits: 525,
+    description: 'For creators',
     features: [
-      '50 image generations',
-      '100 image edits',
+      '525 images per month',
       'Priority processing',
+      'Advanced editing tools',
+      '4K quality',
+      'Valid for 30 days'
+    ]
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise',
+    price: 6000,
+    imageGenerations: 1400,
+    imageEdits: 1400,
+    description: 'Power user',
+    features: [
+      '1400 images per month',
+      'Fastest processing',
+      'All editing tools',
+      '8K quality',
+      'Batch processing',
+      'API access',
       'Valid for 30 days'
     ]
   }

@@ -5,6 +5,7 @@ import { useAuth } from "../../lib/auth";
 import { useCredits } from "../../lib/credits";
 
 // No longer need tab types since we're using a separate page for My Creations
+import { getSafeImageUrl, handleImageError } from "@/lib/image-utils";
 
 // Type for user images
 interface UserImage {
@@ -244,13 +245,25 @@ export default function DemoPage() {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Check if there's an image URL in localStorage for editing
+  // Check if there's an image URL in localStorage for editing and preload it
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const editImageUrl = localStorage.getItem('editImageUrl');
       if (editImageUrl) {
-        setDemoImage(editImageUrl);
-        localStorage.removeItem('editImageUrl');
+        // Attempt to preload the image
+        const img = new Image();
+        img.onload = () => {
+          console.log('Successfully preloaded image from localStorage');
+          setDemoImage(editImageUrl);
+          localStorage.removeItem('editImageUrl');
+        };
+        img.onerror = () => {
+          console.error('Failed to preload image from localStorage:', editImageUrl);
+          setDemoError('Failed to load the image from previous session. Please try again.');
+          localStorage.removeItem('editImageUrl');
+        };
+        // Use the safe URL with proxy if needed
+        img.src = getSafeImageUrl(editImageUrl);
       }
     }
   }, []);
@@ -563,18 +576,23 @@ export default function DemoPage() {
   const handleDownload = () => {
     if (!demoImage) return;
     
-    // Check if this is an R2 image that needs to be proxied
-    const isR2Image = demoImage.includes('r2.cloudflarestorage.com') || 
-                      demoImage.includes('.r2.') ||
-                      demoImage.includes('cloudflare');
+    // Use our utility function to get a safe URL
+    const imageUrl = getSafeImageUrl(demoImage);
     
-    const imageUrl = isR2Image 
-      ? `/api/proxy-image?url=${encodeURIComponent(demoImage)}` 
-      : demoImage;
-    
+    // Create a download link
     const link = document.createElement('a');
     link.href = imageUrl;
     link.download = 'GoLoco-creation.png';
+    
+    // Track download attempt
+    console.log(`Attempting to download image from: ${imageUrl}`);
+    
+    // Add error handling for download
+    link.onerror = () => {
+      console.error('Download failed');
+      setDemoError('Download failed. Please try again.');
+    };
+    
     link.click();
   };
 
@@ -749,12 +767,13 @@ export default function DemoPage() {
               <div className="flex justify-center mb-8 md:mb-12">
                 <div className="relative group">
                   <img
-                    src={demoImage?.includes('r2.cloudflarestorage.com') || demoImage?.includes('.r2.') || demoImage?.includes('cloudflare')
-                      ? `/api/proxy-image?url=${encodeURIComponent(demoImage)}`
-                      : demoImage}
+                    src={getSafeImageUrl(demoImage)}
                     alt="Demo Image"
                     className="rounded-2xl shadow-2xl max-w-full w-full object-contain border-4 border-white/20"
                     style={{ maxHeight: '400px', maxWidth: '600px' }}
+                    onError={(e) => handleImageError(e, setDemoError)}
+                    loading="eager"
+                    crossOrigin="anonymous"
                   />
                   {(demoGenerating || demoEditing) && (
                     <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center backdrop-blur-sm">
@@ -1142,7 +1161,7 @@ export default function DemoPage() {
                 </div>
               </div>
               <p className="mb-6 text-[#1E1E1E] opacity-80">
-                You&apos;ve reached your free limit. Upgrade to continue creating with unlimited generations, edits, and premium features!
+                You&apos;ve reached your free limit. Upgrade to get up to 1400 images per month with our premium plans!
               </p>
               <div className="flex gap-3">
                 <button
