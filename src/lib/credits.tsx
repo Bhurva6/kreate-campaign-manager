@@ -96,6 +96,8 @@ interface CreditContextType {
   showPricingModal: boolean;
   setShowPricingModal: (show: boolean) => void;
   handleSuccessfulPayment: (planId: string, paymentId: string) => void;
+  displayGenerationsRemaining: string | number;
+  displayEditsRemaining: string | number;
 }
 
 const CreditContext = createContext<CreditContextType>({
@@ -114,6 +116,8 @@ const CreditContext = createContext<CreditContextType>({
   showPricingModal: false,
   setShowPricingModal: () => {},
   handleSuccessfulPayment: () => {},
+  displayGenerationsRemaining: 0,
+  displayEditsRemaining: 0,
 });
 
 export const useCredits = () => {
@@ -285,6 +289,10 @@ export const CreditProvider = ({ children }: CreditProviderProps) => {
     }
   };
 
+  // Calculate display values for remaining credits
+  const displayGenerationsRemaining = isUnlimitedUser ? 'Unlimited' : (imageGenerationsLimit - imageGenerationsUsed);
+  const displayEditsRemaining = isUnlimitedUser ? 'Unlimited' : (imageEditsLimit - imageEditsUsed);
+
   const value = {
     imageGenerationsUsed,
     imageEditsUsed,
@@ -301,6 +309,8 @@ export const CreditProvider = ({ children }: CreditProviderProps) => {
     showPricingModal,
     setShowPricingModal,
     handleSuccessfulPayment,
+    displayGenerationsRemaining,
+    displayEditsRemaining,
   };
 
   return (
