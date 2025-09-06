@@ -54,9 +54,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing Flux Kontext API key." }, { status: 500 });
     }
 
+    // Make sure the input_image is properly formatted for the API
+    // Flux Kontext typically expects base64 with or without the data URL prefix
+    let processedImage = input_image;
+    
+    // If it's a data URL, make sure we're using the correct format
+    if (typeof input_image === 'string') {
+      // If it already has a data URL prefix, extract just the base64 part
+      if (input_image.startsWith('data:image/')) {
+        console.log("Input is a data URL, extracting base64 content");
+        processedImage = input_image.split(',')[1] || input_image;
+      } else if (!input_image.startsWith('http')) {
+        // If it doesn't have a prefix and isn't a URL, assume it's raw base64
+        console.log("Input appears to be raw base64");
+      } else {
+        console.log("Input appears to be a URL, this may not work with the API");
+      }
+    } else {
+      console.error("Input image is not a string:", typeof input_image);
+      return NextResponse.json({ 
+        error: "Invalid image format", 
+        details: "Image must be a base64 string or data URL" 
+      }, { status: 400 });
+    }
+    
+    // Log the first few characters for debugging (don't log the whole base64 string)
+    console.log("Processed image type:", typeof processedImage);
+    console.log("Processed image preview:", 
+      typeof processedImage === 'string' 
+        ? `${processedImage.substring(0, 20)}...` 
+        : 'Not a string'
+    );
+    
     const body = {
       prompt,
-      input_image,
+      input_image: processedImage,
       output_format: "png",
       safety_tolerance: 2,
     };
@@ -90,9 +122,23 @@ export async function POST(req: NextRequest) {
       
       if (!res.ok) {
         console.error("API error response:", data);
+        
+        // Handle specific error types with more helpful messages
+        let errorMessage = "Failed to edit image";
+        let errorDetails = JSON.stringify(data);
+        
+        // Check for common error patterns from the API
+        if (data.detail && data.detail.includes("preparing the task")) {
+          errorMessage = "Image processing error";
+          errorDetails = "The image format may not be compatible with the editing service. Try using a different image or converting to JPEG/PNG format.";
+        } else if (data.error && typeof data.error === 'string' && data.error.toLowerCase().includes("too large")) {
+          errorMessage = "Image is too large";
+          errorDetails = "Please try with a smaller image or reduce the image resolution.";
+        }
+        
         return NextResponse.json({ 
-          error: data.error || "Failed to edit image",
-          details: JSON.stringify(data).substring(0, 200)
+          error: errorMessage,
+          details: errorDetails
         }, { status: res.status });
       }
       

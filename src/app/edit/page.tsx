@@ -75,7 +75,29 @@ export default function EditImagePage() {
   function imageLikeToDataURL(
     image: string | { data: Uint8ClampedArray | number[]; width: number; height: number } | ImageData
   ): string {
-    if (typeof image === "string") return image;
+    // If it's already a string, verify if it's a data URL or needs to be converted
+    if (typeof image === "string") {
+      // Check if it's already a data URL (starts with data:image/)
+      if (image.startsWith("data:image/")) {
+        return image;
+      }
+      
+      // Check if it's a URL (not a data URL)
+      if (image.startsWith("http")) {
+        console.warn("Cannot convert remote URL to data URL. API might not accept this format.");
+        return image;
+      }
+      
+      // Assume it's raw base64, convert to data URL
+      try {
+        return `data:image/png;base64,${image}`;
+      } catch (err) {
+        console.error("Failed to format base64 string as data URL:", err);
+        return image; // Return as-is if conversion fails
+      }
+    }
+    
+    // Handle native ImageData
     if (isNativeImageData(image)) {
       // Convert native ImageData to data URL
       const canvas = document.createElement("canvas");
@@ -84,8 +106,10 @@ export default function EditImagePage() {
       const ctx = canvas.getContext("2d");
       if (!ctx) return "";
       ctx.putImageData(image, 0, 0);
-      return canvas.toDataURL();
+      // Use PNG for better quality
+      return canvas.toDataURL("image/png", 1.0);
     }
+    
     // If it's a custom object, reconstruct native ImageData
     const { data, width, height } = image;
     const canvas = document.createElement("canvas");
@@ -96,7 +120,8 @@ export default function EditImagePage() {
     const arr = data instanceof Uint8ClampedArray ? data : new Uint8ClampedArray(data);
     const nativeImageData = new window.ImageData(arr, width, height);
     ctx.putImageData(nativeImageData, 0, 0);
-    return canvas.toDataURL();
+    // Use PNG for better quality
+    return canvas.toDataURL("image/png", 1.0);
   }
 
   const handleEdit = async () => {
@@ -107,10 +132,15 @@ export default function EditImagePage() {
     setPollingUrl(null);
     try {
       console.log("Sending edit request...");
+      // Convert image to proper data URL format first
+      const imageDataUrl = imageLikeToDataURL(img);
+      console.log("Image data URL type:", typeof imageDataUrl);
+      console.log("Image data URL starts with:", imageDataUrl.substring(0, 30) + "...");
+      
       const res = await fetch("/api/edit-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, input_image: img }),
+        body: JSON.stringify({ prompt, input_image: imageDataUrl }),
       });
       
       const data = await res.json();
