@@ -46,6 +46,11 @@ module.exports = {
           'accent': 'var(--accent)',
           'base': 'var(--background)',
         }
+      },
+      animation: {
+        'scroll': 'scroll 30s linear infinite',
+        'marquee': 'marquee 25s linear infinite',
+        'slideLeft': 'slideLeft 25s linear infinite',
       }
     },
   },

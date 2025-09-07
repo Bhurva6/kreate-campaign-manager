@@ -551,22 +551,118 @@ function LandingPageContent() {
          
             </p>
 
-            {/* CTA Button */}
-            <button
-              className="mx-auto inline-flex items-center gap-3 font-semibold px-8 sm:px-10 py-2.5 sm:py-3 rounded-full text-base sm:text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 bg-[#B6CF4F] text-white hover:shadow-[#1A018D]/30"
-              onClick={() => {
-                if (user) {
-                  router.push("/demo");
-                } else {
-                  setShowAuthModal(true);
-                }
-              }}
-            >
-              <span>✨</span>
-              Start Editing
-              <span className="text-sm opacity-80">→</span>
-            </button>
             
+
+            {/* CTA Button */}
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
+  <button
+    className="inline-flex items-center gap-3 font-semibold px-8 sm:px-10 py-2.5 sm:py-3 rounded-full text-base sm:text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 bg-[#B6CF4F] text-white hover:shadow-[#1A018D]/30"
+    onClick={() => {
+      if (user) {
+        router.push("/demo");
+      } else {
+        setShowAuthModal(true);
+      }
+    }}
+  >
+    <span>✨</span>
+    Start Editing
+    <span className="text-sm opacity-80">→</span>
+  </button>
+  <button
+    className="inline-flex items-center gap-3 font-semibold px-8 sm:px-10 py-2.5 sm:py-3 rounded-full text-base sm:text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 bg-[#FF5E32] text-white hover:shadow-[#1A018D]/30"
+    onClick={() => {
+      if (user) {
+        router.push("/enterprise");
+      } else {
+        setShowAuthModal(true);
+      }
+    }}
+  >
+    <span>✨</span>
+    Try Enterprise
+    <span className="text-sm opacity-80">→</span>
+  </button>
+</div>
+     
+            {/* Brands Carousel */}
+            <div className="w-full max-w-5xl mx-auto mt-10">
+              <p className="text-white/70 text-sm mb-6 text-center">Trusted by innovative brands</p>
+              
+              <div className="relative overflow-hidden rounded-xl bg-black/90">
+                {/* Darker strip background */}
+                <div className="absolute inset-0 bg-black rounded-xl"></div>
+                
+                {/* Carousel container with automatic horizontal scroll animation */}
+                <div className="py-8 overflow-hidden w-full">
+                  <div className="flex whitespace-nowrap logo-slide">
+                    {/* First set of logos */}
+                    <div className="flex gap-8 items-center mx-6">
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/zuvelogo.png" alt="Vercel" className="h-14 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/cbbunny.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/unlabellogo.png" alt="Google" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/sslogo.png" alt="Next.js" className="h-14 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/panachelogo.png" alt="GlobalTech" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/ollsafelogo.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/gcgclogo.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/evolvlogo.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/bloomlogo.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                    </div>
+                    
+                    {/* Duplicate set for continuous scroll effect */}
+                    <div className="flex gap-8 items-center mx-6">
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/zuvelogo.png" alt="Vercel" className="h-14 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-40 h-16 flex items-center justify-center">
+                        <img src="/cbbunny.png" alt="FileCorp" className="h-11 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/unlabellogo.png" alt="Google" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/sslogo.png" alt="Next.js" className="h-14 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/panachelogo.png" alt="GlobalTech" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-36 h-20 flex items-center justify-center">
+                        <img src="/ollsafelogo.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-40 h-16 flex items-center justify-center">
+                        <img src="/gcgclogo.png" alt="FileCorp" className="h-11 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      <div className="w-40 h-16 flex items-center justify-center">
+                        <img src="/evolvlogo.png" alt="FileCorp" className="h-11 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                      
+                      <div className="w-40 h-16 flex items-center justify-center">
+                        <img src="/bloomlogo.png" alt="FileCorp" className="h-11 hover:opacity-100 transition-opacity duration-300" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>            
             {/* Spacer div to ensure proper spacing */}
             <div className="h-12 md:h-22 lg:h-10"></div>
             
