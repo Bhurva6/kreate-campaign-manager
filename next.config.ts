@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
         fs: false,
         path: false,
       };
+      
+      // Ignore warnings for libheif-js critical dependencies
+      config.ignoreWarnings = [
+        {
+          module: /libheif-js\/libheif-wasm\/libheif-bundle\.js/,
+          message: /Critical dependency: require function is used in a way in which dependencies cannot be statically extracted/,
+        },
+      ];
     }
     return config;
   },

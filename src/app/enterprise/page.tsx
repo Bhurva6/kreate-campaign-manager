@@ -8,25 +8,16 @@ import UserDropdown from "../../components/UserDropdown";
 import Link from "next/link";
 import { useTheme } from "@/context/ThemeContext";
 import ThemeToggle from "../../components/ThemeToggle";
+// Import NoSSR wrapper to prevent server-side rendering of components that need client-side context
+import NoSSR from "../../components/NoSSR";
 
-export default function EnterprisePage() {
+// Create a client-only inner component that uses hooks
+function EnterprisePageContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  // Default theme values in case the provider is not available
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
+  const { isDarkMode, toggleTheme } = useTheme();
   
-  // Try to use the theme context if available
-  let themeContext;
-  try {
-    themeContext = useTheme();
-  } catch (error) {
-    // Theme provider not available, we'll use our local state
-    console.log("Theme provider not available, using default theme");
-  }
-  
-  const effectiveIsDarkMode = themeContext?.isDarkMode ?? isDarkMode;
-  const effectiveToggleTheme = themeContext?.toggleTheme ?? toggleTheme;
+  // The rest of your component logic
   
   const [companyData, setCompanyData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -95,7 +86,7 @@ export default function EnterprisePage() {
           </div>
           
           <div className="flex items-center gap-4">
-            <ThemeToggle isDarkMode={effectiveIsDarkMode} toggleTheme={effectiveToggleTheme} />
+            <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
             {user && <UserDropdown />}
           </div>
         </div>
@@ -189,5 +180,18 @@ export default function EnterprisePage() {
         </div>
       </footer>
     </div>
+  );
+}
+
+// Main export that wraps the content with NoSSR
+export default function EnterprisePage() {
+  return (
+    <NoSSR fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    }>
+      <EnterprisePageContent />
+    </NoSSR>
   );
 }
