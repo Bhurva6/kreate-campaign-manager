@@ -55,22 +55,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Make sure the input_image is properly formatted for the API
-    // Flux Kontext typically expects base64 with or without the data URL prefix
+    // The Flux Kontext API expects base64 WITHOUT the data URL prefix
     let processedImage = input_image;
     
-    // If it's a data URL, make sure we're using the correct format
-    if (typeof input_image === 'string') {
-      // If it already has a data URL prefix, extract just the base64 part
-      if (input_image.startsWith('data:image/')) {
-        console.log("Input is a data URL, extracting base64 content");
-        processedImage = input_image.split(',')[1] || input_image;
-      } else if (!input_image.startsWith('http')) {
-        // If it doesn't have a prefix and isn't a URL, assume it's raw base64
-        console.log("Input appears to be raw base64");
-      } else {
-        console.log("Input appears to be a URL, this may not work with the API");
-      }
-    } else {
+    if (typeof input_image !== 'string') {
       console.error("Input image is not a string:", typeof input_image);
       return NextResponse.json({ 
         error: "Invalid image format", 
@@ -78,79 +66,268 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
     
-    // Log the first few characters for debugging (don't log the whole base64 string)
-    console.log("Processed image type:", typeof processedImage);
-    console.log("Processed image preview:", 
-      typeof processedImage === 'string' 
-        ? `${processedImage.substring(0, 20)}...` 
-        : 'Not a string'
-    );
+    // Process the image based on format
+    try {
+      if (input_image.startsWith('data:image/')) {
+        // Extract just the base64 part from data URL
+        console.log("Input is a data URL, extracting base64 content");
+        // Format: data:image/jpeg;base64,/9j/4AAQSkZJRg...
+        const base64Parts = input_image.split(',');
+        if (base64Parts.length !== 2) {
+          throw new Error("Invalid data URL format");
+        }
+        
+        // Clean up the extracted base64 content
+        processedImage = base64Parts[1].trim().replace(/\s/g, '');
+        
+        // Validate that it's proper base64 with a more permissive check
+        if (!/^[A-Za-z0-9+/=]*$/.test(processedImage)) {
+          console.error("Data URL base64 validation failed, contains invalid characters");
+          throw new Error("Invalid base64 characters in data URL");
+        }
+        
+        // Ensure base64 string is not empty
+        if (processedImage.length === 0) {
+          throw new Error("Empty base64 content in data URL");
+        }
+        
+        // Some APIs expect base64 strings with padding. Ensure proper padding.
+        const remainder = processedImage.length % 4;
+        if (remainder > 0) {
+          processedImage += '='.repeat(4 - remainder);
+          console.log("Added padding to base64 string from data URL");
+        }
+      } else if (input_image.startsWith('http')) {
+        console.error("Input appears to be a URL, cannot process directly");
+        return NextResponse.json({
+          error: "Invalid image format",
+          details: "Direct image URLs are not supported. Please use a base64 or data URL format."
+        }, { status: 400 });
+      } else {
+        // Assume it's already raw base64
+        console.log("Input appears to be raw base64");
+        
+        // Clean up the base64 string by removing whitespace and other non-base64 characters
+        processedImage = input_image.trim().replace(/\s/g, '');
+        
+        // Better validation with more permissive check but still ensures it's mostly valid base64
+        if (!/^[A-Za-z0-9+/=]*$/.test(processedImage)) {
+          console.error("Base64 validation failed, contains invalid characters");
+          throw new Error("Invalid base64 characters in raw string");
+        }
+        
+        // Ensure base64 string is not empty
+        if (processedImage.length === 0) {
+          throw new Error("Empty base64 string provided");
+        }
+        
+        // Some APIs expect base64 strings with padding. Ensure proper padding.
+        const remainder = processedImage.length % 4;
+        if (remainder > 0) {
+          processedImage += '='.repeat(4 - remainder);
+          console.log("Added padding to base64 string");
+        }
+      }
+      
+      // Log the first few characters for debugging
+      console.log("Processed image type:", typeof processedImage);
+      console.log("Processed image preview:", `${processedImage.substring(0, 20)}...`);
+    } catch (error: any) {
+      console.error("Error processing image:", error);
+      return NextResponse.json({
+        error: "Invalid image format",
+        details: `Could not process image: ${error.message}`,
+        help: "Make sure you're providing a valid image in base64 format or as a data URL."
+      }, { status: 400 });
+    }
+
+    // Validate that the processed image is not too long or too short
+    if (processedImage.length < 100) {
+      console.error("Processed image is suspiciously short:", processedImage.length);
+      return NextResponse.json({
+        error: "Invalid image data",
+        details: "The processed image data is too short to be valid."
+      }, { status: 400 });
+    }
+
+    // Log image size in KB for debugging
+    console.log(`Image size: ~${Math.round(processedImage.length * 0.75 / 1024)}KB`);
+
+    // Try to validate the prompt and image before sending to API
+    if (!prompt || prompt.trim().length === 0) {
+      return NextResponse.json({
+        error: "Invalid prompt",
+        details: "Prompt cannot be empty"
+      }, { status: 400 });
+    }
     
     const body = {
-      prompt,
+      prompt: prompt.trim(),
       input_image: processedImage,
-      output_format: "png",
+      output_format: "png", // Using PNG format is typically more reliable for editing operations
       safety_tolerance: 2,
     };
+    
+    // Optional: Log a sanitized version of the request for debugging
+    console.log("API request:", {
+      prompt: body.prompt,
+      inputImageLength: body.input_image.length,
+      outputFormat: body.output_format
+    });
 
     console.log("Sending request to Flux Kontext API...");
     
+    // Implement a retry mechanism
+    const MAX_RETRIES = 2;
+    let attempt = 0;
+    let lastError = null;
     let data;
-    try {
-      const res = await fetch("https://api.bfl.ai/v1/flux-kontext-pro", {
-        method: "POST",
-        headers: {
-          "x-key": apiKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-      
-      console.log("Flux Kontext API response status:", res.status);
-      
-      // First try to parse the response as JSON
-      const responseText = await res.text();
+    
+    while (attempt <= MAX_RETRIES) {
       try {
-        data = JSON.parse(responseText);
-      } catch (parseError) {
-        console.error("Failed to parse API response as JSON:", responseText.substring(0, 200));
-        return NextResponse.json({ 
-          error: "Invalid response from image editing API", 
-          details: "Response couldn't be parsed as JSON" 
-        }, { status: 500 });
-      }
-      
-      if (!res.ok) {
-        console.error("API error response:", data);
+        attempt++;
+        console.log(`API attempt ${attempt}/${MAX_RETRIES + 1}`);
         
-        // Handle specific error types with more helpful messages
-        let errorMessage = "Failed to edit image";
-        let errorDetails = JSON.stringify(data);
+        // Add timeout handling for the fetch operation
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
         
-        // Check for common error patterns from the API
-        if (data.detail && data.detail.includes("preparing the task")) {
-          errorMessage = "Image processing error";
-          errorDetails = "The image format may not be compatible with the editing service. Try using a different image or converting to JPEG/PNG format.";
-        } else if (data.error && typeof data.error === 'string' && data.error.toLowerCase().includes("too large")) {
-          errorMessage = "Image is too large";
-          errorDetails = "Please try with a smaller image or reduce the image resolution.";
+        let res;
+        try {
+          res = await fetch("https://api.bfl.ai/v1/flux-kontext-pro", {
+            method: "POST",
+            headers: {
+              "x-key": apiKey,
+              "Content-Type": "application/json",
+              "Accept": "application/json"
+            },
+            body: JSON.stringify(body),
+            signal: controller.signal,
+          });
+          clearTimeout(timeoutId);
+        } catch (fetchError: any) {
+          // Handle timeout or network errors
+          console.error("Fetch operation failed:", fetchError.message);
+          
+          if (fetchError.name === "AbortError") {
+            lastError = "Request timed out after 30 seconds";
+          } else {
+            lastError = fetchError.message;
+          }
+          
+          // If this is the last retry, return an error
+          if (attempt > MAX_RETRIES) {
+            return NextResponse.json({ 
+              error: "Connection error", 
+              details: lastError
+            }, { status: 500 });
+          }
+          
+          // Wait a bit longer between retries for network issues
+          console.log("Network error, retrying in 2 seconds...");
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
         }
         
-        return NextResponse.json({ 
-          error: errorMessage,
-          details: errorDetails
-        }, { status: res.status });
+        console.log("Flux Kontext API response status:", res.status);
+        
+        // First try to parse the response as JSON
+        const responseText = await res.text();
+        try {
+          data = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error("Failed to parse API response as JSON:", responseText.substring(0, 200));
+          lastError = "Invalid response from image editing API";
+          
+          // If this is the last retry, return an error
+          if (attempt > MAX_RETRIES) {
+            return NextResponse.json({ 
+              error: "Invalid response from image editing API", 
+              details: "Response couldn't be parsed as JSON" 
+            }, { status: 500 });
+          }
+          
+          // Otherwise retry
+          console.log("Retrying due to JSON parse error...");
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between retries
+          continue;
+        }
+        
+        if (!res.ok) {
+          console.error("API error response:", data);
+          
+          // Handle specific error types with more helpful messages
+          let errorMessage = "Failed to edit image";
+          let errorDetails = JSON.stringify(data);
+          
+          // Check for common error patterns from the API
+          if (data.detail && data.detail.includes("preparing the task")) {
+            errorMessage = "Image processing error";
+            errorDetails = "The image format may not be compatible with the editing service. Try using a different image or converting to JPEG/PNG format.";
+            
+            // Log more details for debugging
+            console.error("Task preparation error details:", {
+              responseStatus: res.status,
+              dataReceived: JSON.stringify(data),
+              imageDataLength: processedImage.length,
+              promptLength: prompt.length,
+              attemptNumber: attempt
+            });
+            
+            // Add a longer delay for task preparation errors
+            if (attempt <= MAX_RETRIES) {
+              console.log("Task preparation error, waiting 3 seconds before retry...");
+              await new Promise(resolve => setTimeout(resolve, 3000));
+              continue;
+            }
+          } else if (data.error && typeof data.error === 'string' && data.error.toLowerCase().includes("too large")) {
+            errorMessage = "Image is too large";
+            errorDetails = "Please try with a smaller image or reduce the image resolution.";
+          }
+          
+          lastError = errorMessage;
+          
+          // If this is the last retry, return an error
+          if (attempt > MAX_RETRIES) {
+            return NextResponse.json({ 
+              error: errorMessage,
+              details: errorDetails
+            }, { status: res.status });
+          }
+          
+          // Otherwise retry
+          console.log("Retrying due to API error...");
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between retries
+          continue;
+        }
+        
+        // Success - break out of retry loop
+        console.log("API request successful, returning data");
+        return NextResponse.json({ ...data });
+      } catch (error: any) {
+        // This catches any other errors in the try block
+        console.error("Unexpected error during API request:", error);
+        lastError = error.message || "An unexpected error occurred";
+        
+        // If this is the last retry, return an error
+        if (attempt > MAX_RETRIES) {
+          return NextResponse.json({ 
+            error: "Error processing request", 
+            details: lastError
+          }, { status: 500 });
+        }
+        
+        // Otherwise retry
+        console.log("Retrying after unexpected error...");
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
       }
-      
-      console.log("API request successful, returning data");
-      return NextResponse.json({ ...data });
-    } catch (fetchError: any) {
-      console.error("Error fetching from Flux Kontext API:", fetchError.message);
-      return NextResponse.json({ 
-        error: "Error connecting to image editing service", 
-        details: fetchError.message 
-      }, { status: 500 });
     }
+    
+    // Should never get here, but just in case
+    return NextResponse.json({ 
+      error: "Failed to edit image after multiple attempts", 
+      details: lastError || "Unknown error" 
+    }, { status: 500 });
   } catch (err: any) {
     console.error("Edit image error details:", {
       message: err.message,

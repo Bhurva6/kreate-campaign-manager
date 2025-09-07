@@ -176,11 +176,33 @@ export async function fetchUserImages(userId: string): Promise<UploadResult[]> {
 
 /**
  * Convert base64 string to Buffer
+ * @param base64String - The base64 string to convert (with or without data URL prefix)
+ * @returns Buffer representing the image data
  */
 export function base64ToBuffer(base64String: string): Buffer {
-  // Remove data URL prefix if present
-  const base64Data = base64String.replace(/^data:image\/[a-z]+;base64,/, '');
-  return Buffer.from(base64Data, 'base64');
+  try {
+    // Handle empty or invalid input
+    if (!base64String || typeof base64String !== 'string') {
+      console.error("Invalid base64 input:", typeof base64String);
+      throw new Error("Invalid base64 input format");
+    }
+    
+    // Clean the string by removing whitespace if any
+    const cleanedString = base64String.trim().replace(/\s/g, '');
+    
+    // Remove data URL prefix if present
+    const base64Data = cleanedString.replace(/^data:image\/[a-z]+;base64,/, '');
+    
+    // Ensure we have valid base64 data
+    if (base64Data.length === 0) {
+      throw new Error("Empty base64 data after processing");
+    }
+    
+    return Buffer.from(base64Data, 'base64');
+  } catch (error) {
+    console.error("Error converting base64 to buffer:", error);
+    throw error;
+  }
 }
 
 /**

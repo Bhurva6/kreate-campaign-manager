@@ -99,13 +99,51 @@ export function useImageOperations() {
       throw new Error("Image edit limit reached");
     }
     
+    // Validate input parameters
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+      setError("Invalid prompt");
+      throw new Error("Invalid prompt");
+    }
+    
+    if (!inputImage || typeof inputImage !== 'string') {
+      setError("Invalid image data");
+      throw new Error("Invalid image data");
+    }
+    
+    // Validate image format
+    if (!inputImage.startsWith('data:image/')) {
+      console.error("Invalid image format. Image must start with data:image/");
+      setError("Invalid image format");
+      throw new Error("Image must be in data URL format");
+    }
+    
+    // Basic validation for base64 content
+    const base64Parts = inputImage.split(',');
+    if (base64Parts.length !== 2) {
+      console.error("Invalid data URL format");
+      setError("Invalid image data");
+      throw new Error("Invalid image data");
+    }
+    
+    const base64Content = base64Parts[1];
+    if (!base64Content || base64Content.length < 100) {
+      console.error("Invalid base64 image data:", 
+        base64Content ? `Length: ${base64Content.length}, Preview: ${base64Content.substring(0, 20)}...` : "No base64 content");
+      setError("Invalid image data");
+      throw new Error("Invalid image data");
+    }
+    
     try {
       // Start the edit process
       console.log("Sending image edit request...");
       const response = await fetch("/api/edit-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input_image: inputImage, prompt, userId: userIdentifier }),
+        body: JSON.stringify({ 
+          input_image: inputImage, 
+          prompt: prompt.trim(),
+          userId: userIdentifier 
+        }),
       });
 
       if (!response.ok) {

@@ -119,7 +119,7 @@ export async function convertHeicImage(
 ): Promise<{ buffer: Buffer; mimeType: string }> {
   try {
     // Dynamically import heic-convert to avoid SSR issues
-    const heicConvert = await importDynamic<any>('heic-convert');
+    const heicConvert = await importDynamic<any>(() => import('heic-convert'));
     
     // Convert HEIC to target format
     const convertedBuffer = await heicConvert({

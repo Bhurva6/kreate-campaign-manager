@@ -486,10 +486,28 @@ export default function DemoPage() {
     try {
       let imageUrl = demoImage;
       
-      // Handle image conversion with better error handling
+      // Handle image conversion with better error handling and validation
+      if (!demoImage || typeof demoImage !== 'string') {
+        throw new Error("No valid image selected");
+      }
+      
+      // Log the first 50 chars of the image string for debugging
+      console.log("Image type:", typeof demoImage);
+      console.log("Image preview:", demoImage.substring(0, 50) + "...");
+      
+      // Check if the image is a URL parameter or invalid format
+      if (demoImage.startsWith('remove') || demoImage.length < 100) {
+        throw new Error("Invalid image format. Please select a valid image.");
+      }
+      
       if (!demoImage.startsWith('data:')) {
         try {
           setEditingProgress("Converting image format...");
+          
+          // Check if the URL is malformed or contains query parameters
+          if (demoImage.includes('?') && !demoImage.startsWith('http')) {
+            throw new Error("Invalid image URL format");
+          }
           
           // Use our proxy API for R2 images to avoid CORS issues
           const isR2Image = demoImage.includes('r2.cloudflarestorage.com') || 
@@ -503,7 +521,7 @@ export default function DemoPage() {
           }
           
           const response = await fetch(imageToFetch);
-          if (!response.ok) throw new Error("Failed to fetch image");
+          if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
           
           const blob = await response.blob();
           if (blob.size === 0) throw new Error("Empty image data");
@@ -511,6 +529,11 @@ export default function DemoPage() {
           // Size validation - prevent overly large images (>10MB)
           if (blob.size > 10 * 1024 * 1024) {
             throw new Error("Image too large (max 10MB)");
+          }
+          
+          // Check MIME type
+          if (!blob.type.startsWith('image/')) {
+            throw new Error(`Invalid file type: ${blob.type}. Expected an image.`);
           }
           
           imageUrl = await new Promise<string>((resolve, reject) => {
@@ -522,21 +545,43 @@ export default function DemoPage() {
                 reject(new Error("Invalid image format"));
                 return;
               }
+              
+              // Validate base64 content after the comma
+              const base64Part = result.split(',')[1];
+              if (!base64Part || base64Part.length < 100) {
+                reject(new Error("Invalid base64 image data"));
+                return;
+              }
+              
               resolve(result);
             };
             reader.onerror = () => reject(new Error("Failed to read image"));
             reader.readAsDataURL(blob);
           });
         } catch (convertError: any) {
+          console.error("Image conversion error:", convertError);
           throw new Error(`Image preparation failed: ${convertError.message || "Unknown error"}`);
         }
       }
       
       setEditingProgress("Processing your edit...");
       
+      // Perform final validation before sending to editImage function
+      if (!imageUrl || typeof imageUrl !== 'string') {
+        throw new Error("Image processing failed - no valid image URL");
+      }
+      
+      // Ensure it's a data URL
+      if (!imageUrl.startsWith('data:image/')) {
+        console.error("Invalid image URL format:", imageUrl.substring(0, 50) + "...");
+        throw new Error("Image processing failed - invalid format");
+      }
+      
+      console.log("Image prepared for editing:", imageUrl.substring(0, 50) + "...");
+      
       try {
-        // Use our enhanced editImage function which handles credit management internally
-        const result = await editImage(demoEditPrompt, imageUrl);
+        // Note: The editImage function expects (inputImage, prompt) parameters in that order
+        const result = await editImage(imageUrl, demoEditPrompt);
         
         if (!result) {
           throw new Error("Edit operation failed - no result returned");

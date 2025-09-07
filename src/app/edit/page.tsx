@@ -124,6 +124,83 @@ export default function EditImagePage() {
     return canvas.toDataURL("image/png", 1.0);
   }
 
+  // Normalize image to a standard format that the API will accept
+  function normalizeImageForAPI(
+    image: string | { data: Uint8ClampedArray | number[]; width: number; height: number } | ImageData
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      try {
+        // First convert to data URL if not already
+        const dataUrl = imageLikeToDataURL(image);
+        
+        // Create an Image element to load the data URL
+        const img = document.createElement('img');
+        img.crossOrigin = 'anonymous';
+        
+        img.onload = () => {
+          try {
+            // Create a canvas with standard dimensions
+            const canvas = document.createElement('canvas');
+            
+            // Keep aspect ratio but limit size to reasonable dimensions
+            const MAX_SIZE = 1024; // Most APIs work well with images up to 1024px
+            let width = img.width;
+            let height = img.height;
+            
+            if (width > height && width > MAX_SIZE) {
+              height = Math.round((height * MAX_SIZE) / width);
+              width = MAX_SIZE;
+            } else if (height > MAX_SIZE) {
+              width = Math.round((width * MAX_SIZE) / height);
+              height = MAX_SIZE;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw the image onto the canvas
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              reject(new Error('Failed to get canvas context'));
+              return;
+            }
+            
+            // Use better quality settings
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            
+            // Draw white background first (in case of transparent images)
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Then draw the image
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert to JPEG format (widely compatible)
+            const normalizedDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            console.log(`Normalized image: ${width}x${height}, starts with: ${normalizedDataUrl.substring(0, 30)}...`);
+            resolve(normalizedDataUrl);
+          } catch (err) {
+            console.error('Error normalizing image:', err);
+            // Fall back to original data URL
+            resolve(dataUrl);
+          }
+        };
+        
+        img.onerror = () => {
+          console.error('Failed to load image for normalization');
+          // Fall back to original data URL
+          resolve(dataUrl);
+        };
+        
+        img.src = dataUrl;
+      } catch (err) {
+        console.error('Error in image normalization:', err);
+        reject(err);
+      }
+    });
+  }
+
   const handleEdit = async () => {
     setLoading(true);
     setError(null);
@@ -131,16 +208,20 @@ export default function EditImagePage() {
     setFinalImage(null);
     setPollingUrl(null);
     try {
-      console.log("Sending edit request...");
-      // Convert image to proper data URL format first
-      const imageDataUrl = imageLikeToDataURL(img);
-      console.log("Image data URL type:", typeof imageDataUrl);
-      console.log("Image data URL starts with:", imageDataUrl.substring(0, 30) + "...");
+      console.log("Processing image for edit request...");
+      
+      // Convert and normalize the image to a standard format
+      const normalizedImage = await normalizeImageForAPI(img).catch(err => {
+        console.error("Image normalization failed, falling back to simple conversion:", err);
+        return imageLikeToDataURL(img);
+      });
+      
+      console.log("Image prepared for API, sending edit request...");
       
       const res = await fetch("/api/edit-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, input_image: imageDataUrl }),
+        body: JSON.stringify({ prompt, input_image: normalizedImage }),
       });
       
       const data = await res.json();
