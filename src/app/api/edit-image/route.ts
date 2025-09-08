@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadImageToR2, base64ToBuffer, getMimeTypeFromDataUrl } from "@/lib/r2-upload";
+import { tokenManager } from '@/lib/google-auth';
 
 // Simple request deduplication cache - stores recent prompts with timestamps
 // This helps prevent duplicate API calls
@@ -20,12 +21,12 @@ type ApiEndpoint = {
 // API endpoints - primary and fallback
 const API_ENDPOINTS = [
   {
-    url: "https://us-central1-aiplatform.googleapis.com/v1/projects/cobalt-mind-422108/locations/us-central1/publishers/google/models/gemini-2.5-flash-image-preview:generateContent", // Vertex AI Gemini primary API
+    url: "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash-image-preview:generateContent", // Use gemini-2.5-flash-image-preview which requires OAuth token
     headerKey: "Authorization", 
-    envKey: "GEMINI_NANO_BANANA",
-    timeout: 45000, // 45 seconds
+    envKey: "GEMINI_OAUTH_TOKEN", // We'll use the dynamically generated token instead of env var
+    timeout: 60000, // 60 seconds - increased timeout for OAuth token usage
     retryDelay: 1500, // 1.5 seconds
-    apiType: "vertex-gemini"
+    apiType: "gemini-direct"
   },
   {
     url: "https://api.bfl.ai/v1/flux-kontext-pro",
@@ -89,11 +90,36 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const apiKey = process.env.GEMINI_NANO_BANANA;
-    if (!apiKey) {
-      console.error("Missing Gemini API key in environment variables");
-      return NextResponse.json({ error: "Missing Gemini API key." }, { status: 500 });
+    // Check if any of our API keys are available and generate OAuth token for Gemini
+    let geminiToken: string | null = null;
+    try {
+      // Generate a fresh OAuth token for gemini-2.5-flash-image-preview which requires OAuth
+      geminiToken = await tokenManager.getAccessToken();
+      console.log("Generated OAuth token for Gemini API");
+    } catch (tokenErr) {
+      console.error("Failed to generate Gemini OAuth token:", tokenErr);
+      // We'll continue without the token and try other APIs if available
     }
+    
+    const fluxKey = process.env.FLUX_KONTEXT_API_KEY;
+    const stabilityKey = process.env.STABILITY_API_KEY;
+    
+    console.log("API Keys available check:", {
+      "GEMINI_OAUTH_TOKEN": geminiToken ? "Available (generated)" : "Failed to generate",
+      "FLUX_KONTEXT_API_KEY": fluxKey ? "Available" : "Missing",
+      "STABILITY_API_KEY": stabilityKey ? "Available" : "Missing"
+    });
+
+    // At least one API key should be available
+    if (!geminiToken && !fluxKey && !stabilityKey) {
+      console.error("No API keys available or OAuth token could not be generated");
+      return NextResponse.json({ 
+        error: "API configuration error", 
+        details: "No API keys available or OAuth token could not be generated. Please check your environment variables and service account configuration." 
+      }, { status: 500 });
+    }
+    
+    // Continue even without primary API key as we'll try fallbacks
 
     // Make sure the input_image is properly formatted for the API
     // The Flux Kontext API expects base64 WITHOUT the data URL prefix
@@ -227,13 +253,31 @@ export async function POST(req: NextRequest) {
       outputFormat: body.output_format
     });
 
-    console.log("Sending request to Vertex AI Gemini API...");
+    console.log("Preparing to send request to image editing APIs...");
     
     // Smart retry mechanism with multiple API fallbacks
     const MAX_RETRIES_PER_API = 2; // 2 retries per API
     const MAX_TOTAL_ATTEMPTS = API_ENDPOINTS.length * MAX_RETRIES_PER_API; // Total attempts across all APIs
     
-    let apiIndex = 0; // Start with primary API
+    // Determine which API to start with based on available keys
+    let apiIndex = 0; // Default: start with primary API (Gemini)
+    
+    // If the primary API (Gemini with OAuth token) is not available, start with the first available one
+    if (!geminiToken) {
+      console.log("Gemini OAuth token not available, looking for alternative APIs");
+      let foundAlternative = false;
+      for (let i = 1; i < API_ENDPOINTS.length; i++) {
+        if (process.env[API_ENDPOINTS[i].envKey]) {
+          console.log(`Starting with ${API_ENDPOINTS[i].envKey} instead`);
+          apiIndex = i;
+          foundAlternative = true;
+          break;
+        }
+      }
+      if (!foundAlternative) {
+        console.log("No alternative APIs found, will still try with Gemini but likely to fail");
+      }
+    }
     let attemptsOnCurrentApi = 0;
     let totalAttempts = 0;
     let lastError = null;
@@ -252,18 +296,32 @@ export async function POST(req: NextRequest) {
         attemptsOnCurrentApi++;
         
         const currentEndpoint: ApiEndpoint = API_ENDPOINTS[apiIndex];
-        const currentApiKey = process.env[currentEndpoint.envKey];
+        
+        // Get the appropriate key or token based on the endpoint
+        let currentApiKey: string | null = null;
+        if (currentEndpoint.envKey === 'GEMINI_OAUTH_TOKEN') {
+          // Use the dynamically generated OAuth token for Gemini
+          currentApiKey = geminiToken;
+          console.log("Using dynamically generated OAuth token for Gemini model");
+        } else {
+          // Use environment variable for other APIs
+          currentApiKey = process.env[currentEndpoint.envKey] || null;
+        }
         
         if (!currentApiKey) {
-          console.error(`Missing API key for ${currentEndpoint.url} in environment variable ${currentEndpoint.envKey}`);
+          console.error(`Missing API key/token for ${currentEndpoint.url}`);
           
           // Try next API if available
           if (apiIndex < API_ENDPOINTS.length - 1) {
+            console.log(`Missing API key/token for ${currentEndpoint.apiType || currentEndpoint.url}, trying next API...`);
             apiIndex++;
             attemptsOnCurrentApi = 0;
             continue;
           } else {
-            return NextResponse.json({ error: "API configuration error" }, { status: 500 });
+            return NextResponse.json({ 
+              error: "API configuration error", 
+              details: `No API keys available. Make sure API keys or OAuth token are properly configured.`
+            }, { status: 500 });
           }
         }
         
@@ -287,8 +345,8 @@ export async function POST(req: NextRequest) {
           };
           
           // Format request body based on which API we're calling
-          if (currentEndpoint.apiType === "vertex-gemini") {
-            // Vertex AI Gemini 2.5 Flash Image format
+          if (currentEndpoint.apiType === "gemini-direct") {
+            // Direct Gemini 2.5 Flash Image format 
             // Determine the best mime type to use
             let mimeType = "image/jpeg"; // Default mime type
             
@@ -346,13 +404,10 @@ export async function POST(req: NextRequest) {
           // Set the API key in the correct header - using type assertion for header key
           let requestUrl = currentEndpoint.url;
           
-          if (currentEndpoint.apiType === "vertex-gemini") {
-            // For Vertex AI, add the API key as a query parameter
-            // Make sure we don't append the key multiple times if retrying
-            if (!requestUrl.includes('?key=')) {
-              requestUrl = `${requestUrl}?key=${currentApiKey}`;
-            }
-            // No Authorization header needed for API key authentication in query param
+          if (currentEndpoint.apiType === "gemini-direct") {
+            // For direct Gemini API with the 2.5-flash-image-preview model, use OAuth token
+            // This model requires OAuth authentication in the Authorization header
+            apiHeaders[currentEndpoint.headerKey as keyof typeof apiHeaders] = `Bearer ${currentApiKey}`;
           } else {
             apiHeaders[currentEndpoint.headerKey as keyof typeof apiHeaders] = currentEndpoint.headerKey === "Authorization" 
               ? `Bearer ${currentApiKey}` 
@@ -409,8 +464,8 @@ export async function POST(req: NextRequest) {
           data = JSON.parse(responseText);
           
           // Process the response based on which API was used
-          if (currentEndpoint.apiType === "vertex-gemini" && data.candidates && data.candidates.length > 0) {
-            // Extract image from Vertex AI Gemini response
+          if ((currentEndpoint.apiType === "vertex-gemini" || currentEndpoint.apiType === "gemini-direct") && data.candidates && data.candidates.length > 0) {
+            // Extract image from Gemini API response (works for both direct and Vertex)
             const candidate = data.candidates[0];
             if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
               // Find the part that contains the image
@@ -423,14 +478,14 @@ export async function POST(req: NextRequest) {
                   images: [imagePart.inline_data.data],
                   result: "success"
                 };
-                console.log("Successfully extracted image from Vertex AI Gemini response");
+                console.log(`Successfully extracted image from ${currentEndpoint.apiType === "gemini-direct" ? "Gemini API" : "Vertex AI Gemini"} response`);
               } else {
-                console.error("No image found in Vertex AI Gemini response");
-                throw new Error("No image found in Vertex AI Gemini response");
+                console.error(`No image found in ${currentEndpoint.apiType === "gemini-direct" ? "Gemini API" : "Vertex AI Gemini"} response`);
+                throw new Error(`No image found in ${currentEndpoint.apiType === "gemini-direct" ? "Gemini API" : "Vertex AI Gemini"} response`);
               }
             } else {
-              console.error("Invalid Vertex AI Gemini response format");
-              throw new Error("Invalid Vertex AI Gemini response format");
+              console.error(`Invalid ${currentEndpoint.apiType === "gemini-direct" ? "Gemini API" : "Vertex AI Gemini"} response format`);
+              throw new Error(`Invalid ${currentEndpoint.apiType === "gemini-direct" ? "Gemini API" : "Vertex AI Gemini"} response format`);
             }
           }
         } catch (parseError) {
@@ -472,6 +527,21 @@ export async function POST(req: NextRequest) {
             errorMessage = "Unsupported image format";
             errorDetails = "The image format (possibly HEIC/HEIF from iPhone) is not supported. Please convert to JPEG/PNG before uploading.";
             console.log("iPhone image format error detected, advising user to convert format");
+          }
+          // Special handling for Vertex AI permission errors
+          else if (data.error && typeof data.error === 'object' && data.error.message &&
+              (data.error.message.includes("Permission") || data.error.status === 'PERMISSION_DENIED')) {
+            errorMessage = "API access issue";
+            errorDetails = "Access to the image editing service is currently restricted. Switching to alternative service.";
+            console.log("Vertex AI permission error detected, switching to alternative API immediately");
+            
+            // Immediately switch to the next API without retrying
+            if (apiIndex < API_ENDPOINTS.length - 1) {
+              console.log(`Permission denied for ${currentEndpoint.envKey}, switching to next API immediately`);
+              apiIndex++;
+              attemptsOnCurrentApi = 0;
+              continue;
+            }
           }
           // Check for common error patterns from the API
           else if (data.detail && data.detail.includes("preparing the task")) {
@@ -541,7 +611,9 @@ export async function POST(req: NextRequest) {
           ...data, 
           _meta: {
             processingTimeSeconds: processingTime,
-            apiProvider: new URL(currentEndpoint.url).hostname,
+            apiProvider: currentEndpoint.apiType === "vertex-gemini" ? 
+              "Vertex AI Gemini" : new URL(currentEndpoint.url).hostname,
+            apiEndpoint: currentEndpoint.url,
             jobId,
             attempts: totalAttempts
           }
