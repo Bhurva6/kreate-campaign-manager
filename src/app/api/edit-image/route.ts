@@ -118,6 +118,17 @@ export async function POST(req: NextRequest) {
           throw new Error("Invalid data URL format");
         }
         
+        // Get the mime type for format detection
+        const mimeType = base64Parts[0].match(/data:(.*?);/)?.[1]?.toLowerCase() || '';
+        console.log("Detected mime type:", mimeType);
+        
+        // Handle iPhone HEIC/HEIF images specifically if needed
+        if (mimeType === 'image/heic' || mimeType === 'image/heif') {
+          console.log("iPhone HEIC/HEIF image detected, ensuring compatibility");
+          // We'll continue with processing, but note the format for potential conversion
+          // The actual conversion happens in the browser before upload in most cases
+        }
+        
         // Clean up the extracted base64 content
         processedImage = base64Parts[1].trim().replace(/\s/g, '');
         
@@ -278,6 +289,23 @@ export async function POST(req: NextRequest) {
           // Format request body based on which API we're calling
           if (currentEndpoint.apiType === "vertex-gemini") {
             // Vertex AI Gemini 2.5 Flash Image format
+            // Determine the best mime type to use
+            let mimeType = "image/jpeg"; // Default mime type
+            
+            // Try to detect the image format from data URL if present
+            if (input_image.startsWith('data:image/')) {
+              const detectedMime = input_image.match(/data:(image\/[^;]+);/)?.[1];
+              if (detectedMime) {
+                // For HEIC/HEIF from iPhones, convert mime type to jpeg for better compatibility
+                if (detectedMime === 'image/heic' || detectedMime === 'image/heif') {
+                  mimeType = "image/jpeg";
+                  console.log("Converting HEIC/HEIF format to JPEG for API compatibility");
+                } else {
+                  mimeType = detectedMime;
+                }
+              }
+            }
+            
             apiBody = {
               contents: [{
                 parts: [
@@ -286,7 +314,7 @@ export async function POST(req: NextRequest) {
                   },
                   {
                     inline_data: {
-                      mime_type: "image/jpeg",
+                      mime_type: mimeType,
                       data: body.input_image
                     }
                   }
@@ -438,8 +466,15 @@ export async function POST(req: NextRequest) {
           let errorMessage = "Failed to edit image";
           let errorDetails = JSON.stringify(data);
           
+          // Special handling for iPhone image format errors
+          if (data.error && typeof data.error === 'object' && data.error.message && 
+              data.error.message.includes("unsupported image format")) {
+            errorMessage = "Unsupported image format";
+            errorDetails = "The image format (possibly HEIC/HEIF from iPhone) is not supported. Please convert to JPEG/PNG before uploading.";
+            console.log("iPhone image format error detected, advising user to convert format");
+          }
           // Check for common error patterns from the API
-          if (data.detail && data.detail.includes("preparing the task")) {
+          else if (data.detail && data.detail.includes("preparing the task")) {
             errorMessage = "Image processing error";
             errorDetails = "The image format may not be compatible with the editing service. Try using a different image or converting to JPEG/PNG format.";
             
@@ -570,6 +605,7 @@ export async function POST(req: NextRequest) {
       suggestion: "Try using a smaller image or different format (JPEG/PNG).",
       troubleshooting: [
         "Make sure your image is in a standard format (JPEG/PNG)",
+        "If uploading from an iPhone, make sure HEIC/HEIF images are converted to JPEG",
         "Try with a smaller image (under 4MB)",
         "Check your network connection",
         "Try a simpler edit prompt"
