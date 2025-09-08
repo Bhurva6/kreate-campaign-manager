@@ -191,6 +191,8 @@ function LandingPageContent() {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [activePoint, setActivePoint] = useState(0);
   const [autoRotate, setAutoRotate] = useState(true);
+  // Track window width for responsiveness
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
   // Auto rotate points every 3 seconds
   useEffect(() => {
@@ -206,6 +208,22 @@ function LandingPageContent() {
       if (rotationTimer) clearInterval(rotationTimer);
     };
   }, [autoRotate]);
+  
+  // Handle window resize for responsive content
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    
+    // Set initial width
+    handleResize();
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   // Handle successful payment
   const handlePaymentSuccess = () => {
@@ -498,17 +516,17 @@ function LandingPageContent() {
       {/* First Viewport - Completely Black */}
       <div className="min-h-screen flex flex-col bg-black relative">
         {/* Logo Top Left and Auth Buttons Top Right */}
-        <div className="flex flex-row justify-between items-center w-full p-4 md:p-6 bg-black z-10">
-          <div className="text-2xl md:text-3xl font-bold text-white">
+        <div className="flex flex-row justify-between items-center w-full p-3 sm:p-4 md:p-6 bg-black z-10">
+          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
             GoLoco
           </div>
 
-          <div className="flex items-center gap-2 md:gap-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4">
             {/* Authentication Section */}
             {loading ? (
-              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+              <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
             ) : user ? (
-              <div className="flex items-center gap-2 md:gap-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4">
                 <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
                 <UserDropdown />
               </div>
@@ -516,13 +534,13 @@ function LandingPageContent() {
               <>
                 <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
                 <button
-                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-[#FF5E32] text-white font-semibold hover:shadow-lg hover:shadow-[#1A018D]/25 transition-all duration-300 text-sm md:text-base"
+                  className="px-2 py-1 sm:px-3 sm:py-1.5 md:px-6 md:py-2 rounded-lg bg-[#FF5E32] text-white font-semibold hover:shadow-lg hover:shadow-[#1A018D]/25 transition-all duration-300 text-xs sm:text-sm md:text-base whitespace-nowrap"
                   onClick={() => setShowAuthModal(true)}
                 >
                   Sign Up
                 </button>
                 <button
-                  className="px-3 py-1.5 md:px-6 md:py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition-all duration-300 text-sm md:text-base"
+                  className="px-2 py-1 sm:px-3 sm:py-1.5 md:px-6 md:py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition-all duration-300 text-xs sm:text-sm md:text-base whitespace-nowrap"
                   onClick={() => setShowAuthModal(true)}
                 >
                   Sign In
@@ -538,25 +556,26 @@ function LandingPageContent() {
           <div className="absolute inset-0 bg-gradient-to-b from-black via-black to-gray-900/30"></div>
 
           {/* Content - Centered */}
-          <div className="relative z-10 text-center max-w-4xl">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 text-white leading-tight">
+          <div className="relative z-10 text-center max-w-4xl px-1 sm:px-6">
+            <h1 className="text-lg sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-1.5 sm:mb-6 text-white leading-tight px-0 sm:px-0">
               <span className="text-[#FF5E32]">
                 Consistent
-               </span>{" "}
-               creativity with every image, every time.
+              </span>
+              <span className="block sm:inline"> creativity </span> 
+              <span className="block sm:inline">with every image,</span> 
+              <span className="block sm:inline">every time.</span>
             </h1>
-            <p className="text-lg sm:text-xl md:text-2xl text-white/90 max-w-3xl mx-auto mb-8 leading-relaxed">
-             GoLoco changes exactly what you want{" "}
-              <em className="font-medium text-white">no distortions, no chaos.</em> 
-         
+            <p className="text-[10px] sm:text-base md:text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto mb-2 sm:mb-6 md:mb-8 leading-relaxed px-1 sm:px-0">
+              GoLoco changes exactly what you want
+              <em className="font-medium text-white block sm:inline ml-0 sm:ml-1">no distortions, no chaos.</em>
             </p>
 
             
 
             {/* CTA Button */}
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center">
+            <div className="flex flex-row gap-0.5 sm:gap-6 justify-center px-1 sm:px-0 max-w-[90%] sm:max-w-full mx-auto">
   <button
-    className="inline-flex items-center gap-3 font-semibold px-8 sm:px-10 py-2.5 sm:py-3 rounded-full text-base sm:text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 bg-[#B6CF4F] text-white hover:shadow-[#1A018D]/30"
+    className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-1.5 sm:px-8 md:px-10 py-0.5 sm:py-2.5 md:py-3 rounded-full text-[8px] sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#B6CF4F] text-white hover:shadow-[#1A018D]/30 flex-1 sm:w-auto whitespace-nowrap min-w-0"
     onClick={() => {
       if (user) {
         router.push("/demo");
@@ -565,12 +584,12 @@ function LandingPageContent() {
       }
     }}
   >
-    <span>✨</span>
-    Start Editing
-    <span className="text-sm opacity-80">→</span>
+    <span className="hidden sm:inline">✨</span>
+    <span>Start</span>
+    <span className="text-[8px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
   </button>
   <button
-    className="inline-flex items-center gap-3 font-semibold px-8 sm:px-10 py-2.5 sm:py-3 rounded-full text-base sm:text-lg transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 bg-[#FF5E32] text-white hover:shadow-[#1A018D]/30"
+    className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-1.5 sm:px-8 md:px-10 py-0.5 sm:py-2.5 md:py-3 rounded-full text-[8px] sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#FF5E32] text-white hover:shadow-[#1A018D]/30 flex-1 sm:w-auto whitespace-nowrap min-w-0"
     onClick={() => {
       if (user) {
         router.push("/enterprise");
@@ -579,84 +598,82 @@ function LandingPageContent() {
       }
     }}
   >
-    <span>✨</span>
-    Try Enterprise
-    <span className="text-sm opacity-80">→</span>
+    <span className="hidden sm:inline">✨</span>
+    <span>Pro</span>
+    <span className="text-[8px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
   </button>
 </div>
      
             {/* Brands Carousel */}
-            <div className="w-full max-w-5xl mx-auto mt-10">
-              <p className="text-white/70 text-sm mb-6 text-center">Trusted by innovative brands</p>
+            <div className="w-full max-w-5xl mx-auto mt-6 sm:mt-10">
+              <p className="text-white/70 text-xs sm:text-sm mb-4 sm:mb-6 text-center">Trusted by innovative brands</p>
               
               <div className="relative overflow-hidden rounded-xl bg-black/90">
                 {/* Darker strip background */}
                 <div className="absolute inset-0 bg-black rounded-xl"></div>
                 
                 {/* Carousel container with automatic horizontal scroll animation */}
-                <div className="py-8 overflow-hidden w-full">
-                  <div className="flex whitespace-nowrap logo-slide">
-                    {/* First set of logos */}
-                    <div className="flex gap-8 items-center mx-6">
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/zuvelogo.png" alt="Vercel" className="h-14 hover:opacity-100 transition-opacity duration-300" />
+                <div className="py-4 sm:py-6 md:py-8 overflow-hidden w-full">
+                  <div className="flex whitespace-nowrap logo-slide" style={{ animationDuration: windowWidth < 640 ? '15s' : '20s' }}>
+                    {/* First set of logos - smaller on mobile */}
+                    <div className="flex gap-4 sm:gap-6 md:gap-8 items-center mx-3 sm:mx-4 md:mx-6">
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/zuvelogo.png" alt="Zuve" className="h-8 sm:h-10 md:h-14 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/cbbunny.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/cbbunny.png" alt="CB Bunny" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/unlabellogo.png" alt="Google" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/unlabellogo.png" alt="Unlabel" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/sslogo.png" alt="Next.js" className="h-14 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/sslogo.png" alt="SS" className="h-8 sm:h-10 md:h-14 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/panachelogo.png" alt="GlobalTech" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/panachelogo.png" alt="Panache" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/ollsafelogo.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/ollsafelogo.png" alt="Ollsafe" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/gcgclogo.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/gcgclogo.png" alt="GCGC" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/evolvlogo.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/evolvlogo.png" alt="Evolv" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/bloomlogo.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/bloomlogo.png" alt="Bloom" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
                     </div>
                     
-                    {/* Duplicate set for continuous scroll effect */}
-                    <div className="flex gap-8 items-center mx-6">
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/zuvelogo.png" alt="Vercel" className="h-14 hover:opacity-100 transition-opacity duration-300" />
+                    {/* Duplicate set for continuous scroll effect - smaller on mobile */}
+                    <div className="flex gap-4 sm:gap-6 md:gap-8 items-center mx-3 sm:mx-4 md:mx-6">
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/zuvelogo.png" alt="Zuve" className="h-8 sm:h-10 md:h-14 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-40 h-16 flex items-center justify-center">
-                        <img src="/cbbunny.png" alt="FileCorp" className="h-11 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/cbbunny.png" alt="CB Bunny" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/unlabellogo.png" alt="Google" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/unlabellogo.png" alt="Unlabel" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/sslogo.png" alt="Next.js" className="h-14 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/sslogo.png" alt="SS" className="h-8 sm:h-10 md:h-14 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/panachelogo.png" alt="GlobalTech" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/panachelogo.png" alt="Panache" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-36 h-20 flex items-center justify-center">
-                        <img src="/ollsafelogo.png" alt="FileCorp" className="h-16 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/ollsafelogo.png" alt="Ollsafe" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-40 h-16 flex items-center justify-center">
-                        <img src="/gcgclogo.png" alt="FileCorp" className="h-11 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/gcgclogo.png" alt="GCGC" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      <div className="w-40 h-16 flex items-center justify-center">
-                        <img src="/evolvlogo.png" alt="FileCorp" className="h-11 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/evolvlogo.png" alt="Evolv" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
-                      
-                      <div className="w-40 h-16 flex items-center justify-center">
-                        <img src="/bloomlogo.png" alt="FileCorp" className="h-11 hover:opacity-100 transition-opacity duration-300" />
+                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
+                        <img src="/bloomlogo.png" alt="Bloom" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
                       </div>
                     </div>
                   </div>
@@ -672,53 +689,50 @@ function LandingPageContent() {
                 0% { width: 0%; }
                 100% { width: 100%; }
               }
+              
+              @keyframes logo-slide {
+                0% { transform: translateX(0); }
+                100% { transform: translateX(-50%); }
+              }
+              
+              .logo-slide {
+                animation: logo-slide 20s linear infinite;
+              }
+              
+              @media (max-width: 640px) {
+                .logo-slide {
+                  animation-duration: 15s;
+                }
+              }
             `}</style>
             
             {/* Interactive Feature Section */}
-            <div className="w-full flex flex-col md:flex-row justify-between items-center gap-8 my-10">
-              {/* Left Side - Numerical Bullet Points */}
-              <div className="w-full md:w-1/3">
-                <ul className="space-y-5">
-                  {[1, 2, 3, 4, 5].map((num, index) => (
-                    <li 
-                      key={num} 
-                      className="flex items-center cursor-pointer transition-all duration-300 group hover:translate-x-1" 
+            <div className="w-full flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6 md:gap-8 my-6 sm:my-8 md:my-10">
+              {/* Right Side - Images (Moved to top on mobile) */}
+              <div className="w-full md:w-2/3 order-1 md:order-2 h-64 sm:h-80 md:h-96 relative rounded-xl overflow-hidden shadow-2xl border-2 border-white/20 bg-gray-800">
+                {/* Mobile Step Indicators - Very visible on small screens */}
+                <div className="md:hidden absolute top-4 left-4 z-20 flex items-center gap-2 bg-black/60 px-2 py-1 rounded-lg">
+                  <span className="text-white text-xs font-bold">Step {activePoint + 1}/5</span>
+                </div>
+                
+                {/* Mobile Indicator Dots - Only visible on small screens */}
+                <div className="md:hidden absolute bottom-3 left-0 right-0 z-20 flex justify-center gap-2">
+                  {[0, 1, 2, 3, 4].map((dotIndex) => (
+                    <button 
+                      key={dotIndex}
                       onClick={() => {
-                        setActivePoint(index);
-                        setAutoRotate(false); // Pause auto-rotation when user manually clicks
-                        // Resume auto-rotation after 5 seconds of inactivity
+                        setActivePoint(dotIndex);
+                        setAutoRotate(false);
                         setTimeout(() => setAutoRotate(true), 5000);
                       }}
-                    >
-                      <div 
-                        className={`w-1 h-full rounded-full transition-all duration-300 mr-3 ${
-                          activePoint === index 
-                            ? 'bg-[#0171B9]' 
-                            : 'bg-white/30'
-                        } ${activePoint === index && autoRotate ? 'animate-pulse' : ''}`}
-                      ></div>
-                      <div className={`transition-all duration-300 text-left flex-grow ${activePoint === index ? 'opacity-100' : 'opacity-60'}`}>
-                        <h3 className="text-xl font-semibold text-white flex items-center">
-                          <span className="flex-shrink-0 border-2 border-[#0171B9] rounded-full flex items-center justify-center mr-3 text-white font-bold text-sm px-4 py-1.5">
-                            Step {index + 1}
-                          </span>
-                          <span>
-                            {index === 0 && "Upload the Einstein"}
-                            {index === 1 && "Drop the bombshell: \"Shit Happens.\""}
-                            {index === 2 && "Flip the script—now it's \"Edit Happens.\""}
-                            {index === 3 && "Light up the genius—full color mode on."}
-                            {index === 4 && "Cartoon chaos: let creativity rip through his eyes"}
-                          </span>
-                        </h3>
-                       
-                      </div>
-                    </li>
+                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                        activePoint === dotIndex ? 'bg-white scale-110' : 'bg-white/40'
+                      }`}
+                      aria-label={`View step ${dotIndex + 1}`}
+                    />
                   ))}
-                </ul>
-              </div>
-              
-              {/* Right Side - Images */}
-              <div className="w-full md:w-2/3 h-80 md:h-96 relative rounded-xl overflow-hidden shadow-2xl border-2 border-white/20 bg-gray-800">
+                </div>
+                
                 {/* Progress Indicator Bar */}
                 {autoRotate && (
                   <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20 z-10">
@@ -740,17 +754,25 @@ function LandingPageContent() {
                   <span>Auto</span>
                 </div>
                 
-                {/* Images */}
+                {/* Images - Improved for touch */}
                 {[
                   "/einstein1.jpeg", 
                   "/einstein2.jpeg", 
                   "/einstein3.jpeg", 
                   "/einstein4.jpeg",
-                    "/einstein5.jpeg"
+                  "/einstein5.jpeg"
                 ].map((src, index) => (
                   <div 
                     key={index}
                     className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-500 ${activePoint === index ? 'opacity-100' : 'opacity-0'}`}
+                    onClick={() => {
+                      // Allow tapping on image to advance on mobile
+                      if (windowWidth < 768) {
+                        setActivePoint((prev) => (prev + 1) % 5);
+                        setAutoRotate(false);
+                        setTimeout(() => setAutoRotate(true), 5000);
+                      }
+                    }}
                   >
                     <img 
                       src={src} 
@@ -760,16 +782,79 @@ function LandingPageContent() {
                   </div>
                 ))}
               </div>
+              
+              {/* Left Side - Numerical Bullet Points */}
+              <div className="w-full md:w-1/3 order-2 md:order-1 mt-4 md:mt-0">
+                <h3 className="text-white text-lg font-semibold mb-2 md:hidden text-center">Steps:</h3>
+                
+                {/* Mobile step indicators */}
+                <div className="flex justify-center items-center gap-2 mb-3 md:hidden">
+                  {[0, 1, 2, 3, 4].map((index) => (
+                    <div 
+                      key={index} 
+                      className={`w-3 h-3 rounded-full cursor-pointer transition-all duration-300 ${
+                        activePoint === index 
+                          ? 'bg-[#0171B9] scale-125' 
+                          : 'bg-white/30'
+                      }`}
+                      onClick={() => {
+                        setActivePoint(index);
+                        setAutoRotate(false);
+                        setTimeout(() => setAutoRotate(true), 5000);
+                      }}
+                    ></div>
+                  ))}
+                </div>
+                
+                <ul className="space-y-2 sm:space-y-3 md:space-y-5 max-h-[300px] overflow-y-auto md:overflow-visible px-2 md:px-0">
+                  {[1, 2, 3, 4, 5].map((num, index) => (
+                    <li 
+                      key={num} 
+                      className={`flex items-center cursor-pointer transition-all duration-300 group hover:translate-x-1 p-2 ${
+                        activePoint === index ? 'bg-black/30 rounded-lg' : ''
+                      }`} 
+                      onClick={() => {
+                        setActivePoint(index);
+                        setAutoRotate(false); // Pause auto-rotation when user manually clicks
+                        // Resume auto-rotation after 5 seconds of inactivity
+                        setTimeout(() => setAutoRotate(true), 5000);
+                      }}
+                    >
+                      <div 
+                        className={`w-1 h-full rounded-full transition-all duration-300 mr-2 ${
+                          activePoint === index 
+                            ? 'bg-[#0171B9]' 
+                            : 'bg-white/30'
+                        } ${activePoint === index && autoRotate ? 'animate-pulse' : ''}`}
+                      ></div>
+                      <div className={`transition-all duration-300 text-left flex-grow ${activePoint === index ? 'opacity-100' : 'opacity-60'}`}>
+                        <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white flex flex-col sm:flex-row sm:items-center">
+                          <span className="flex-shrink-0 border-2 border-[#0171B9] rounded-full flex items-center justify-center mb-1 sm:mb-0 sm:mr-3 text-white font-bold text-xs sm:text-sm px-2 sm:px-4 py-0.5 sm:py-1.5 w-fit">
+                            Step {index + 1}
+                          </span>
+                          <span className="text-xs sm:text-sm md:text-base">
+                            {index === 0 && "Upload the Einstein"}
+                            {index === 1 && (windowWidth < 640 ? "\"Shit Happens\"" : "Drop the bombshell: \"Shit Happens.\"")}
+                            {index === 2 && (windowWidth < 640 ? "\"Edit Happens\"" : "Flip the script—now it's \"Edit Happens.\"")}
+                            {index === 3 && (windowWidth < 640 ? "Add color" : "Light up the genius—full color mode on.")}
+                            {index === 4 && (windowWidth < 640 ? "Cartoon style" : "Cartoon chaos: let creativity rip through his eyes")}
+                          </span>
+                        </h3>
+                       
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            
           </div>
 
           {/* Scroll indicator */}
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white/60 animate-bounce">
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-sm">Scroll to explore</span>
-              <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-                <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse"></div>
+          <div className="absolute bottom-6 sm:bottom-8 left-1/2 transform -translate-x-1/2 text-white/60 animate-bounce">
+            <div className="flex flex-col items-center gap-1 sm:gap-2">
+              <span className="text-xs sm:text-sm">Scroll to explore</span>
+              <div className="w-5 h-8 sm:w-6 sm:h-10 border-2 border-white/30 rounded-full flex justify-center">
+                <div className="w-1 h-2 sm:h-3 bg-white/60 rounded-full mt-2 animate-pulse"></div>
               </div>
             </div>
           </div>
@@ -1057,14 +1142,14 @@ function LandingPageContent() {
         </div>
 
         {/* Features Section */}
-        <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
+        <div className="w-full flex flex-col items-center mt-12 sm:mt-16 md:mt-24 lg:mt-32 mb-12 sm:mb-16 md:mb-24 lg:mb-32 px-4 sm:px-6">
           <h2
-            className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 text-[var(--foreground)]"
+            className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 sm:mb-8 md:mb-12 lg:mb-16 transition-colors duration-300 text-[var(--foreground)]"
           >
             Features
           </h2>
 
-          <div className="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+          <div className="w-full max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 md:gap-10 lg:gap-12">
             {/* Feature 1 - Precise Editing */}
             <div className="flex flex-col items-center text-center group">
               <div
@@ -1133,6 +1218,46 @@ function LandingPageContent() {
 
                   document.addEventListener("mousemove", handleMouseMove);
                   document.addEventListener("mouseup", handleMouseUp);
+                }}
+                onTouchStart={(e) => {
+                  const slider = e.currentTarget;
+                  const rect = slider.getBoundingClientRect();
+                  
+                  const handleTouchMove = (touchEvent: TouchEvent) => {
+                    touchEvent.preventDefault(); // Prevent scrolling while dragging
+                    const touch = touchEvent.touches[0];
+                    const currentX = touch.clientX - rect.left;
+                    const percentage = Math.max(
+                      0,
+                      Math.min(100, (currentX / rect.width) * 100)
+                    );
+
+                    const afterImage = slider.querySelector(
+                      ".after-image"
+                    ) as HTMLElement;
+                    const sliderHandle = slider.querySelector(
+                      ".slider-handle"
+                    ) as HTMLElement;
+                    const sliderLine = slider.querySelector(
+                      ".slider-line"
+                    ) as HTMLElement;
+
+                    if (afterImage)
+                      afterImage.style.clipPath = `inset(0 ${
+                        100 - percentage
+                      }% 0 0)`;
+                    if (sliderHandle)
+                      sliderHandle.style.left = `${percentage}%`;
+                    if (sliderLine) sliderLine.style.left = `${percentage}%`;
+                  };
+
+                  const handleTouchEnd = () => {
+                    document.removeEventListener("touchmove", handleTouchMove);
+                    document.removeEventListener("touchend", handleTouchEnd);
+                  };
+
+                  document.addEventListener("touchmove", handleTouchMove, { passive: false });
+                  document.addEventListener("touchend", handleTouchEnd);
                 }}
                 style={{ cursor: "ew-resize" }}
               >
