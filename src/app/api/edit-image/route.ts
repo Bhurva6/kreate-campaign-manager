@@ -5,7 +5,43 @@ import { uploadImageToR2, base64ToBuffer, getMimeTypeFromDataUrl } from "@/lib/r
 // This helps prevent duplicate API calls
 const recentRequests = new Map<string, number>();
 const DEDUPLICATION_WINDOW = 3000; // 3 seconds window for deduplication
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB maximum size (approximate for base64)
+const MAX_IMAGE_SIZE = 8 * 1024 * 1024; // 8MB maximum size (reduced from 10MB for better performance)
+
+// API endpoint interface
+type ApiEndpoint = {
+  url: string;
+  headerKey: string;
+  envKey: string;
+  timeout: number;
+  retryDelay: number;
+  apiType?: string;
+};
+
+// API endpoints - primary and fallback
+const API_ENDPOINTS = [
+  {
+    url: "https://us-central1-aiplatform.googleapis.com/v1/projects/cobalt-mind-422108/locations/us-central1/publishers/google/models/gemini-2.5-flash-image-preview:generateContent", // Vertex AI Gemini primary API
+    headerKey: "Authorization", 
+    envKey: "GEMINI_NANO_BANANA",
+    timeout: 45000, // 45 seconds
+    retryDelay: 1500, // 1.5 seconds
+    apiType: "vertex-gemini"
+  },
+  {
+    url: "https://api.bfl.ai/v1/flux-kontext-pro",
+    headerKey: "x-key", 
+    envKey: "FLUX_KONTEXT_API_KEY",
+    timeout: 60000, // 60 seconds
+    retryDelay: 2000 // 2 seconds
+  },
+  {
+    url: "https://api.stability.ai/v2/image-to-image", // Last fallback API
+    headerKey: "Authorization", 
+    envKey: "STABILITY_API_KEY",
+    timeout: 45000, // 45 seconds
+    retryDelay: 1500 // 1.5 seconds
+  }
+];
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,9 +56,14 @@ export async function POST(req: NextRequest) {
     if (approximateSize > MAX_IMAGE_SIZE) {
       console.error("Image too large:", Math.round(approximateSize / (1024 * 1024)), "MB (approx). Max size is", MAX_IMAGE_SIZE / (1024 * 1024), "MB");
       return NextResponse.json({ 
-        error: `Image is too large. Maximum size is 10MB.` 
+        error: `Image is too large. Maximum size is 8MB.`,
+        suggestion: "Please resize your image before uploading."
       }, { status: 400 });
     }
+    
+    // Generate a job ID for tracking this request
+    const jobId = `${Date.now()}-${Math.random().toString(36).substring(2, 10)}`;
+    console.log(`Starting image edit job ${jobId}`);
     
     // Generate a cache key based on prompt and first 100 chars of image data
     // This should be enough to identify duplicate requests
@@ -48,10 +89,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const apiKey = process.env.FLUX_KONTEXT_API_KEY;
+    const apiKey = process.env.GEMINI_NANO_BANANA;
     if (!apiKey) {
-      console.error("Missing Flux Kontext API key in environment variables");
-      return NextResponse.json({ error: "Missing Flux Kontext API key." }, { status: 500 });
+      console.error("Missing Gemini API key in environment variables");
+      return NextResponse.json({ error: "Missing Gemini API key." }, { status: 500 });
     }
 
     // Make sure the input_image is properly formatted for the API
@@ -175,79 +216,216 @@ export async function POST(req: NextRequest) {
       outputFormat: body.output_format
     });
 
-    console.log("Sending request to Flux Kontext API...");
+    console.log("Sending request to Vertex AI Gemini API...");
     
-    // Implement a retry mechanism
-    const MAX_RETRIES = 2;
-    let attempt = 0;
+    // Smart retry mechanism with multiple API fallbacks
+    const MAX_RETRIES_PER_API = 2; // 2 retries per API
+    const MAX_TOTAL_ATTEMPTS = API_ENDPOINTS.length * MAX_RETRIES_PER_API; // Total attempts across all APIs
+    
+    let apiIndex = 0; // Start with primary API
+    let attemptsOnCurrentApi = 0;
+    let totalAttempts = 0;
     let lastError = null;
     let data;
     
-    while (attempt <= MAX_RETRIES) {
+    // Compress large images further if needed
+    const imageSize = Math.round(processedImage.length * 0.75 / 1024);
+    console.log(`Processing image of size: ~${imageSize}KB with ${MAX_TOTAL_ATTEMPTS} total allowed attempts`);
+    
+    // Prepare progress tracking
+    const startTime = Date.now();
+    
+    while (totalAttempts < MAX_TOTAL_ATTEMPTS) {
       try {
-        attempt++;
-        console.log(`API attempt ${attempt}/${MAX_RETRIES + 1}`);
+        totalAttempts++;
+        attemptsOnCurrentApi++;
         
-        // Add timeout handling for the fetch operation
+        const currentEndpoint: ApiEndpoint = API_ENDPOINTS[apiIndex];
+        const currentApiKey = process.env[currentEndpoint.envKey];
+        
+        if (!currentApiKey) {
+          console.error(`Missing API key for ${currentEndpoint.url} in environment variable ${currentEndpoint.envKey}`);
+          
+          // Try next API if available
+          if (apiIndex < API_ENDPOINTS.length - 1) {
+            apiIndex++;
+            attemptsOnCurrentApi = 0;
+            continue;
+          } else {
+            return NextResponse.json({ error: "API configuration error" }, { status: 500 });
+          }
+        }
+        
+        // Progress logging
+        const elapsedSecs = Math.round((Date.now() - startTime) / 1000);
+        console.log(`API attempt ${totalAttempts}/${MAX_TOTAL_ATTEMPTS} (${elapsedSecs}s elapsed) using ${currentEndpoint.apiType === "vertex-gemini" ? "Vertex AI Gemini" : currentEndpoint.url}`);
+        
+        // Setup timeout handling
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), currentEndpoint.timeout);
         
         let res;
         try {
-          res = await fetch("https://api.bfl.ai/v1/flux-kontext-pro", {
+          console.log(`Starting API request to ${currentEndpoint.apiType === "vertex-gemini" ? "us-central1-aiplatform.googleapis.com" : new URL(currentEndpoint.url).hostname}...`);
+          
+          // Create appropriate request body for current API endpoint
+          let apiBody = body;
+          let apiHeaders = {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          };
+          
+          // Format request body based on which API we're calling
+          if (currentEndpoint.apiType === "vertex-gemini") {
+            // Vertex AI Gemini 2.5 Flash Image format
+            apiBody = {
+              contents: [{
+                parts: [
+                  {
+                    text: `Edit this image based on the following prompt: ${body.prompt}`
+                  },
+                  {
+                    inline_data: {
+                      mime_type: "image/jpeg",
+                      data: body.input_image
+                    }
+                  }
+                ]
+              }],
+              generation_config: {
+                temperature: 0.4,
+                top_p: 1,
+                top_k: 32,
+                max_output_tokens: 8192
+              }
+            } as any;
+          } else if (currentEndpoint.url.includes('stability.ai')) {
+            // Stability AI format is different (with type assertion)
+            apiBody = {
+              text_prompts: [
+                {
+                  text: body.prompt,
+                  weight: 1.0
+                }
+              ],
+              image: body.input_image,
+              cfg_scale: 8,
+              samples: 1,
+              style_preset: "photographic"
+            } as any; // Using type assertion since this is a different API schema
+          }
+          
+          // Set the API key in the correct header - using type assertion for header key
+          let requestUrl = currentEndpoint.url;
+          
+          if (currentEndpoint.apiType === "vertex-gemini") {
+            // For Vertex AI, add the API key as a query parameter
+            // Make sure we don't append the key multiple times if retrying
+            if (!requestUrl.includes('?key=')) {
+              requestUrl = `${requestUrl}?key=${currentApiKey}`;
+            }
+            // No Authorization header needed for API key authentication in query param
+          } else {
+            apiHeaders[currentEndpoint.headerKey as keyof typeof apiHeaders] = currentEndpoint.headerKey === "Authorization" 
+              ? `Bearer ${currentApiKey}` 
+              : currentApiKey;
+          }
+            
+          res = await fetch(requestUrl, {
             method: "POST",
-            headers: {
-              "x-key": apiKey,
-              "Content-Type": "application/json",
-              "Accept": "application/json"
-            },
-            body: JSON.stringify(body),
+            headers: apiHeaders,
+            body: JSON.stringify(apiBody),
             signal: controller.signal,
           });
+          console.log("API request completed with status:", res.status);
           clearTimeout(timeoutId);
         } catch (fetchError: any) {
           // Handle timeout or network errors
           console.error("Fetch operation failed:", fetchError.message);
           
           if (fetchError.name === "AbortError") {
-            lastError = "Request timed out after 30 seconds";
+            lastError = "Request timed out after 60 seconds. This usually happens with large images or when the service is busy.";
           } else {
             lastError = fetchError.message;
           }
           
-          // If this is the last retry, return an error
-          if (attempt > MAX_RETRIES) {
-            return NextResponse.json({ 
-              error: "Connection error", 
-              details: lastError
-            }, { status: 500 });
+          // Try fallback API if we've exhausted retries on current API
+          if (attemptsOnCurrentApi >= MAX_RETRIES_PER_API) {
+            // Try next API if available
+            if (apiIndex < API_ENDPOINTS.length - 1) {
+              console.log(`Switching to fallback API ${apiIndex + 2}...`);
+              apiIndex++;
+              attemptsOnCurrentApi = 0;
+            } else if (totalAttempts >= MAX_TOTAL_ATTEMPTS) {
+              // All APIs and retries exhausted
+              return NextResponse.json({ 
+                error: "Connection error", 
+                details: lastError,
+                suggestion: "Try uploading a smaller image or try again later."
+              }, { status: 500 });
+            }
           }
           
-          // Wait a bit longer between retries for network issues
-          console.log("Network error, retrying in 2 seconds...");
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Wait before retry
+          const retryDelay = currentEndpoint.retryDelay;
+          console.log(`Network error, retrying in ${retryDelay/1000} seconds...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
           continue;
         }
         
-        console.log("Flux Kontext API response status:", res.status);
+        console.log(`${new URL(currentEndpoint.url).hostname} API response status:`, res.status);
         
         // First try to parse the response as JSON
         const responseText = await res.text();
         try {
           data = JSON.parse(responseText);
+          
+          // Process the response based on which API was used
+          if (currentEndpoint.apiType === "vertex-gemini" && data.candidates && data.candidates.length > 0) {
+            // Extract image from Vertex AI Gemini response
+            const candidate = data.candidates[0];
+            if (candidate.content && candidate.content.parts && candidate.content.parts.length > 0) {
+              // Find the part that contains the image
+              const imagePart = candidate.content.parts.find((part: any) => 
+                part.inline_data && part.inline_data.mime_type && part.inline_data.mime_type.startsWith('image/'));
+              
+              if (imagePart && imagePart.inline_data && imagePart.inline_data.data) {
+                // Reformat the response to match our expected format
+                data = {
+                  images: [imagePart.inline_data.data],
+                  result: "success"
+                };
+                console.log("Successfully extracted image from Vertex AI Gemini response");
+              } else {
+                console.error("No image found in Vertex AI Gemini response");
+                throw new Error("No image found in Vertex AI Gemini response");
+              }
+            } else {
+              console.error("Invalid Vertex AI Gemini response format");
+              throw new Error("Invalid Vertex AI Gemini response format");
+            }
+          }
         } catch (parseError) {
           console.error("Failed to parse API response as JSON:", responseText.substring(0, 200));
           lastError = "Invalid response from image editing API";
           
-          // If this is the last retry, return an error
-          if (attempt > MAX_RETRIES) {
-            return NextResponse.json({ 
-              error: "Invalid response from image editing API", 
-              details: "Response couldn't be parsed as JSON" 
-            }, { status: 500 });
+          // Try fallback API if we've exhausted retries on current API
+          if (attemptsOnCurrentApi >= MAX_RETRIES_PER_API) {
+            // Try next API if available
+            if (apiIndex < API_ENDPOINTS.length - 1) {
+              console.log(`Switching to fallback API ${apiIndex + 2}...`);
+              apiIndex++;
+              attemptsOnCurrentApi = 0;
+            } else if (totalAttempts >= MAX_TOTAL_ATTEMPTS) {
+              // All APIs and retries exhausted
+              return NextResponse.json({ 
+                error: "Invalid response from image editing API", 
+                details: "Response couldn't be parsed as JSON" 
+              }, { status: 500 });
+            }
           }
           
-          // Otherwise retry
+          // Wait before retry
           console.log("Retrying due to JSON parse error...");
           await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between retries
           continue;
@@ -271,13 +449,20 @@ export async function POST(req: NextRequest) {
               dataReceived: JSON.stringify(data),
               imageDataLength: processedImage.length,
               promptLength: prompt.length,
-              attemptNumber: attempt
+              attemptNumber: totalAttempts,
+              apiProvider: new URL(currentEndpoint.url).hostname
             });
             
-            // Add a longer delay for task preparation errors
-            if (attempt <= MAX_RETRIES) {
+            // Try with longer delay, or switch APIs
+            if (attemptsOnCurrentApi < MAX_RETRIES_PER_API) {
               console.log("Task preparation error, waiting 3 seconds before retry...");
               await new Promise(resolve => setTimeout(resolve, 3000));
+              continue;
+            } else if (apiIndex < API_ENDPOINTS.length - 1) {
+              // Switch to fallback API
+              console.log(`Switching to fallback API ${apiIndex + 2}...`);
+              apiIndex++;
+              attemptsOnCurrentApi = 0;
               continue;
             }
           } else if (data.error && typeof data.error === 'string' && data.error.toLowerCase().includes("too large")) {
@@ -287,46 +472,89 @@ export async function POST(req: NextRequest) {
           
           lastError = errorMessage;
           
-          // If this is the last retry, return an error
-          if (attempt > MAX_RETRIES) {
-            return NextResponse.json({ 
-              error: errorMessage,
-              details: errorDetails
-            }, { status: res.status });
+          // Try fallback API if we've exhausted retries on current API
+          if (attemptsOnCurrentApi >= MAX_RETRIES_PER_API) {
+            // Try next API if available
+            if (apiIndex < API_ENDPOINTS.length - 1) {
+              console.log(`Switching to fallback API ${apiIndex + 2}...`);
+              apiIndex++;
+              attemptsOnCurrentApi = 0;
+            } else if (totalAttempts >= MAX_TOTAL_ATTEMPTS) {
+              // All APIs and retries exhausted
+              return NextResponse.json({ 
+                error: errorMessage,
+                details: errorDetails,
+                suggestion: "Please try with a different image or edit prompt."
+              }, { status: res.status });
+            }
           }
           
-          // Otherwise retry
+          // Wait before retry
           console.log("Retrying due to API error...");
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between retries
+          await new Promise(resolve => setTimeout(resolve, currentEndpoint.retryDelay));
           continue;
         }
         
         // Success - break out of retry loop
-        console.log("API request successful, returning data");
-        return NextResponse.json({ ...data });
+        const endTime = Date.now();
+        const processingTime = Math.round((endTime - startTime) / 100) / 10; // To seconds with 1 decimal
+        
+        console.log(`✓ API request successful (${processingTime}s) using ${currentEndpoint.apiType === "vertex-gemini" ? "Vertex AI Gemini" : new URL(currentEndpoint.url).hostname}`);
+        
+        // Include performance metrics and api used in response
+        return NextResponse.json({ 
+          ...data, 
+          _meta: {
+            processingTimeSeconds: processingTime,
+            apiProvider: new URL(currentEndpoint.url).hostname,
+            jobId,
+            attempts: totalAttempts
+          }
+        });
       } catch (error: any) {
         // This catches any other errors in the try block
         console.error("Unexpected error during API request:", error);
         lastError = error.message || "An unexpected error occurred";
         
-        // If this is the last retry, return an error
-        if (attempt > MAX_RETRIES) {
-          return NextResponse.json({ 
-            error: "Error processing request", 
-            details: lastError
-          }, { status: 500 });
+        // Try fallback API if we've exhausted retries on current API
+        if (attemptsOnCurrentApi >= MAX_RETRIES_PER_API) {
+          // Try next API if available
+          if (apiIndex < API_ENDPOINTS.length - 1) {
+            console.log(`Switching to fallback API ${apiIndex + 2}...`);
+            apiIndex++;
+            attemptsOnCurrentApi = 0;
+          } else if (totalAttempts >= MAX_TOTAL_ATTEMPTS) {
+            // All APIs and retries exhausted
+            return NextResponse.json({ 
+              error: "Error processing request", 
+              details: lastError,
+              suggestion: "Please try again later."
+            }, { status: 500 });
+          }
         }
         
-        // Otherwise retry
-        console.log("Retrying after unexpected error...");
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+        // Wait before retry
+        const retryDelay = API_ENDPOINTS[apiIndex].retryDelay || 2000;
+        console.log(`Retrying after unexpected error in ${retryDelay/1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
       }
     }
     
+    const endTime = Date.now();
+    const totalTimeSeconds = Math.round((endTime - startTime) / 1000);
+    
     // Should never get here, but just in case
+    console.error(`❌ All API attempts failed after ${totalTimeSeconds}s and ${totalAttempts} attempts`);
+    
     return NextResponse.json({ 
       error: "Failed to edit image after multiple attempts", 
-      details: lastError || "Unknown error" 
+      details: lastError || "Unknown error",
+      suggestion: "Our image editing service is experiencing high load. Please try again in a few minutes.",
+      _meta: {
+        totalTimeSeconds,
+        attempts: totalAttempts,
+        jobId
+      }
     }, { status: 500 });
   } catch (err: any) {
     console.error("Edit image error details:", {
@@ -334,9 +562,18 @@ export async function POST(req: NextRequest) {
       stack: err.stack,
       cause: err.cause,
     });
+    
+    // Include troubleshooting instructions
     return NextResponse.json({ 
       error: err.message || "Unknown error",
-      errorType: err.name || "UnknownError"
+      errorType: err.name || "UnknownError",
+      suggestion: "Try using a smaller image or different format (JPEG/PNG).",
+      troubleshooting: [
+        "Make sure your image is in a standard format (JPEG/PNG)",
+        "Try with a smaller image (under 4MB)",
+        "Check your network connection",
+        "Try a simpler edit prompt"
+      ]
     }, { status: 500 });
   }
 }

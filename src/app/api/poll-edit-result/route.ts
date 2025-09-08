@@ -19,9 +19,9 @@ export async function POST(req: NextRequest) {
     
     console.log(`Polling edit result: ${polling_url.substring(0, 50)}...`);
     
-    // Add a timeout to the fetch to prevent hanging requests
+        // Add a timeout to the fetch to prevent hanging requests
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout (increased from 10s)
     
     try {
       const res = await fetch(polling_url, { 
@@ -122,10 +122,24 @@ export async function POST(req: NextRequest) {
     } catch (fetchError: any) {
       clearTimeout(timeoutId);
       console.error("Error fetching polling URL:", fetchError.message, fetchError.stack);
+      
+      // For timeout errors, give more helpful information
+      if (fetchError.name === "AbortError") {
+        return NextResponse.json({ 
+          error: "Polling request timed out",
+          details: "The image editing service is taking longer than expected to respond",
+          status: "Processing", // Return "Processing" instead of "Error" to encourage client to keep polling
+          progress: "Still working on your image...",
+          recoverable: true,
+          suggestion: "Continue polling, your image is still being processed"
+        }, { status: 202 }); // Use 202 Accepted to indicate processing is continuing
+      }
+      
       return NextResponse.json({ 
         error: fetchError instanceof Error ? fetchError.message : "Failed to fetch polling result",
         details: fetchError instanceof Error ? fetchError.stack : undefined,
-        status: "Error"
+        status: "Error",
+        recoverable: false // Indicate this is not recoverable
       }, { status: 500 });
     }
   } catch (err: any) {
