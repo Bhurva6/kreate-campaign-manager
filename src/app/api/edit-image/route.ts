@@ -270,7 +270,7 @@ export async function POST(req: NextRequest) {
           
           // Create appropriate request body for current API endpoint
           let apiBody = body;
-          let apiHeaders = {
+          const apiHeaders = {
             "Content-Type": "application/json",
             "Accept": "application/json"
           };
