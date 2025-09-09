@@ -35,13 +35,7 @@ const API_ENDPOINTS = [
     timeout: 60000, // 60 seconds
     retryDelay: 2000 // 2 seconds
   },
-  {
-    url: "https://api.stability.ai/v2/image-to-image", // Last fallback API
-    headerKey: "Authorization", 
-    envKey: "STABILITY_API_KEY",
-    timeout: 45000, // 45 seconds
-    retryDelay: 1500 // 1.5 seconds
-  }
+
 ];
 
 export async function POST(req: NextRequest) {
