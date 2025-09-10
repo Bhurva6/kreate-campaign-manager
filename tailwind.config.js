@@ -15,6 +15,15 @@ module.exports = {
     'text-theme-accent'
   ],
   theme: {
+    screens: {
+      'xs': '400px',
+      // Default Tailwind breakpoints below
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       fontFamily: {
         sans: ['var(--font-ibm-plex-mono)', 'monospace'],

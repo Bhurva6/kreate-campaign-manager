@@ -5,7 +5,7 @@ import { useUI } from './ui';
 // Constants for free limits
 const FREE_IMAGE_GENERATIONS = 3;
 const FREE_IMAGE_EDITS = 7;
-const UNLIMITED_EMAIL = 'golocostudios@gmail.com';
+const UNLIMITED_EMAIL = ['golocostudios@gmail.com','paridhi.jain0007@gmail.com','lixxca8@gmail.com'];
 
 // Define plans
 export interface Plan {
@@ -146,7 +146,7 @@ export const CreditProvider = ({ children }: CreditProviderProps) => {
   }, [showPricingModal, openPricingModal]);
 
   // Check if user has unlimited access
-  const isUnlimitedUser = user?.email === UNLIMITED_EMAIL;
+  const isUnlimitedUser = user?.email ? UNLIMITED_EMAIL.includes(user.email) : false;
 
   // Calculate limits based on active plan or free tier
   const imageGenerationsLimit = activePlan ? activePlan.imageGenerations : FREE_IMAGE_GENERATIONS;

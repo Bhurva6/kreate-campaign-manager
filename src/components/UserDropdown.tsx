@@ -4,9 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
 import { useCredits } from '../lib/credits';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function UserDropdown() {
   const { user, signOut } = useAuth();
+  const router = useRouter();
   const { 
     imageGenerationsUsed, 
     imageEditsUsed, 
@@ -39,6 +41,10 @@ export default function UserDropdown() {
     try {
       await signOut();
       setIsOpen(false);
+      // Redirect to home page after successful logout
+      router.push('/');
+      // Force page refresh to ensure all auth state is cleared
+      window.location.reload();
     } catch (error) {
       console.error('Error signing out:', error);
       // Still close the dropdown even if sign out fails
@@ -54,7 +60,7 @@ export default function UserDropdown() {
   const initials = displayName.charAt(0).toUpperCase();
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative z-[999999]" ref={dropdownRef}>
       {/* User Avatar Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -100,7 +106,7 @@ export default function UserDropdown() {
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50">
+        <div className="fixed md:absolute right-2 md:right-0 top-16 md:top-full mt-2 w-[calc(100vw-16px)] sm:w-80 md:w-64 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-[999999] md:z-[999999] max-h-[80vh] overflow-y-auto">
           {/* User Info Section */}
           <div className="p-4 border-b border-gray-100">
             <div className="flex items-center gap-3">

@@ -396,7 +396,7 @@ export async function POST(req: NextRequest) {
           }
           
           // Set the API key in the correct header - using type assertion for header key
-          let requestUrl = currentEndpoint.url;
+          const requestUrl = currentEndpoint.url;
           
           if (currentEndpoint.apiType === "gemini-direct") {
             // For direct Gemini API with the 2.5-flash-image-preview model, use OAuth token

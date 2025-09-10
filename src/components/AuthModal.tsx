@@ -33,7 +33,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   if (typeof window === 'undefined' || !isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 border-[#F3752A]/20 relative">
         {/* Close Button */}
         <button

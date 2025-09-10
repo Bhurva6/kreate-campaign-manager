@@ -192,7 +192,14 @@ function LandingPageContent() {
   const [activePoint, setActivePoint] = useState(0);
   const [autoRotate, setAutoRotate] = useState(true);
   // Track window width for responsiveness
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+  const [windowWidth, setWindowWidth] = useState(1024); // Default to desktop value
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Initialize client-side state
+  useEffect(() => {
+    setWindowWidth(window.innerWidth);
+    setIsMounted(true);
+  }, []);
 
   // Auto rotate points every 3 seconds
   useEffect(() => {
@@ -216,10 +223,7 @@ function LandingPageContent() {
     };
     
     window.addEventListener('resize', handleResize);
-    
-    // Set initial width
-    handleResize();
-    
+        
     return () => {
       window.removeEventListener('resize', handleResize);
     };
@@ -573,9 +577,9 @@ function LandingPageContent() {
             
 
             {/* CTA Button */}
-            <div className="flex flex-row gap-0.5 sm:gap-6 justify-center px-1 sm:px-0 max-w-[90%] sm:max-w-full mx-auto">
+            <div className="flex flex-col md:flex-row gap-2 md:gap-6 justify-center px-1 sm:px-0 max-w-[85%] sm:max-w-[90%] md:max-w-full mx-auto">
   <button
-    className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-1.5 sm:px-8 md:px-10 py-0.5 sm:py-2.5 md:py-3 rounded-full text-[8px] sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#B6CF4F] text-white hover:shadow-[#1A018D]/30 flex-1 sm:w-auto whitespace-nowrap min-w-0"
+    className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-3 sm:px-8 md:px-10 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#B6CF4F] text-white hover:shadow-[#1A018D]/30 w-full md:w-auto whitespace-nowrap"
     onClick={() => {
       if (user) {
         router.push("/demo");
@@ -586,10 +590,10 @@ function LandingPageContent() {
   >
     <span className="hidden sm:inline">✨</span>
     <span>Start</span>
-    <span className="text-[8px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
+    <span className="text-[10px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
   </button>
   <button
-    className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-1.5 sm:px-8 md:px-10 py-0.5 sm:py-2.5 md:py-3 rounded-full text-[8px] sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#FF5E32] text-white hover:shadow-[#1A018D]/30 flex-1 sm:w-auto whitespace-nowrap min-w-0"
+    className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-3 sm:px-8 md:px-10 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#FF5E32] text-white hover:shadow-[#1A018D]/30 w-full md:w-auto whitespace-nowrap"
     onClick={() => {
       if (user) {
         router.push("/enterprise");
@@ -600,7 +604,7 @@ function LandingPageContent() {
   >
     <span className="hidden sm:inline">✨</span>
     <span>Pro</span>
-    <span className="text-[8px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
+    <span className="text-[10px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
   </button>
 </div>
      
@@ -614,7 +618,9 @@ function LandingPageContent() {
                 
                 {/* Carousel container with automatic horizontal scroll animation */}
                 <div className="py-4 sm:py-6 md:py-8 overflow-hidden w-full">
-                  <div className="flex whitespace-nowrap logo-slide" style={{ animationDuration: windowWidth < 640 ? '15s' : '20s' }}>
+                  <div className="flex whitespace-nowrap logo-slide" style={{ 
+                    animationDuration: isMounted && windowWidth < 640 ? '15s' : '20s'
+                  }}>
                     {/* First set of logos - smaller on mobile */}
                     <div className="flex gap-4 sm:gap-6 md:gap-8 items-center mx-3 sm:mx-4 md:mx-6">
                       <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
@@ -834,10 +840,18 @@ function LandingPageContent() {
                           </span>
                           <span className="text-xs sm:text-sm md:text-base">
                             {index === 0 && "Upload the Einstein"}
-                            {index === 1 && (windowWidth < 640 ? "\"Shit Happens\"" : "Drop the bombshell: \"Shit Happens.\"")}
-                            {index === 2 && (windowWidth < 640 ? "\"Edit Happens\"" : "Flip the script—now it's \"Edit Happens.\"")}
-                            {index === 3 && (windowWidth < 640 ? "Add color" : "Light up the genius—full color mode on.")}
-                            {index === 4 && (windowWidth < 640 ? "Cartoon style" : "Cartoon chaos: let creativity rip through his eyes")}
+                            {index === 1 && (!isMounted ? "Drop the bombshell: \"Shit Happens.\"" : 
+                              windowWidth < 640 ? "\"Shit Happens\"" : "Drop the bombshell: \"Shit Happens.\"")
+                            }
+                            {index === 2 && (!isMounted ? "Flip the script—now it's \"Edit Happens.\"" :
+                              windowWidth < 640 ? "\"Edit Happens\"" : "Flip the script—now it's \"Edit Happens.\"")
+                            }
+                            {index === 3 && (!isMounted ? "Light up the genius—full color mode on." :
+                              windowWidth < 640 ? "Add color" : "Light up the genius—full color mode on.")
+                            }
+                            {index === 4 && (!isMounted ? "Cartoon chaos: let creativity rip through his eyes" :
+                              windowWidth < 640 ? "Cartoon style" : "Cartoon chaos: let creativity rip through his eyes")
+                            }
                           </span>
                         </h3>
                        
@@ -1701,7 +1715,7 @@ function LandingPageContent() {
 
         {/* Success Message for Payment */}
         {paymentSuccess && (
-          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white px-6 py-3 rounded-md shadow-lg">
+          <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[998] bg-green-500 text-white px-6 py-3 rounded-md shadow-lg">
             Payment successful! Your plan has been activated.
           </div>
         )}
@@ -2267,7 +2281,7 @@ Best regards`);
 
         {/* Pricing Popup */}
         {showPricingModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div
               className={`rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 transition-colors duration-300 ${
                 isDarkMode

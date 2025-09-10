@@ -40,7 +40,7 @@ export const useCreditManagement = () => {
   } = useCreditStore();
 
   // Special unlimited user email
-  const UNLIMITED_EMAIL = 'golocostudios@gmail.com';
+  const UNLIMITED_EMAIL = ['golocostudios@gmail.com','paridhi.jain0007@gmail.com','lixxca8@gmail.com'];
 
   // Initialize the store with user data from context
   useEffect(() => {
@@ -49,7 +49,7 @@ export const useCreditManagement = () => {
       
       if (!userCredit) {
         // If unlimited user, use high limits
-        if (user.email === UNLIMITED_EMAIL) {
+        if (user.email && UNLIMITED_EMAIL.includes(user.email)) {
           initializeUserCredit(user.uid, 9999, 9999);
         } 
         // If paid user from context, set up their plan in the store
