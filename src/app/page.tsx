@@ -520,7 +520,7 @@ function LandingPageContent() {
       {/* First Viewport - Completely Black */}
       <div className="min-h-screen flex flex-col bg-black relative">
         {/* Logo Top Left and Auth Buttons Top Right */}
-        <div className="flex flex-row justify-between items-center w-full p-3 sm:p-4 md:p-6 bg-black z-10">
+        <div className="flex flex-row justify-between items-center w-full p-3 sm:p-4 md:p-6 bg-black z-[999999]">
           <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
             GoLoco
           </div>
@@ -530,7 +530,7 @@ function LandingPageContent() {
             {loading ? (
               <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
             ) : user ? (
-              <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 relative z-[999999]">
                 <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
                 <UserDropdown />
               </div>
@@ -577,7 +577,7 @@ function LandingPageContent() {
             
 
             {/* CTA Button */}
-            <div className="flex flex-col md:flex-row gap-2 md:gap-6 justify-center px-1 sm:px-0 max-w-[85%] sm:max-w-[90%] md:max-w-full mx-auto">
+            <div className="flex flex-col md:flex-row gap-2 md:gap-6 justify-center px-1 sm:px-0 max-w-[85%] sm:max-w-[90%] md:max-w-full mx-auto relative z-10">
   <button
     className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-3 sm:px-8 md:px-10 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#B6CF4F] text-white hover:shadow-[#1A018D]/30 w-full md:w-auto whitespace-nowrap"
     onClick={() => {
