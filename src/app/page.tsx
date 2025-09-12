@@ -603,7 +603,7 @@ function LandingPageContent() {
     }}
   >
     <span className="hidden sm:inline">✨</span>
-    <span>Pro</span>
+    <span>Enterprise</span>
     <span className="text-[10px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
   </button>
 </div>

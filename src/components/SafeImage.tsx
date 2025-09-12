@@ -13,6 +13,7 @@ interface SafeImageProps {
   fallbackSrc?: string;
   onError?: () => void;
   showErrorMessage?: boolean; // New prop to control if error message is shown
+  priority?: boolean; // Support Next.js Image's priority prop but handle it appropriately
   [key: string]: any; // Allow additional props
 }
 
@@ -28,6 +29,7 @@ export default function SafeImage({
   fallbackSrc = '/GoLoco-creation.png',
   onError,
   showErrorMessage = true, // Default to showing error messages
+  priority, // Extract priority prop to prevent it from being passed to the img tag
   ...rest
 }: SafeImageProps) {
   const [error, setError] = useState(false);
@@ -62,6 +64,21 @@ export default function SafeImage({
     );
   }
 
+  // Filter out non-standard HTML attributes that might be in rest props
+  const filterSafeProps = (props: any) => {
+    // List of Next.js Image props that shouldn't be passed to native img
+    const nextJsSpecificProps = ['priority', 'placeholder', 'blurDataURL', 'layout', 'objectFit', 'objectPosition'];
+    
+    const filtered = {...props};
+    nextJsSpecificProps.forEach(prop => {
+      if (prop in filtered) {
+        delete filtered[prop];
+      }
+    });
+    
+    return filtered;
+  };
+
   return (
     <div className="relative">
       {/* Native img tag with explicit dimensions for better performance */}
@@ -75,7 +92,7 @@ export default function SafeImage({
         height={height}
         loading="eager"
         crossOrigin="anonymous"
-        {...rest}
+        {...filterSafeProps(rest)}
       />
       
       {/* Show loading state */}
