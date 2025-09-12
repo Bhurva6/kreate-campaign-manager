@@ -666,7 +666,7 @@ function EnterprisePageContent() {
           <div className="step-content max-w-3xl mx-auto mt-8 px-8 py-10 bg-theme-background rounded-xl shadow-xl">
             <h3 className="text-2xl font-bold text-theme-foreground mb-6 text-center">Confidence Score</h3>
             <p className="text-gray-600 dark:text-gray-300 text-center mb-8">
-              Based on your business information, objectives, and generation preferences, here's how well your content aligns with your goals.
+              Based on your business information, objectives, and generation preferences, here&apos;s how well your content aligns with your goals.
             </p>
             
             {/* Overall Confidence Score */}
