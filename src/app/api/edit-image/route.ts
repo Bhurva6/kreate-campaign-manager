@@ -318,7 +318,7 @@ export async function POST(req: NextRequest) {
         const streamingResp = await ai.models.generateContentStream(req);
         
         let fullResponse = '';
-        let generatedImages: string[] = [];
+        const generatedImages: string[] = [];
         
         for await (const chunk of streamingResp) {
           if (chunk.text) {
