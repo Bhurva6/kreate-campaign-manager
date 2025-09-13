@@ -106,6 +106,19 @@ async function pollEditResult(
 // Define the pricing plans for the home page
 const homePlans: Plan[] = [
   {
+    id: "starter",
+    name: "Starter",
+    price: 49,
+    imageGenerations: 10,
+    imageEdits: 10,
+    description: "Quick start",
+    features: [
+      "10 images per month",
+      "Basic tools",
+      "Download & share",
+    ],
+  },
+  {
     id: "mini",
     name: "Mini",
     price: 299,
@@ -1733,15 +1746,13 @@ function LandingPageContent() {
             Pricing
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 justify-center items-stretch w-full max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6 justify-center items-stretch w-full max-w-7xl mx-auto">
             {/* Free Plan */}
-            <div
-              className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${
+            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${
                 isDarkMode
                   ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20"
                   : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"
-              }`}
-            >
+              }`}>
               <div className="text-center">
                 <div className="text-4xl mb-4">🎮</div>
                 <h3 className="text-xl font-bold text-[#0171B9] mb-2">Free</h3>
@@ -1808,6 +1819,86 @@ function LandingPageContent() {
                 >
                   Get Started Free
                 </button>
+              </div>
+            </div>
+
+            {/* Starter Plan */}
+            <div
+              className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${
+                isDarkMode
+                  ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20"
+                  : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"
+              }`}
+            >
+              <div className="text-center">
+                <div className="text-4xl mb-4">🚀</div>
+                <h3 className="text-xl font-bold text-[#0171B9] mb-2">
+                  Starter
+                </h3>
+                <p className="text-[#004684] font-semibold text-sm mb-4">
+                  &quot;Quick start&quot;
+                </p>
+
+                <div
+                  className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
+                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
+                  }`}
+                >
+                  ₹40
+                </div>
+                <div
+                  className={`text-xs mb-4 transition-colors duration-300 ${
+                    isDarkMode
+                      ? "text-white opacity-60"
+                      : "text-[#1E1E1E] opacity-60"
+                  }`}
+                >
+                  10 images per month
+                </div>
+
+                <div className="space-y-2 text-left mb-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#004684] text-sm">⚡</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      10 images per month
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#004684] text-sm">🎨</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Basic tools
+                    </span>
+                  </div>
+                </div>
+
+                {user ? (
+                  <RazorpayHandler
+                    plan={homePlans[0]}
+                    buttonText="Choose Starter"
+                    customClassName="w-full px-4 py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition text-sm"
+                    onSuccess={handlePaymentSuccess}
+                    onFailure={handlePaymentFailure}
+                  />
+                ) : (
+                  <button
+                    className="w-full px-4 py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition text-sm"
+                    onClick={() => setShowAuthModal(true)}
+                  >
+                    Choose Starter
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1896,7 +1987,7 @@ function LandingPageContent() {
 
                 {user ? (
                   <RazorpayHandler
-                    plan={homePlans[0]}
+                    plan={homePlans[1]}
                     buttonText="Choose Mini"
                     customClassName="w-full px-4 py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition text-sm"
                     onSuccess={handlePaymentSuccess}
@@ -2015,7 +2106,7 @@ function LandingPageContent() {
 
                 {user ? (
                   <RazorpayHandler
-                    plan={homePlans[1]}
+                    plan={homePlans[3]}
                     buttonText="Choose Pro"
                     customClassName="w-full px-4 py-2 rounded-lg bg-[#FF5E32] text-white font-semibold hover:bg-[#1A018D] transition text-sm"
                     onSuccess={handlePaymentSuccess}

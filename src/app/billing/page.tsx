@@ -64,6 +64,19 @@ export default function BillingPage() {
   // Define the pricing plans for the billing page
   const billingPlans: Plan[] = [
     {
+      id: 'starter',
+      name: 'Starter',
+      price: 49,
+      imageGenerations: 10,
+      imageEdits: 10,
+      description: "Quick start",
+      features: [
+        '10 image generations',
+        'Basic tools',
+        'Download & share'
+      ]
+    },
+    {
       id: 'basic',
       name: 'Basic',
       price: 700,

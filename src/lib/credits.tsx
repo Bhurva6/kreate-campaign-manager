@@ -20,6 +20,19 @@ export interface Plan {
 
 export const PLANS: Plan[] = [
   {
+    id: 'starter',
+    name: 'Starter',
+    price: 49,
+    imageGenerations: 10,
+    imageEdits: 10,
+    description: 'Quick start',
+    features: [
+      '10 images per month',
+      'Basic tools',
+      'Valid for 30 days'
+    ]
+  },
+  {
     id: 'mini',
     name: 'Mini',
     price: 299,
