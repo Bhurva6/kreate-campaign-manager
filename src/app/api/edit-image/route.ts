@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadImageToR2, base64ToBuffer, getMimeTypeFromDataUrl } from "@/lib/r2-upload";
 import { tokenManager } from '@/lib/google-auth';
+import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 
 // Simple request deduplication cache - stores recent prompts with timestamps
 // This helps prevent duplicate API calls
@@ -37,6 +38,37 @@ const API_ENDPOINTS = [
   },
 
 ];
+
+// Nano Banana API setup
+const ai = new GoogleGenAI({
+  apiKey: process.env.GOOGLE_CLOUD_API_KEY,
+});
+const model = 'gemini-2.5-flash-image-preview';
+
+const generationConfig = {
+  maxOutputTokens: 32768,
+  temperature: 1,
+  topP: 0.95,
+  responseModalities: ["TEXT", "IMAGE"],
+  safetySettings: [
+    {
+      category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+      threshold: HarmBlockThreshold.OFF,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+      threshold: HarmBlockThreshold.OFF,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+      threshold: HarmBlockThreshold.OFF,
+    },
+    {
+      category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+      threshold: HarmBlockThreshold.OFF,
+    }
+  ],
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -249,6 +281,83 @@ export async function POST(req: NextRequest) {
 
     console.log("Preparing to send request to image editing APIs...");
     
+    // Prepare progress tracking
+    const startTime = Date.now();
+    
+    // Try Nano Banana API (Google GenAI SDK) first as priority
+    if (process.env.GOOGLE_CLOUD_API_KEY) {
+      try {
+        console.log("Attempting Nano Banana API (Google GenAI SDK) first...");
+        const parts: any[] = [];
+        
+        // Add the input image
+        let mimeType = "image/jpeg"; // default
+        if (input_image.startsWith('data:image/')) {
+          const detectedMime = input_image.match(/data:(image\/[^;]+);/)?.[1];
+          if (detectedMime) mimeType = detectedMime;
+        }
+        
+        parts.push({
+          inlineData: {
+            mimeType: mimeType,
+            data: processedImage,
+          },
+        });
+        
+        // Add text prompt
+        parts.push({ text: `Edit this image based on the following prompt: ${prompt.trim()}` });
+        
+        const req = {
+          model: model,
+          contents: [
+            { role: 'user', parts }
+          ],
+          generationConfig: generationConfig,
+        };
+        
+        const streamingResp = await ai.models.generateContentStream(req);
+        
+        let fullResponse = '';
+        let generatedImages: string[] = [];
+        
+        for await (const chunk of streamingResp) {
+          if (chunk.text) {
+            fullResponse += chunk.text;
+          }
+          
+          if (chunk.candidates && chunk.candidates[0]?.content?.parts) {
+            for (const part of chunk.candidates[0].content.parts) {
+              if (part.inlineData) {
+                const dataUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+                generatedImages.push(dataUrl);
+              }
+            }
+          }
+        }
+        
+        if (generatedImages.length > 0) {
+          console.log("Nano Banana API succeeded");
+          return NextResponse.json({ 
+            images: generatedImages,
+            result: "success",
+            _meta: {
+              processingTimeSeconds: Math.round((Date.now() - startTime) / 100) / 10,
+              apiProvider: "Nano Banana API (Google GenAI)",
+              jobId,
+              attempts: 1
+            }
+          });
+        } else {
+          console.log("Nano Banana API did not generate images, falling back...");
+        }
+      } catch (error) {
+        console.error("Nano Banana API failed:", error);
+        // Continue to other APIs
+      }
+    } else {
+      console.log("GOOGLE_CLOUD_API_KEY not set, skipping Nano Banana API");
+    }
+    
     // Smart retry mechanism with multiple API fallbacks
     const MAX_RETRIES_PER_API = 2; // 2 retries per API
     const MAX_TOTAL_ATTEMPTS = API_ENDPOINTS.length * MAX_RETRIES_PER_API; // Total attempts across all APIs
@@ -280,9 +389,6 @@ export async function POST(req: NextRequest) {
     // Compress large images further if needed
     const imageSize = Math.round(processedImage.length * 0.75 / 1024);
     console.log(`Processing image of size: ~${imageSize}KB with ${MAX_TOTAL_ATTEMPTS} total allowed attempts`);
-    
-    // Prepare progress tracking
-    const startTime = Date.now();
     
     while (totalAttempts < MAX_TOTAL_ATTEMPTS) {
       try {
