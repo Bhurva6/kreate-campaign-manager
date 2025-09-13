@@ -10,6 +10,7 @@ export interface ImageData {
   category?: string;
   uploadedAt?: string;
   userId?: string;
+  additionalUrls?: string[]; // Additional image URLs for variations
 }
 
 interface ImageStore {

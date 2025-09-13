@@ -41,7 +41,7 @@ const API_ENDPOINTS = [
 
 // Nano Banana API setup
 const ai = new GoogleGenAI({
-  apiKey: process.env.GOOGLE_CLOUD_API_KEY,
+  apiKey: "AIzaSyAL13i8HfjEQKd6X413CslA19G39wFiB_M",
 });
 const model = 'gemini-2.5-flash-image-preview';
 
@@ -72,7 +72,7 @@ const generationConfig = {
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, input_image, userId } = await req.json();
+    const { prompt, input_image, userId, additional_images } = await req.json();
     if (!prompt || !input_image) {
       return NextResponse.json({ error: "Prompt and input_image are required." }, { status: 400 });
     }
@@ -285,77 +285,120 @@ export async function POST(req: NextRequest) {
     const startTime = Date.now();
     
     // Try Nano Banana API (Google GenAI SDK) first as priority
-    if (process.env.GOOGLE_CLOUD_API_KEY) {
-      try {
-        console.log("Attempting Nano Banana API (Google GenAI SDK) first...");
-        const parts: any[] = [];
-        
-        // Add the input image
-        let mimeType = "image/jpeg"; // default
-        if (input_image.startsWith('data:image/')) {
-          const detectedMime = input_image.match(/data:(image\/[^;]+);/)?.[1];
-          if (detectedMime) mimeType = detectedMime;
-        }
-        
-        parts.push({
-          inlineData: {
-            mimeType: mimeType,
-            data: processedImage,
-          },
-        });
-        
-        // Add text prompt
-        parts.push({ text: `Edit this image based on the following prompt: ${prompt.trim()}` });
-        
-        const req = {
-          model: model,
-          contents: [
-            { role: 'user', parts }
-          ],
-          generationConfig: generationConfig,
-        };
-        
-        const streamingResp = await ai.models.generateContentStream(req);
-        
-        let fullResponse = '';
-        const generatedImages: string[] = [];
-        
-        for await (const chunk of streamingResp) {
-          if (chunk.text) {
-            fullResponse += chunk.text;
-          }
-          
-          if (chunk.candidates && chunk.candidates[0]?.content?.parts) {
-            for (const part of chunk.candidates[0].content.parts) {
-              if (part.inlineData) {
-                const dataUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                generatedImages.push(dataUrl);
+    try {
+      console.log("Attempting Nano Banana API (Google GenAI SDK) first...");
+      const parts: any[] = [];
+      
+      // Add the main input image
+      let mimeType = "image/jpeg"; // default
+      if (input_image.startsWith('data:image/')) {
+        const detectedMime = input_image.match(/data:(image\/[^;]+);/)?.[1];
+        if (detectedMime) mimeType = detectedMime;
+      }
+      
+      parts.push({
+        inlineData: {
+          mimeType: mimeType,
+          data: processedImage,
+        },
+      });
+      
+      // Add additional images if provided
+      if (additional_images && Array.isArray(additional_images)) {
+        for (const additionalImage of additional_images) {
+          if (typeof additionalImage === 'string' && additionalImage.trim()) {
+            let additionalMimeType = "image/jpeg";
+            let additionalProcessedImage = additionalImage;
+            
+            if (additionalImage.startsWith('data:image/')) {
+              const detectedMime = additionalImage.match(/data:(image\/[^;]+);/)?.[1];
+              if (detectedMime) additionalMimeType = detectedMime;
+              const base64Parts = additionalImage.split(',');
+              if (base64Parts.length === 2) {
+                additionalProcessedImage = base64Parts[1].trim().replace(/\s/g, '');
+                const remainder = additionalProcessedImage.length % 4;
+                if (remainder > 0) {
+                  additionalProcessedImage += '='.repeat(4 - remainder);
+                }
               }
             }
+            
+            parts.push({
+              inlineData: {
+                mimeType: additionalMimeType,
+                data: additionalProcessedImage,
+              },
+            });
           }
         }
-        
-        if (generatedImages.length > 0) {
-          console.log("Nano Banana API succeeded");
-          return NextResponse.json({ 
-            images: generatedImages,
-            result: "success",
-            _meta: {
-              processingTimeSeconds: Math.round((Date.now() - startTime) / 100) / 10,
-              apiProvider: "Nano Banana API (Google GenAI)",
-              jobId,
-              attempts: 1
-            }
-          });
-        } else {
-          console.log("Nano Banana API did not generate images, falling back...");
-        }
-      } catch (error) {
-        console.error("Nano Banana API failed:", error);
-        // Continue to other APIs
       }
-    } else {
-      console.log("GOOGLE_CLOUD_API_KEY not set, skipping Nano Banana API");
+      
+      // Add text prompt
+      parts.push({ text: `Edit this image based on the following prompt: ${prompt.trim()}` });
+      
+      const req = {
+        model: model,
+        contents: [
+          { role: 'user', parts }
+        ],
+        generationConfig: generationConfig,
+      };
+      
+      const streamingResp = await ai.models.generateContentStream(req);
+      
+      let fullResponse = '';
+      const generatedImages: string[] = [];
+      
+      for await (const chunk of streamingResp) {
+        if (chunk.text) {
+          fullResponse += chunk.text;
+        }
+        
+        if (chunk.candidates && chunk.candidates[0]?.content?.parts) {
+          for (const part of chunk.candidates[0].content.parts) {
+            if (part.inlineData) {
+              const dataUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+              generatedImages.push(dataUrl);
+            }
+          }
+        }
+      }
+      
+      if (generatedImages.length > 0) {
+        console.log("Nano Banana API succeeded");
+        
+        // Upload the first image to R2 for consistency with other APIs
+        const firstImageDataUrl = generatedImages[0];
+        const base64Data = firstImageDataUrl.split(',')[1];
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        
+        const uploadResult = await uploadImageToR2({
+          imageBuffer,
+          category: "edit-image",
+          prompt: prompt.trim(),
+          mimeType: "image/png",
+          userId,
+        });
+        
+        return NextResponse.json({ 
+          result: {
+            sample: uploadResult.publicUrl
+          },
+          status: "Ready",
+          images: generatedImages, // Keep all images for frontend display
+          _meta: {
+            processingTimeSeconds: Math.round((Date.now() - startTime) / 100) / 10,
+            apiProvider: "Nano Banana API (Google GenAI)",
+            jobId,
+            attempts: 1
+          }
+        });
+      } else {
+        console.log("Nano Banana API did not generate images, falling back...");
+      }
+    } catch (error) {
+      console.error("Nano Banana API failed:", error);
+      // Continue to other APIs
     }
     
     // Smart retry mechanism with multiple API fallbacks

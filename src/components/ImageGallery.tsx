@@ -72,6 +72,13 @@ export default function ImageGallery({
             onClick={() => handleImageClick(image)}
           >
             <div className="aspect-square relative">
+              {/* Badge for images with variations */}
+              {image.additionalUrls && image.additionalUrls.length > 0 && (
+                <div className="absolute top-2 right-2 z-10 bg-blue-600 text-white text-xs font-medium px-2 py-1 rounded-full">
+                  +{image.additionalUrls.length} variations
+                </div>
+              )}
+              
               <Image
                 src={image.dataUrl || image.url}
                 alt={image.prompt || "Generated image"}
@@ -233,6 +240,51 @@ export default function ImageGallery({
               </div>
             </div>
           </div>
+          
+          {/* Display additional variations if available */}
+          {typeof selectedImage === "object" && 
+           selectedImage !== null && 
+           "additionalUrls" in selectedImage && 
+           selectedImage.additionalUrls && 
+           selectedImage.additionalUrls.length > 0 && (
+            <div className="mt-6">
+              <h4 className="text-md font-semibold mb-3">Image Variations ({selectedImage.additionalUrls.length})</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {selectedImage.additionalUrls.map((url, index) => (
+                  <div key={`variation-${index}`} className="relative aspect-square rounded-md overflow-hidden border border-gray-200">
+                    <Image
+                      src={url}
+                      alt={`Variation ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all flex items-center justify-center">
+                      <div className="opacity-0 hover:opacity-100 transition-opacity flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard(url);
+                          }}
+                          className="bg-white text-black px-2 py-1 rounded text-xs hover:bg-gray-100"
+                        >
+                          Copy URL
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(url, "_blank");
+                          }}
+                          className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+                        >
+                          Open
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

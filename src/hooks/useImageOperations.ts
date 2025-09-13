@@ -229,15 +229,53 @@ export function useImageOperations() {
       const data = await response.json();
       console.log("Edit image response:", data);
       
+      // Only consume credit when we successfully get a response
+      consumeImageEdit();
+      
       if (data.polling_url) {
-        // Only consume credit when we successfully start the edit
-        consumeImageEdit();
-        
-        // Poll for results
+        // Poll for results if we have a polling URL
         return pollEditResult(data.polling_url, prompt, userIdentifier);
+      } else if (data.result && data.result.sample) {
+        // Handle direct result without polling (like from Nano Banana API)
+        console.log("Direct edit result received without polling");
+        
+        // Check if we also have multiple images in the response
+        const additionalUrls = data.images && Array.isArray(data.images) && data.images.length > 0
+          ? data.images.filter((url: string) => url !== data.result.sample)
+          : undefined;
+          
+        const imageData: ImageData = {
+          id: `edited-${Date.now()}`,
+          url: data.result.sample,
+          prompt: prompt || "edited-image",
+          r2Key: data.r2?.key,
+          signedUrl: data.r2?.signedUrl,
+          category: "edited",
+          uploadedAt: new Date().toISOString(),
+          userId: userIdentifier,
+          additionalUrls: additionalUrls,
+        };
+        
+        addImage(imageData);
+        return imageData;
+      } else if (data.images && data.images.length > 0) {
+        // Handle response with multiple images array
+        console.log("Multiple edit results received");
+        const imageData: ImageData = {
+          id: `edited-${Date.now()}`,
+          url: data.images[0], // Use the first image as the main one
+          prompt: prompt || "edited-image",
+          category: "edited",
+          uploadedAt: new Date().toISOString(),
+          userId: userIdentifier,
+          additionalUrls: data.images.slice(1), // Store any additional images
+        };
+        
+        addImage(imageData);
+        return imageData;
       }
 
-      throw new Error("No polling URL received");
+      throw new Error("No valid image result or polling URL received");
     } catch (error: any) {
       console.error("Error editing image:", error);
       setError(error.message || "Failed to edit image");

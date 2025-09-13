@@ -8,9 +8,13 @@ export default function EditImagePage() {
   const [prompt, setPrompt] = useState("");
   const [pollingUrl, setPollingUrl] = useState<string | null>(null);
   const [finalImage, setFinalImage] = useState<string | null>(null);
+  const [finalImages, setFinalImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
+  
+  // Additional images state
+  const [additionalImages, setAdditionalImages] = useState<string[]>(["", "", ""]);
 
   if (!img) {
     return <div className="text-center text-red-400">No image selected.</div>;
@@ -22,6 +26,7 @@ export default function EditImagePage() {
     setError(null);
     setErrorDetails(null);
     setFinalImage(null);
+    setFinalImages([]);
     try {
       for (let i = 0; i < 30; i++) {
         // poll up to 30 times (~30s)
@@ -37,11 +42,14 @@ export default function EditImagePage() {
           throw new Error(errorData.error || `API error: ${res.status}`);
         }
         
-        const data: { status: string; result?: { sample?: string }; details?: string } = await res.json();
+        const data: { status: string; result?: { sample?: string }; images?: string[]; details?: string } = await res.json();
         
         if (data.status === "Ready" && data.result?.sample) {
           console.log("Edit result received successfully");
           setFinalImage(data.result.sample);
+          if (data.images && Array.isArray(data.images)) {
+            setFinalImages(data.images);
+          }
           setLoading(false);
           return;
         }
@@ -206,6 +214,7 @@ export default function EditImagePage() {
     setError(null);
     setErrorDetails(null);
     setFinalImage(null);
+    setFinalImages([]);
     setPollingUrl(null);
     try {
       console.log("Processing image for edit request...");
@@ -216,12 +225,35 @@ export default function EditImagePage() {
         return imageLikeToDataURL(img);
       });
       
-      console.log("Image prepared for API, sending edit request...");
+      // Process additional images
+      const processedAdditionalImages = [];
+      for (const additionalImg of additionalImages) {
+        if (additionalImg) {
+          try {
+            const normalized = await normalizeImageForAPI(additionalImg);
+            processedAdditionalImages.push(normalized);
+          } catch (err) {
+            console.error("Failed to process additional image:", err);
+            processedAdditionalImages.push(additionalImg);
+          }
+        }
+      }
+      
+      console.log("Images prepared for API, sending edit request...");
+      
+      const requestBody: any = { 
+        prompt, 
+        input_image: normalizedImage 
+      };
+      
+      if (processedAdditionalImages.length > 0) {
+        requestBody.additional_images = processedAdditionalImages;
+      }
       
       const res = await fetch("/api/edit-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, input_image: normalizedImage }),
+        body: JSON.stringify(requestBody),
       });
       
       const data = await res.json();
@@ -237,6 +269,11 @@ export default function EditImagePage() {
         console.log("Received polling URL:", data.polling_url);
         setPollingUrl(data.polling_url);
         pollForResult(data.polling_url);
+      } else if (data.result?.sample) {
+        setFinalImage(data.result.sample);
+        if (data.images && Array.isArray(data.images)) {
+          setFinalImages(data.images);
+        }
       } else if (data.image) {
         setFinalImage(data.image);
       } else {
@@ -250,10 +287,76 @@ export default function EditImagePage() {
     }
   };
 
+  // Handle additional image upload
+  const handleAdditionalImageUpload = (index: number, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const result = e.target?.result as string;
+      if (result) {
+        const newImages = [...additionalImages];
+        newImages[index] = result;
+        setAdditionalImages(newImages);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Remove additional image
+  const removeAdditionalImage = (index: number) => {
+    const newImages = [...additionalImages];
+    newImages[index] = "";
+    setAdditionalImages(newImages);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#111] px-4">
-      <div className="max-w-3xl w-full flex flex-col items-center">
-        <div className="flex flex-col md:flex-row gap-8 items-center w-full">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#111] px-4 py-8">
+      <div className="max-w-6xl w-full flex flex-col items-center">
+        
+        {/* Additional Images Upload Section */}
+        <div className="w-full max-w-4xl mb-8">
+          <h3 className="text-white text-lg font-semibold mb-4 text-center">Additional Reference Images (Optional)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[0, 1, 2].map((index) => (
+              <div key={index} className="flex flex-col items-center">
+                <div className="relative w-32 h-32 border-2 border-dashed border-gray-600 rounded-lg overflow-hidden">
+                  {additionalImages[index] ? (
+                    <>
+                      <Image
+                        src={additionalImages[index]}
+                        alt={`Reference ${index + 1}`}
+                        className="object-cover w-full h-full"
+                        fill
+                        sizes="128px"
+                      />
+                      <button
+                        onClick={() => removeAdditionalImage(index)}
+                        className="absolute top-1 right-1 bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-700"
+                      >
+                        ×
+                      </button>
+                    </>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-gray-700 transition">
+                      <span className="text-gray-400 text-sm text-center">Upload Image {index + 1}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleAdditionalImageUpload(index, file);
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+                <span className="text-xs text-gray-400 mt-2">Reference {index + 1}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-8 items-start w-full max-w-6xl">
           {/* Original Image */}
           <div className="flex flex-col items-center">
             <div className="relative w-72 h-72">
@@ -270,8 +373,27 @@ export default function EditImagePage() {
             </div>
             <span className="text-xs text-gray-400 mt-2">Original Image</span>
           </div>
-          {/* Final Edited Image */}
-          {finalImage && (
+          
+          {/* Final Edited Images */}
+          {finalImages.length > 0 ? (
+            <div className="flex flex-col items-center">
+              <div className="grid grid-cols-1 gap-4">
+                {finalImages.map((imageUrl, index) => (
+                  <div key={index} className="relative w-72 h-72">
+                    <Image
+                      src={imageUrl}
+                      alt={`Edited ${index + 1}`}
+                      className="rounded-xl object-contain"
+                      fill
+                      sizes="(max-width: 768px) 100vw, 384px"
+                      priority
+                    />
+                  </div>
+                ))}
+              </div>
+              <span className="text-xs text-gray-400 mt-2">Edited Images</span>
+            </div>
+          ) : finalImage ? (
             <div className="flex flex-col items-center">
               <div className="relative w-72 h-72">
                 <Image
@@ -285,7 +407,7 @@ export default function EditImagePage() {
               </div>
               <span className="text-xs text-gray-400 mt-2">Edited Image</span>
             </div>
-          )}
+          ) : null}
         </div>
         {/* Edit Input with Button inside */}
         <div className="relative w-full max-w-xl mt-8 mb-4">
@@ -306,6 +428,14 @@ export default function EditImagePage() {
             {loading ? "Editing..." : "Submit"}
           </button>
         </div>
+        
+        {/* Info about additional images */}
+        {additionalImages.some(img => img) && (
+          <div className="text-gray-400 text-sm mb-4 text-center">
+            Using {additionalImages.filter(img => img).length} additional reference image(s)
+          </div>
+        )}
+        
         {error && (
           <div className="text-red-400 mt-4">
             <div className="font-semibold">Error: {error}</div>
@@ -321,8 +451,13 @@ export default function EditImagePage() {
             )}
           </div>
         )}
+        
         {pollingUrl && !finalImage && !error && (
           <div className="text-gray-400 mt-4">Waiting for edited image...</div>
+        )}
+        
+        {loading && !pollingUrl && (
+          <div className="text-gray-400 mt-4">Processing your edit request...</div>
         )}
       </div>
     </div>
