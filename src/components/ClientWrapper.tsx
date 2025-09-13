@@ -9,6 +9,7 @@ import { useUI } from '../lib/ui';
 import { ThemeProvider } from '../context/ThemeContext';
 // Import our credit store initialization component
 import { CreditStoreInitializer } from '@/components/CreditStoreInitializer';
+import PWAInstall from './PWAInstall';
 
 // Component to include modals
 function PricingModalWrapper() {
@@ -43,6 +44,7 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
             <CreditStoreInitializer />
             {children}
             <PricingModalWrapper />
+            <PWAInstall />
           </CreditProvider>
         </UIProvider>
       </AuthProvider>
