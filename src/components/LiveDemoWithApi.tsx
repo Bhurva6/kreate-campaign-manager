@@ -25,22 +25,25 @@ const callGenerateImage = async (prompt: string): Promise<string> => {
   }
 };
 
-const callEditImage = async (prompt: string, sourceImage: string): Promise<string> => {
+const callEditImage = async (prompt: string, sourceImage: string, additionalImages: (string | null)[]): Promise<string> => {
   try {
     const response = await fetch('/api/edit-image', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ prompt, sourceImage }),
+      body: JSON.stringify({
+        prompt,
+        input_image: sourceImage,
+        additional_images: additionalImages.filter(Boolean),
+      }),
     });
-    
     if (!response.ok) {
       throw new Error('Failed to edit image');
     }
-    
     const data = await response.json();
-    return data.imageUrl;
+    // Prefer sample/result or fallback to first image
+    return data.result?.sample || data.images?.[0] || data.imageUrl;
   } catch (error) {
     console.error('Error editing image:', error);
     throw new Error('Failed to edit image');
@@ -56,6 +59,23 @@ export default function LiveDemoWithApi() {
   const [editImage, setEditImage] = useState<string | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [additionalImages, setAdditionalImages] = useState<(string | null)[]>([null, null, null]);
+
+  // Helper to handle file input and convert to base64
+  const handleAdditionalImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target?.result as string;
+      setAdditionalImages((prev) => {
+        const updated = [...prev];
+        updated[index] = base64;
+        return updated;
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   // Generate image
   const handleGenerate = async () => {
@@ -80,7 +100,7 @@ export default function LiveDemoWithApi() {
     setEditError(null);
     setEditImage(null);
     try {
-      const url = await callEditImage(editPrompt, genImage);
+      const url = await callEditImage(editPrompt, genImage, additionalImages);
       setEditImage(url);
     } catch (err: any) {
       setEditError(err.message);
@@ -146,6 +166,30 @@ export default function LiveDemoWithApi() {
         >
           {editLoading ? "Editing..." : "Edit"}
         </button>
+      </div>
+      <div className="w-full max-w-xl mx-auto flex flex-col items-center gap-2 mb-4">
+        <div className="flex gap-2">
+          {[0, 1, 2].map((idx) => (
+            <div key={idx} className="flex flex-col items-center">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleAdditionalImageChange(idx, e)}
+                className="block mb-1"
+                disabled={idx > 0 && !additionalImages[idx - 1]}
+              />
+              {additionalImages[idx] && (
+                <img
+                  src={additionalImages[idx] as string}
+                  alt={`Additional ${idx + 1}`}
+                  className="w-16 h-16 object-cover rounded border mb-1"
+                />
+              )}
+              <span className="text-xs text-gray-400">Image {idx + 1}</span>
+            </div>
+          ))}
+        </div>
+        <span className="text-xs text-gray-500">(Optional) Upload up to 3 additional images for editing</span>
       </div>
       <div className="flex gap-4 mb-8">
         <button

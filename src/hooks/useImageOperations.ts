@@ -139,6 +139,7 @@ export function useImageOperations() {
   const editImage = useCallback(async (
     inputImage: string,
     prompt: string,
+    additionalImages?: string[],
     userId?: string
   ) => {
     // Use user.uid if no userId is provided
@@ -215,7 +216,8 @@ export function useImageOperations() {
         body: JSON.stringify({ 
           input_image: optimizedImage, 
           prompt: prompt.trim(),
-          userId: userIdentifier 
+          userId: userIdentifier,
+          additional_images: additionalImages && additionalImages.length > 0 ? additionalImages : undefined
         }),
       });
 

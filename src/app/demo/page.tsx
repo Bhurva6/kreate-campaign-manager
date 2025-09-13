@@ -254,6 +254,9 @@ export default function DemoPage() {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Add state for up to 3 additional images
+  const [additionalImages, setAdditionalImages] = useState<(string | null)[]>([null, null, null]);
+
   // Check if there's an image URL in localStorage for editing and preload it
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -580,8 +583,12 @@ export default function DemoPage() {
       console.log("Image prepared for editing:", imageUrl.substring(0, 50) + "...");
       
       try {
-        // Note: The editImage function expects (inputImage, prompt) parameters in that order
-        const result = await editImage(imageUrl, demoEditPrompt);
+        // Note: The editImage function expects (inputImage, prompt, additional_images) parameters in that order
+        const result = await editImage(
+          imageUrl,
+          demoEditPrompt,
+          additionalImages.filter((img): img is string => Boolean(img))
+        );
         
         if (!result) {
           throw new Error("Edit operation failed - no result returned");
@@ -660,6 +667,22 @@ export default function DemoPage() {
   };
 
   // No longer need handleImageDelete function in demo page as we moved it to my-creations page
+
+  // Handler for additional image uploads
+  const handleAdditionalImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const base64 = ev.target?.result as string;
+      setAdditionalImages((prev) => {
+        const updated = [...prev];
+        updated[index] = base64;
+        return updated;
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
@@ -1047,6 +1070,32 @@ export default function DemoPage() {
                     }`}>
                       Describe how you want to change your image
                     </p>
+                  </div>
+                  
+                  {/* Additional Images Upload UI - place above edit prompt */}
+                  <div className="w-full flex flex-col items-center gap-2 mb-4">
+                    <div className="flex gap-2">
+                      {[0, 1, 2].map((idx) => (
+                        <div key={idx} className="flex flex-col items-center">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleAdditionalImageChange(idx, e)}
+                            className="block mb-1"
+                            disabled={idx > 0 && !additionalImages[idx - 1]}
+                          />
+                          {additionalImages[idx] && (
+                            <img
+                              src={additionalImages[idx] as string}
+                              alt={`Additional ${idx + 1}`}
+                              className="w-16 h-16 object-cover rounded border mb-1"
+                            />
+                          )}
+                          <span className="text-xs text-gray-400">Image {idx + 1}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-500">(Optional) Upload up to 3 additional images for editing</span>
                   </div>
                   
                   <div className="space-y-4">
