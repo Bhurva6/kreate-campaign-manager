@@ -1074,15 +1074,16 @@ export default function DemoPage() {
                   
                   {/* Additional Images Upload UI - place above edit prompt */}
                   <div className="w-full flex flex-col items-center gap-2 mb-4">
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 justify-center w-full">
                       {[0, 1, 2].map((idx) => (
-                        <div key={idx} className="flex flex-col items-center">
+                        <div key={idx} className="flex flex-col items-center w-1/3 min-w-[90px] max-w-[120px] flex-shrink-0">
                           <input
                             type="file"
                             accept="image/*"
                             onChange={(e) => handleAdditionalImageChange(idx, e)}
-                            className="block mb-1"
+                            className="block mb-1 w-full"
                             disabled={idx > 0 && !additionalImages[idx - 1]}
+                            style={{ minWidth: '70px' }}
                           />
                           {additionalImages[idx] && (
                             <img
@@ -1095,7 +1096,7 @@ export default function DemoPage() {
                         </div>
                       ))}
                     </div>
-                    <span className="text-xs text-gray-500">(Optional) Upload up to 3 additional images for editing</span>
+                    <span className="text-xs text-gray-500 text-center w-full">(Optional) Upload up to 3 additional images for editing</span>
                   </div>
                   
                   <div className="space-y-4">
