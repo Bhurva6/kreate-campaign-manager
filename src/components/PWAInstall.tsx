@@ -19,7 +19,7 @@ export default function PWAInstall() {
     }
     
     // Check if app is already installed
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
     if (isStandalone) {
       console.log('Application is already installed and running in standalone mode');
       setIsInstallable(false);
@@ -35,20 +35,27 @@ export default function PWAInstall() {
       setIsInstallable(true);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    
-    // Check if app was installed
-    window.addEventListener('appinstalled', () => {
+    const handleAppInstalled = () => {
       console.log('PWA was installed');
       setDeferredPrompt(null);
       setIsInstallable(false);
-    });
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    // Debug: Log if beforeinstallprompt never fires
+    setTimeout(() => {
+      if (!deferredPrompt) {
+        console.log('Debug: beforeinstallprompt event did not fire within 5 seconds.');
+      }
+    }, 5000);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', () => {});
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
+  }, [deferredPrompt]);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) {
