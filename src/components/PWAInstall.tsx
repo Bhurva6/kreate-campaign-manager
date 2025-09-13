@@ -85,7 +85,30 @@ export default function PWAInstall() {
     }
   };
 
-  // Only show the button if the app is installable
+  // Detect iOS
+  const [isIOS, setIsIOS] = useState(false);
+  useEffect(() => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent);
+    setIsIOS(isIOSDevice);
+  }, []);
+
+  // Only show the button if the app is installable (Android/desktop) or show iOS instructions
+  if (isIOS) {
+    // Show iOS install instructions if not in standalone
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+    if (!isStandalone) {
+      return (
+        <div className="fixed bottom-4 right-4 left-4 md:left-auto md:w-auto px-4 py-2 rounded-lg shadow-lg bg-yellow-100 text-gray-900 z-50 flex items-center gap-2">
+          <svg width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14m0 0l-6-6m6 6l6-6"/></svg>
+          <span>To install this app, tap <b>Share</b> <span role="img" aria-label="share">&#x1f5d2;</span> and then <b>Add to Home Screen</b>.</span>
+        </div>
+      );
+    }
+    // If already installed, show nothing
+    return null;
+  }
+
   if (!isInstallable) return null;
 
   return (
