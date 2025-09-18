@@ -1749,622 +1749,131 @@ function LandingPageContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6 justify-center items-stretch w-full max-w-7xl mx-auto">
             {/* Free Plan */}
             <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${
-                isDarkMode
-                  ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20"
-                  : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"
-              }`}>
+  isDarkMode
+    ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20"
+    : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"
+}`}>
               <div className="text-center">
                 <div className="text-4xl mb-4">🎮</div>
                 <h3 className="text-xl font-bold text-[#0171B9] mb-2">Free</h3>
-                <p className="text-[#004684] font-semibold text-sm mb-4">
-                  &quot;Try it out&quot;
-                </p>
-
-                <div
-                  className={`text-3xl font-bold mb-4 transition-colors duration-300 ${
-                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  ₹0
-                </div>
-
+                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹0</div>
                 <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#0171B9] text-sm">✨</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      3 free image generations
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#0171B9] text-sm">🖼️</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      7 free image edits
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#0171B9] text-sm">📱</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      Standard resolution
-                    </span>
-                  </div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>7 creditsⓘ free</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">💳</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>No credit card required</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins and APIs</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process up to 7 hifi assets</span></div>
                 </div>
-
-                <button
-                  className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm"
-                  onClick={() => {
-                    if (user) {
-                      router.push("/demo");
-                    } else {
-                      setShowAuthModal(true);
-                    }
-                  }}
-                >
-                  Get Started Free
-                </button>
+                <button className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm" onClick={() => { if (user) { router.push("/demo"); } else { setShowAuthModal(true); } }}>Sign Up</button>
               </div>
             </div>
 
-            {/* Starter Plan */}
-            <div
-              className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${
-                isDarkMode
-                  ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20"
-                  : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"
-              }`}
-            >
+            {/* Pay-As-You-Go Plan */}
+            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${isDarkMode ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20" : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"}`}>
               <div className="text-center">
-                <div className="text-4xl mb-4">🚀</div>
-                <h3 className="text-xl font-bold text-[#0171B9] mb-2">
-                  Starter
-                </h3>
-                <p className="text-[#004684] font-semibold text-sm mb-4">
-                  &quot;Quick start&quot;
-                </p>
-
-                <div
-                  className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
-                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  ₹40
-                </div>
-                <div
-                  className={`text-xs mb-4 transition-colors duration-300 ${
-                    isDarkMode
-                      ? "text-white opacity-60"
-                      : "text-[#1E1E1E] opacity-60"
-                  }`}
-                >
-                  10 images per month
-                </div>
-
+                <div className="text-4xl mb-4">💸</div>
+                <h3 className="text-xl font-bold text-[#0171B9] mb-2">Pay-As-You-Go</h3>
+                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹0*</div>
+                <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? "text-white opacity-60" : "text-[#1E1E1E] opacity-60"}`}>/month</div>
                 <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#004684] text-sm">⚡</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      10 images per month
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#004684] text-sm">🎨</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      Basic tools
-                    </span>
-                  </div>
+                  <div className="flex items-center gap-2"><span className="text-[#004684] text-sm">💳</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>No monthly charges</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#004684] text-sm">🔋</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Top-up credits as you go</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#004684] text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#004684] text-sm">🛠️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Build Your Own (Localization) Model</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#004684] text-sm">👥</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Great for teams with variable localization needs</span></div>
                 </div>
-
-                {user ? (
-                  <RazorpayHandler
-                    plan={homePlans[0]}
-                    buttonText="Choose Starter"
-                    customClassName="w-full px-4 py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition text-sm"
-                    onSuccess={handlePaymentSuccess}
-                    onFailure={handlePaymentFailure}
-                  />
-                ) : (
-                  <button
-                    className="w-full px-4 py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition text-sm"
-                    onClick={() => setShowAuthModal(true)}
-                  >
-                    Choose Starter
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Mini Plan */}
-            <div
-              className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#004684]/20 ${
-                isDarkMode
-                  ? "bg-gradient-to-br from-[#004684]/20 to-[#E72C19]/20 border-[#004684]/20"
-                  : "bg-gradient-to-br from-[#004684]/10 to-[#E72C19]/10 border-[#004684]/20"
-              }`}
-            >
-              <div className="text-center">
-                <div className="text-4xl mb-4">🧃</div>
-                <h3 className="text-xl font-bold text-[#B6CF4F] mb-2">Mini</h3>
-                <p className="text-[#FF5E32] font-semibold text-sm mb-4">
-                  &quot;Try it out&quot;
-                </p>
-
-                <div
-                  className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
-                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  ₹299
-                </div>
-                <div
-                  className={`text-xs mb-4 transition-colors duration-300 ${
-                    isDarkMode
-                      ? "text-white opacity-60"
-                      : "text-[#1E1E1E] opacity-60"
-                  }`}
-                >
-                  50 images per month
-                </div>
-
-                <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#004684] text-sm">⚡</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      50 images per month
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#004684] text-sm">🎨</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      Basic editing tools
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#004684] text-sm">📸</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      HD quality
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#004684] text-sm">💾</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      Download & share
-                    </span>
-                  </div>
-                </div>
-
-                {user ? (
-                  <RazorpayHandler
-                    plan={homePlans[1]}
-                    buttonText="Choose Mini"
-                    customClassName="w-full px-4 py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition text-sm"
-                    onSuccess={handlePaymentSuccess}
-                    onFailure={handlePaymentFailure}
-                  />
-                ) : (
-                  <button
-                    className="w-full px-4 py-2 rounded-lg bg-[#B6CF4F] text-white font-semibold hover:bg-[#FF5E32] transition text-sm"
-                    onClick={() => setShowAuthModal(true)}
-                  >
-                    Choose Mini
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Pro Plan */}
-            <div
-              className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#E72C19]/40 hover:shadow-xl hover:shadow-[#E72C19]/20 relative ${
-                isDarkMode
-                  ? "bg-gradient-to-br from-[#E72C19]/20 to-[#0171B9]/20 border-[#E72C19]/20"
-                  : "bg-gradient-to-br from-[#E72C19]/10 to-[#0171B9]/10 border-[#E72C19]/20"
-              }`}
-            >
-              {/* Popular Badge */}
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#FF5E32] text-white px-3 py-1 rounded-full text-xs font-semibold">
-                Most Popular
-              </div>
-
-              <div className="text-center">
-                <div className="text-4xl mb-4">🎁</div>
-                <h3 className="text-xl font-bold text-[#FF5E32] mb-2">Pro</h3>
-                <p className="text-[#1A018D] font-semibold text-sm mb-4">
-                  &quot;For creators&quot;
-                </p>
-
-                <div
-                  className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
-                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  ₹2,200
-                </div>
-                <div
-                  className={`text-xs mb-4 transition-colors duration-300 ${
-                    isDarkMode
-                      ? "text-white opacity-60"
-                      : "text-[#1E1E1E] opacity-60"
-                  }`}
-                >
-                  525 images per month
-                </div>
-
-                <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#E72C19] text-sm">🔥</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      525 images per month
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#E72C19] text-sm">⚡</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      Priority processing
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#E72C19] text-sm">🎨</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      Advanced editing tools
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#E72C19] text-sm">📸</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      4K quality
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#E72C19] text-sm">🎭</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      AI style transfer
-                    </span>
-                  </div>
-                </div>
-
-                {user ? (
-                  <RazorpayHandler
-                    plan={homePlans[3]}
-                    buttonText="Choose Pro"
-                    customClassName="w-full px-4 py-2 rounded-lg bg-[#FF5E32] text-white font-semibold hover:bg-[#1A018D] transition text-sm"
-                    onSuccess={handlePaymentSuccess}
-                    onFailure={handlePaymentFailure}
-                  />
-                ) : (
-                  <button
-                    className="w-full px-4 py-2 rounded-lg bg-[#FF5E32] text-white font-semibold hover:bg-[#1A018D] transition text-sm"
-                    onClick={() => setShowAuthModal(true)}
-                  >
-                    Choose Pro
-                  </button>
-                )}
+                <button className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm" onClick={() => { if (user) { router.push("/demo"); } else { setShowAuthModal(true); } }}>Sign Up</button>
               </div>
             </div>
 
             {/* Basic Plan */}
-            <div
-              className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#0171B9]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${
-                isDarkMode
-                  ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20"
-                  : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"
-              }`}
-            >
+            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${isDarkMode ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20" : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"}`}>
               <div className="text-center">
-                <div className="text-4xl mb-4">🌟</div>
+                <div className="text-4xl mb-4">🌱</div>
                 <h3 className="text-xl font-bold text-[#0171B9] mb-2">Basic</h3>
-                <p className="text-[#004684] font-semibold text-sm mb-4">
-                  &quot;Get started&quot;
-                </p>
-
-                <div
-                  className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
-                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  ₹700
-                </div>
-                <div
-                  className={`text-xs mb-4 transition-colors duration-300 ${
-                    isDarkMode
-                      ? "text-white opacity-60"
-                      : "text-[#1E1E1E] opacity-60"
-                  }`}
-                >
-                  150 images per month
-                </div>
-
+                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹1,600</div>
+                <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? "text-white opacity-60" : "text-[#1E1E1E] opacity-60"}`}>/month</div>
                 <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#0171B9] text-sm">🖼️</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      150 images per month
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#0171B9] text-sm">⚡</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      Fastest processing
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#1A018D] text-sm">🎨</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      All editing tools
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#0171B9] text-sm">📸</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      8K quality
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#0171B9] text-sm">📊</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      Batch processing
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#0171B9] text-sm">🔗</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      API access
-                    </span>
-                  </div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>20,000 creditsⓘ / month</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process up to 25 hifiⓘ or 100 lofiⓘ assets</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🔋</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Top-up credits as you go</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🚀</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Perfect for early / start-up teams</span></div>
                 </div>
+                <button className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm" onClick={() => { if (user) { router.push("/demo"); } else { setShowAuthModal(true); } }}>Sign Up</button>
+              </div>
+            </div>
 
-                {user ? (
-                  <RazorpayHandler
-                    plan={homePlans[2]}
-                    buttonText="Choose Basic"
-                    customClassName="w-full px-4 py-2 rounded-lg bg-[#1A018D] text-white font-semibold hover:bg-[#B6CF4F] transition text-sm"
-                    onSuccess={handlePaymentSuccess}
-                    onFailure={handlePaymentFailure}
-                  />
-                ) : (
-                  <button
-                    className="w-full px-4 py-2 rounded-lg bg-[#1A018D] text-white font-semibold hover:bg-[#B6CF4F] transition text-sm"
-                    onClick={() => setShowAuthModal(true)}
-                  >
-                    Choose Basic
-                  </button>
-                )}
+            {/* Plus Plan - Most Popular */}
+            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#FF5E32]/40 hover:shadow-xl hover:shadow-[#FF5E32]/20 relative ${isDarkMode ? "bg-gradient-to-br from-[#FF5E32]/20 to-[#0171B9]/20 border-[#FF5E32]/20" : "bg-gradient-to-br from-[#FF5E32]/10 to-[#0171B9]/10 border-[#FF5E32]/20"}`}>
+              {/* Most Popular Badge */}
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#FF5E32] text-white px-3 py-1 rounded-full text-xs font-semibold">MOST POPULAR</div>
+              <div className="text-center">
+                <div className="text-4xl mb-4">💎</div>
+                <h3 className="text-xl font-bold text-[#FF5E32] mb-2">Plus</h3>
+                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹6,700</div>
+                <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? "text-white opacity-60" : "text-[#1E1E1E] opacity-60"}`}>/month</div>
+                <div className="space-y-2 text-left mb-6">
+                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>100,000 creditsⓘ / month</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process up to 125 hifiⓘ or 500 lofiⓘ assets</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🛠️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Build Your Own (Localization) Model</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🧑‍💻</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated technical support</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🔋</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Top-up credits as you go</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">💡</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Ideal for mid-tier marketing, creative, and localization teams. Best value</span></div>
+                </div>
+                <button className="w-full px-4 py-2 rounded-lg bg-[#FF5E32] text-white font-semibold hover:bg-[#1A018D] transition text-sm" onClick={() => { if (user) { router.push("/demo"); } else { setShowAuthModal(true); } }}>Sign Up</button>
+              </div>
+            </div>
+
+            {/* Premium Plan */}
+            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-gray-400/40 hover:shadow-xl hover:shadow-gray-400/20 ${isDarkMode ? "bg-gradient-to-br from-gray-700/20 to-gray-600/20 border-gray-600/20" : "bg-gradient-to-br from-gray-100/50 to-gray-200/50 border-gray-300/20"}`}>
+              <div className="text-center">
+                <div className="text-4xl mb-4">🚀</div>
+                <h3 className="text-xl font-bold text-gray-600 mb-2">Premium</h3>
+                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹25,000</div>
+                <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? "text-white opacity-60" : "text-[#1E1E1E] opacity-60"}`}>/month</div>
+                <div className="space-y-2 text-left mb-6">
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>500,000 creditsⓘ per month</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process upto 500 hifiⓘ or 2K lofiⓘ assets</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🛠️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Build Your Own (Localization) Model</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">⚡</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Priority technical support</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🎯</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated onboarding</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🔋</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Top-up credits as you go</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">💡</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Ideal for scale-ups and large cross-functional teams.</span></div>
+                </div>
+                <button className="w-full px-4 py-2 rounded-lg bg-gray-600 text-white font-semibold hover:bg-gray-700 transition text-sm" onClick={() => {
+                  const subject = encodeURIComponent("Premium Plan Inquiry - GoLoco");
+                  const body = encodeURIComponent(`Hello GoLoco Team,\n\nI am interested in learning more about your Premium plan and would like to discuss custom pricing and features for my organization.\n\nPlease contact me to schedule a call or provide more information.\n\nBest regards`);
+                  const mailtoLink = `mailto:golocostudios@gmail.com?subject=${subject}&body=${body}`;
+                  window.open(mailtoLink, "_self");
+                }}>Talk to Us</button>
               </div>
             </div>
 
             {/* Enterprise Plan */}
-            <div
-              className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-gray-400/40 hover:shadow-xl hover:shadow-gray-400/20 ${
-                isDarkMode
-                  ? "bg-gradient-to-br from-gray-700/20 to-gray-600/20 border-gray-600/20"
-                  : "bg-gradient-to-br from-gray-100/50 to-gray-200/50 border-gray-300/20"
-              }`}
-            >
+            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-gray-400/40 hover:shadow-xl hover:shadow-gray-400/20 ${isDarkMode ? "bg-gradient-to-br from-gray-700/20 to-gray-600/20 border-gray-600/20" : "bg-gradient-to-br from-gray-100/50 to-gray-200/50 border-gray-300/20"}`}>
               <div className="text-center">
                 <div className="text-4xl mb-4">🏢</div>
-                <h3 className="text-xl font-bold text-gray-600 mb-2">
-                  Enterprise
-                </h3>
-                <p className="text-gray-500 font-semibold text-sm mb-4">
-                  &quot;Custom solution&quot;
-                </p>
-
-                <div
-                  className={`text-2xl font-bold mb-2 transition-colors duration-300 ${
-                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  ₹6,000
-                </div>
-                <div
-                  className={`text-xs mb-4 transition-colors duration-300 ${
-                    isDarkMode
-                      ? "text-white opacity-60"
-                      : "text-[#1E1E1E] opacity-60"
-                  }`}
-                >
-                  1400 images per month
-                </div>
-
+                <h3 className="text-xl font-bold text-gray-600 mb-2">Enterprise</h3>
+                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>Talk to us</div>
                 <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500 text-sm">🖼️</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      1400 images per month
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500 text-sm">🎯</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      Custom branding
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500 text-sm">🔧</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      Custom integrations
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500 text-sm">👥</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      Team management
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500 text-sm">📞</span>
-                    <span
-                      className={`text-xs transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-80"
-                          : "text-[#1E1E1E] opacity-80"
-                      }`}
-                    >
-                      24/7 support
-                    </span>
-                  </div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Unlimited creditsⓘ per month</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process unlimited hifiⓘ / lofiⓘ assets</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🛠️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Build Your Own (Localization) Model</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🎯</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated priority onboarding</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🧑‍💻</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated 24x7 technical support</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🔗</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Support for TMS integrations</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🗂️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>DAM integrations & custom workflows</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🌍</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>For global teams localizing at scale</span></div>
                 </div>
-
-                <button
-                  className="w-full px-4 py-2 rounded-lg bg-gray-600 text-white font-semibold hover:bg-gray-700 transition text-sm"
-                  onClick={() => {
-                    const subject = encodeURIComponent(
-                      "Enterprise Plan Inquiry - GoLoco"
-                    );
-                    const body = encodeURIComponent(`Hello GoLoco Team,
-
-I am interested in learning more about your Enterprise plan and would like to discuss custom pricing and features for my organization.
-
-Please contact me to schedule a call or provide more information.
-
-Best regards`);
-                    const mailtoLink = `mailto:golocostudios@gmail.com?subject=${subject}&body=${body}`;
-                    window.open(mailtoLink, "_self");
-                  }}
-                >
-                  Talk to Us
-                </button>
+                <button className="w-full px-4 py-2 rounded-lg bg-gray-600 text-white font-semibold hover:bg-gray-700 transition text-sm" onClick={() => {
+                  const subject = encodeURIComponent("Enterprise Plan Inquiry - GoLoco");
+                  const body = encodeURIComponent(`Hello GoLoco Team,\n\nI am interested in learning more about your Enterprise plan and would like to discuss custom pricing and features for my organization.\n\nPlease contact me to schedule a call or provide more information.\n\nBest regards`);
+                  const mailtoLink = `mailto:golocostudios@gmail.com?subject=${subject}&body=${body}`;
+                  window.open(mailtoLink, "_self");
+                }}>Talk to Us</button>
               </div>
             </div>
           </div>

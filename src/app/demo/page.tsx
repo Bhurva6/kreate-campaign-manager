@@ -940,8 +940,7 @@ export default function DemoPage() {
               {!demoImage && (
                 <div className="space-y-6">
                   <div className="text-center">
-                    <div className="inline-flex items-center gap-2 mb-4">
-                      <span className="text-xl">🪄</span>
+                    <div className="inline-flex items-center gap-2 mb-4">              
                       <h3 className="text-xl md:text-2xl font-bold text-[#F3752A]">Generate Image</h3>
                     </div>
                     <p className={`text-sm md:text-base transition-colors duration-300 ${
@@ -989,7 +988,7 @@ export default function DemoPage() {
                 <div className="space-y-6">
                   <div className="text-center">
                     <div className="inline-flex items-center gap-2 mb-4">
-                      <span className="text-xl">📤</span>
+                     
                       <h3 className="text-xl md:text-2xl font-bold text-[#F53057]">Upload Image</h3>
                     </div>
                     <p className={`text-sm md:text-base transition-colors duration-300 ${
