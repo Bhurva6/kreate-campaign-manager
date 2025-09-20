@@ -114,7 +114,7 @@ export default function PWAInstall() {
   return (
     <button
       onClick={handleInstallClick}
-      className="fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg transition-colors bg-blue-600 text-white hover:bg-blue-700 z-50"
+      className="fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg transition-colors bg-[#1A0089] text-white hover:bg-blue-700 z-50"
     >
       Install App
     </button>

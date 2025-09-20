@@ -1,1299 +1,676 @@
-"use client";
-import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "../../lib/auth";
-import { useCredits } from "../../lib/credits";
-import { useImageOperations } from "../../hooks/useImageOperations";
+'use client';
 
-// No longer need tab types since we're using a separate page for My Creations
-import { getSafeImageUrl, handleImageError } from "@/lib/image-utils";
+import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../../lib/auth';
+import Link from 'next/link';
 
-// Type for user images
-interface UserImage {
-  key: string;
-  url: string;
-  publicUrl: string;
-  metadata?: {
-    prompt?: string;
-    category?: string;
-    uploadedAt?: string;
-  };
-}
-
-// Helper for API calls
-async function callGenerateImage(prompt: string, userId?: string) {
-  const res = await fetch("/api/generate-image", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, sampleCount: 1, aspectRatio: "1:1", userId }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || "Failed to generate image");
-  
-  // Return the public URL from R2 if available, otherwise use the original URL
-  if (data.images && data.images.length > 0) {
-    return data.images[0].r2?.publicUrl || data.images[0].url;
-  }
-  throw new Error("No image generated");
-}
-
-/**
- * Deprecated: This function is replaced by direct API calls in handleDemoEdit.
- * Keeping it for reference and backward compatibility.
- */
-async function callEditImage(prompt: string, input_image: string) {
-  try {
-    // Prepare the request body and validate it
-    const requestBody = { prompt, input_image };
-    
-    // Check if the input_image string is reasonable in size
-    if (input_image.length > 20 * 1024 * 1024) { // 20MB limit
-      throw new Error("Image data too large (max 20MB)");
-    }
-    
-    // Validate input_image is a proper data URL
-    if (!input_image.startsWith('data:image/')) {
-      throw new Error("Invalid image format - must be a data URL");
-    }
-    
-    console.log("callEditImage is deprecated, use direct API calls instead");
-    
-    const res = await fetch("/api/edit-image", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody),
-    });
-    
-    // Handle non-JSON responses
-    const contentType = res.headers.get("content-type");
-    if (!contentType || !contentType.includes("application/json")) {
-      throw new Error("Server returned non-JSON response");
-    }
-    
-    // Parse JSON response with error handling
-    let data;
-    try {
-      data = await res.json();
-    } catch (jsonError) {
-      throw new Error("Failed to parse server response");
-    }
-    
-    if (!res.ok) {
-      // Handle rate limiting specially
-      if (res.status === 429) {
-        console.log("Rate limited - duplicate request detected");
-        throw new Error("Duplicate request detected. Please wait before trying again.");
-      }
-      throw new Error(data.error || "Failed to edit image");
-    }
-    
-    // If we get a polling_url, we need to poll for results
-    if (data.polling_url) {
-      return await pollEditResult(data.polling_url, prompt);
-    }
-    
-    // If we get a direct result
-    return data.image || (data.result && data.result.sample);
-  } catch (error: any) {
-    console.error("Edit image error:", error);
-    throw error;
-  }
-}
-
-// Global state to track active pollings and avoid duplicate requests
-const activePollings = new Set<string>();
-
-// Improved polling with exponential backoff and better status updates
-async function pollEditResult(polling_url: string, prompt: string, onProgress?: (message: string) => void): Promise<string> {
-  const maxAttempts = 30; // Maximum number of attempts
-  let attempts = 0;
-  
-  // Use URL as unique identifier for this polling session
-  const pollingId = polling_url.split('?')[0]; // Remove query params for cleaner ID
-  
-  // Check if we're already polling this URL to avoid duplicate polling sequences
-  if (activePollings.has(pollingId)) {
-    console.log(`Already polling ${pollingId}, using existing poll`);
-    
-    // Wait for existing polling to complete or timeout after 30 seconds
-    let waitAttempts = 0;
-    while (activePollings.has(pollingId) && waitAttempts < 30) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      waitAttempts++;
-    }
-    
-    // If we're still polling, something went wrong
-    if (activePollings.has(pollingId)) {
-      activePollings.delete(pollingId);
-      throw new Error("Polling timed out - please try again");
-    }
-    
-    // The other polling process should have updated the UI
-    throw new Error("Another edit operation completed");
-  }
-  
-  // Mark this URL as being polled
-  activePollings.add(pollingId);
-  console.log(`Started polling ${pollingId}`);
-  
-  try {
-    while (attempts < maxAttempts) {
-      try {
-        // Calculate wait time with exponential backoff (1s, 1.5s, 2s, 2.5s...)
-        // This reduces server load while still being responsive
-        const waitTime = Math.min(1000 + (attempts * 500), 3000);
-        
-        // Update progress with attempt count
-        if (onProgress) {
-          const progressStage = attempts <= 1 ? "Initiating edit..." : 
-                               attempts < 5 ? "Processing your edit..." :
-                               attempts < 15 ? "Working on details..." : 
-                               "Finalizing your image...";
-          onProgress(progressStage);
-        }
-        
-        const res = await fetch("/api/poll-edit-result", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ polling_url, prompt }),
-        });
-        
-        // Handle non-JSON responses
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("Server returned non-JSON response during polling");
-        }
-        
-        // Parse JSON with error handling
-        let data;
-        try {
-          data = await res.json();
-        } catch (jsonError) {
-          throw new Error("Failed to parse polling response");
-        }
-        
-        if (!res.ok) throw new Error(data.error || "Failed to poll edit result");
-        
-        // Success case
-        if (data.status === "Ready" && data.result?.sample) {
-          console.log(`Polling completed successfully for ${pollingId} after ${attempts + 1} attempts`);
-          // Return R2 URL if available, otherwise the original URL
-          return data.r2?.publicUrl || data.result.sample;
-        }
-        
-        // Error case
-        if (data.status === "Error") {
-          const errorMessage = data.error || "Image editing failed";
-          console.error(`Edit processing error for ${pollingId}:`, errorMessage);
-          throw new Error(errorMessage);
-        }
-        
-        // Progress update if available
-        if (data.progress && onProgress) {
-          onProgress(`${data.progress}...`);
-        }
-        
-        // Wait before polling again (with exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-        attempts++;
-      } catch (error: any) {
-        if (error.message.includes("Failed to fetch")) {
-          // Network error, wait and retry
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          attempts++;
-          continue;
-        }
-        throw error;
-      }
-    }
-    
-    // If we reached max attempts, throw timeout error
-    throw new Error("Image editing timed out - please try again");
-  } finally {
-    // Always clean up the active polling entry
-    activePollings.delete(pollingId);
-    console.log(`Finished polling ${pollingId} (success or failure)`);
-  }
+function ToggleButtons({ onToggle }: { onToggle?: (value: string) => void }) {
+  const [selected, setSelected] = useState('generate');
+  React.useEffect(() => {
+    if (onToggle) onToggle(selected);
+  }, [selected, onToggle]);
+  return (
+    <div style={{ position: 'relative', display: 'flex', gap: '0.5rem', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+      <button
+        type="button"
+        onClick={() => setSelected('generate')}
+        style={{
+          backgroundColor: selected === 'generate' ? '#191A1F' : 'transparent',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          padding: '0.5rem 1.2rem',
+          cursor: 'pointer',
+          position: 'relative',
+        }}
+      >
+        {selected === 'generate' && (
+          <div style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: '-8px',
+            margin: '0 auto',
+            width: '80%',
+            height: '6px',
+            background: '#23272F',
+            borderRadius: '10px',
+          }} />
+        )}
+        Generate
+      </button>
+      <button
+        type="button"
+        onClick={() => setSelected('reimagine')}
+        style={{
+          backgroundColor: selected === 'reimagine' ? '#191A1F' : 'transparent',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          padding: '0.5rem 1.2rem',
+          cursor: 'pointer',
+          position: 'relative',
+        }}
+      >
+        {selected === 'reimagine' && (
+          <div style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: '-8px',
+            margin: '0 auto',
+            width: '80%',
+            height: '6px',
+            background: '#23272F',
+            borderRadius: '10px',
+          }} />
+        )}
+        Reimagine
+      </button>
+    </div>
+  );
 }
 
 export default function DemoPage() {
-  const router = useRouter();
-  const { user } = useAuth();
-  const {
-    imageGenerationsUsed,
-    imageEditsUsed,
-    isUnlimitedUser,
-    showPricingModal,
-    setShowPricingModal,
-  } = useCredits();
-  
-  // Use our enhanced image operations hook with integrated credit management
-  const {
-    generateImages,
-    editImage,
-    pollEditResult,
-    canUseImageGeneration,
-    canUseImageEdit,
-    error: operationError,
-    setError: setOperationError,
-    clearError: clearOperationError
-  } = useImageOperations();
-  
-  // Theme state
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  
-  // Demo state
-  const [demoImage, setDemoImage] = useState<string | null>(null);
-  const [demoPrompt, setDemoPrompt] = useState("");
-  const [demoEditPrompt, setDemoEditPrompt] = useState("");
-  const [demoGenerating, setDemoGenerating] = useState(false);
-  const [demoEditing, setDemoEditing] = useState(false);
-  const [demoError, setDemoError] = useState<string | null>(null);
-  const [demoSuccess, setDemoSuccess] = useState<string | null>(null);
-  const [editingProgress, setEditingProgress] = useState("");
-  const [isDragOver, setIsDragOver] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // Add state for up to 3 additional images
-  const [additionalImages, setAdditionalImages] = useState<(string | null)[]>([null, null, null]);
-
-  // Check if there's an image URL in localStorage for editing and preload it
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const editImageUrl = localStorage.getItem('editImageUrl');
-      if (editImageUrl) {
-        // Attempt to preload the image
-        const img = new Image();
-        img.onload = () => {
-          console.log('Successfully preloaded image from localStorage');
-          setDemoImage(editImageUrl);
-          localStorage.removeItem('editImageUrl');
-        };
-        img.onerror = () => {
-          console.error('Failed to preload image from localStorage:', editImageUrl);
-          setDemoError('Failed to load the image from previous session. Please try again.');
-          localStorage.removeItem('editImageUrl');
-        };
-        // Use the safe URL with proxy if needed
-        img.src = getSafeImageUrl(editImageUrl);
-      }
-    }
-  }, []);
-
-  // Demo functions
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      // Check file size on client side too (10MB max)
-      const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
-      if (file.size > MAX_FILE_SIZE) {
-        setDemoError(`Image file is too large. Maximum size is 10MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`);
-        return;
-      }
-      
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const imageDataUrl = e.target?.result as string;
-        setDemoImage(imageDataUrl);
-        setDemoError(null);
-        setDemoSuccess("Image uploaded successfully! ✨");
-        
-        // If user is logged in, save the uploaded image to their collection
-        if (user) {
-          try {
-            // Convert data URL to blob for upload
-            const response = await fetch(imageDataUrl);
-            const blob = await response.blob();
-            
-            // Create form data for upload
-            const formData = new FormData();
-            formData.append('image', blob, file.name);
-            formData.append('userId', user.uid);
-            formData.append('prompt', 'Uploaded image');
-            
-            // Upload to server
-            const uploadRes = await fetch('/api/upload-image', {
-              method: 'POST',
-              body: formData,
-            });
-            
-            if (!uploadRes.ok) {
-              const errorData = await uploadRes.json();
-              throw new Error(errorData.error || "Failed to upload image");
-            }
-            
-            // Notify that a new image was created (for My Creations refresh)
-            localStorage.setItem('newImageCreated', Date.now().toString());
-          } catch (error: any) {
-            console.error('Failed to save uploaded image:', error);
-            setDemoError(error.message || "Failed to save uploaded image");
-            setDemoSuccess(null);
-            setDemoImage(null);
-            return;
-          }
-        }
-        
-        // Clear success message after 3 seconds
-        setTimeout(() => setDemoSuccess(null), 3000);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      const file = files[0];
-      // Support both standard image types and HEIC format
-      if (file.type.startsWith('image/') || 
-          file.name.toLowerCase().endsWith('.heic') ||
-          file.name.toLowerCase().endsWith('.heif') ||
-          file.type.toLowerCase().includes('heic')) {
-        
-        // Check file size on client side too (10MB max)
-        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
-        if (file.size > MAX_FILE_SIZE) {
-          setDemoError(`Image file is too large. Maximum size is 10MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`);
-          return;
-        }
-          
+  const { user } = useAuth(); // Get the signed-in user
+  const [toggleState, setToggleState] = useState('generate');
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [moveBox, setMoveBox] = useState(false);
+  const [imgBottom, setImgBottom] = useState<number | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [showTitle, setShowTitle] = useState(true);
+  const [prompt, setPrompt] = useState("");
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
         const reader = new FileReader();
-        reader.onload = async (e) => {
-          const imageDataUrl = e.target?.result as string;
-          setDemoImage(imageDataUrl);
-          setDemoError(null);
-          setDemoSuccess("Image uploaded successfully! ✨");
-          
-          // If user is logged in, save the uploaded image to their collection
-          if (user) {
-            try {
-              // Convert data URL to blob for upload
-              const response = await fetch(imageDataUrl);
-              const blob = await response.blob();
-              
-              // Create form data for upload
-              const formData = new FormData();
-              formData.append('image', blob, file.name);
-              formData.append('userId', user.uid);
-              formData.append('prompt', 'Uploaded image');
-              
-              // Upload to server
-              const uploadRes = await fetch('/api/upload-image', {
-                method: 'POST',
-                body: formData,
-              });
-              
-              if (!uploadRes.ok) {
-                const errorData = await uploadRes.json();
-                throw new Error(errorData.error || "Failed to upload image");
-              }
-              
-              // Notify that a new image was created (for My Creations refresh)
-              localStorage.setItem('newImageCreated', Date.now().toString());
-            } catch (error: any) {
-              console.error('Failed to save uploaded image:', error);
-              setDemoError(error.message || "Failed to save uploaded image");
-              setDemoSuccess(null);
-              setDemoImage(null);
-              return;
-            }
-          }
-          
-          // Clear success message after 3 seconds
-          setTimeout(() => setDemoSuccess(null), 3000);
+        reader.onload = function (ev) {
+          setUploadedImages(prev => [...prev, ev.target?.result as string]);
+          setMoveBox(true);
+          setShowTitle(false);
         };
         reader.readAsDataURL(file);
-      } else {
-        setDemoError("Please upload a valid image file");
-      }
-    }
-  };
-
-  // Updated handleDemoGenerate to use our enhanced hook
-  const handleDemoGenerate = async () => {
-    if (!demoPrompt.trim()) return;
-    
-    setDemoGenerating(true);
-    setDemoError(null);
-    setDemoSuccess(null);
-    clearOperationError();
-    
-    try {
-      // generateImages handles credit checking and consumption internally
-      const imageResults = await generateImages(demoPrompt, 1, "1:1", user?.uid);
-      
-      if (imageResults && imageResults.length > 0) {
-        // Get the URL from the returned image data
-        setDemoImage(imageResults[0].url);
-        setDemoSuccess("Image generated successfully! ✨");
-        
-        // Notify that a new image was created (for My Creations refresh)
-        localStorage.setItem('newImageCreated', Date.now().toString());
-        
-        setTimeout(() => setDemoSuccess(null), 3000);
-      } else {
-        throw new Error("No image generated");
-      }
-    } catch (err: any) {
-      // Use error from operation if available, otherwise use the caught error
-      setDemoError(operationError || err.message);
-    } finally {
-      setDemoGenerating(false);
-    }
-  };
-
-  // Track last edit time to prevent duplicate submissions
-  const [lastEditTime, setLastEditTime] = useState(0);
-
-  // Updated handleDemoEdit to use our enhanced hook
-  const handleDemoEdit = async () => {
-    // Prevent duplicate submissions within 2 seconds
-    const now = Date.now();
-    if (now - lastEditTime < 2000) {
-      console.log("Edit request prevented - too soon after last request");
-      return;
-    }
-    setLastEditTime(now);
-    
-    // Standard validation checks
-    if (!demoImage || !demoEditPrompt.trim()) return;
-    
-    // Prevent concurrent edit operations
-    if (demoEditing) {
-      console.log("Edit already in progress, ignoring duplicate request");
-      return;
-    }
-    
-    console.log("Edit image request initiated:", now);
-    setDemoEditing(true);
-    setDemoError(null);
-    setDemoSuccess(null);
-    clearOperationError();
-    setEditingProgress("Starting edit...");
-    try {
-      let imageUrl = demoImage;
-      
-      // Handle image conversion with better error handling and validation
-      if (!demoImage || typeof demoImage !== 'string') {
-        throw new Error("No valid image selected");
-      }
-      
-      // Log the first 50 chars of the image string for debugging
-      console.log("Image type:", typeof demoImage);
-      console.log("Image preview:", demoImage.substring(0, 50) + "...");
-      
-      // Check if the image is a URL parameter or invalid format
-      if (demoImage.startsWith('remove') || demoImage.length < 100) {
-        throw new Error("Invalid image format. Please select a valid image.");
-      }
-      
-      if (!demoImage.startsWith('data:')) {
-        try {
-          setEditingProgress("Converting image format...");
-          
-          // Check if the URL is malformed or contains query parameters
-          if (demoImage.includes('?') && !demoImage.startsWith('http')) {
-            throw new Error("Invalid image URL format");
-          }
-          
-          // Use our proxy API for R2 images to avoid CORS issues
-          const isR2Image = demoImage.includes('r2.cloudflarestorage.com') || 
-                            demoImage.includes('.r2.') ||
-                            demoImage.includes('cloudflare');
-          
-          let imageToFetch = demoImage;
-          if (isR2Image) {
-            // Use our proxy API to avoid CORS issues
-            imageToFetch = `/api/proxy-image?url=${encodeURIComponent(demoImage)}`;
-          }
-          
-          const response = await fetch(imageToFetch);
-          if (!response.ok) throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
-          
-          const blob = await response.blob();
-          if (blob.size === 0) throw new Error("Empty image data");
-          
-          // Size validation - prevent overly large images (>10MB)
-          if (blob.size > 10 * 1024 * 1024) {
-            throw new Error("Image too large (max 10MB)");
-          }
-          
-          // Check MIME type
-          if (!blob.type.startsWith('image/')) {
-            throw new Error(`Invalid file type: ${blob.type}. Expected an image.`);
-          }
-          
-          imageUrl = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const result = reader.result as string;
-              // Validate the data URL format
-              if (!result || !result.startsWith('data:image/')) {
-                reject(new Error("Invalid image format"));
-                return;
-              }
-              
-              // Validate base64 content after the comma
-              const base64Part = result.split(',')[1];
-              if (!base64Part || base64Part.length < 100) {
-                reject(new Error("Invalid base64 image data"));
-                return;
-              }
-              
-              resolve(result);
-            };
-            reader.onerror = () => reject(new Error("Failed to read image"));
-            reader.readAsDataURL(blob);
-          });
-        } catch (convertError: any) {
-          console.error("Image conversion error:", convertError);
-          throw new Error(`Image preparation failed: ${convertError.message || "Unknown error"}`);
-        }
-      }
-      
-      setEditingProgress("Processing your edit...");
-      
-      // Perform final validation before sending to editImage function
-      if (!imageUrl || typeof imageUrl !== 'string') {
-        throw new Error("Image processing failed - no valid image URL");
-      }
-      
-      // Ensure it's a data URL
-      if (!imageUrl.startsWith('data:image/')) {
-        console.error("Invalid image URL format:", imageUrl.substring(0, 50) + "...");
-        throw new Error("Image processing failed - invalid format");
-      }
-      
-      console.log("Image prepared for editing:", imageUrl.substring(0, 50) + "...");
-      
-      try {
-        // Note: The editImage function expects (inputImage, prompt, additional_images) parameters in that order
-        const result = await editImage(
-          imageUrl,
-          demoEditPrompt,
-          additionalImages.filter((img): img is string => Boolean(img))
-        );
-        
-        if (!result) {
-          throw new Error("Edit operation failed - no result returned");
-        }
-        
-        // Update UI with result
-        setDemoImage(result.url);
-        setDemoEditPrompt("");
-        setDemoSuccess(`Edit applied successfully! ${7 - imageEditsUsed - 1} free edit${7 - imageEditsUsed - 1 === 1 ? '' : 's'} remaining ✨`);
-        
-        // Notify that a new image was created (for My Creations refresh)
-        localStorage.setItem('newImageCreated', Date.now().toString());
-      } catch (editError: any) {
-        // If there's a specific polling error or other issue, handle it here
-        if (editError.message === "Another edit operation completed") {
-          // This is actually a success case - another polling operation completed
-          console.log("Used result from another polling operation");
-          return;
-        }
-        
-        throw editError; // Rethrow to be caught by the outer catch block
-      }
-      
-      setTimeout(() => setDemoSuccess(null), 3000);
-    } catch (err: any) {
-      console.error("Edit operation failed:", err.message);
-      
-      // Special handling for duplicate request errors
-      if (err.message.includes("Duplicate request")) {
-        // Just reset the UI without showing an error
-        setDemoError("Please wait a moment before submitting again");
-      } else {
-        // Use error from operation if available, otherwise use the caught error
-        setDemoError(operationError || err.message);
-      }
-    } finally {
-      setDemoEditing(false);
-      setEditingProgress("");
-    }
-  };
-
-  const handleDemoReset = () => {
-    setDemoImage(null);
-    setDemoPrompt("");
-    setDemoEditPrompt("");
-    setDemoError(null);
-    setDemoSuccess(null);
-    setEditingProgress("");
-    setIsDragOver(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleDownload = () => {
-    if (!demoImage) return;
-    
-    // Use our utility function to get a safe URL
-    const imageUrl = getSafeImageUrl(demoImage);
-    
-    // Create a download link
-    const link = document.createElement('a');
-    link.href = imageUrl;
-    link.download = 'GoLoco-creation.png';
-    
-    // Track download attempt
-    console.log(`Attempting to download image from: ${imageUrl}`);
-    
-    // Add error handling for download
-    link.onerror = () => {
-      console.error('Download failed');
-      setDemoError('Download failed. Please try again.');
-    };
-    
-    link.click();
-  };
-
-  // No longer need handleImageDelete function in demo page as we moved it to my-creations page
-
-  // Handler for additional image uploads
-  const handleAdditionalImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target?.result as string;
-      setAdditionalImages((prev) => {
-        const updated = [...prev];
-        updated[index] = base64;
-        return updated;
       });
-    };
-    reader.readAsDataURL(file);
+    }
   };
+  const handleSend = async () => {
+    setMoveBox(true);
+    setShowTitle(false);
+    setLoading(true);
+    setGeneratedImage(null); // Clear previous image so loader is shown immediately
+    try {
+      if (toggleState === 'generate' && prompt.trim()) {
+        const res = await fetch('/api/generate-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, sampleCount: 1, aspectRatio: '1:1' }),
+        });
+        const data = await res.json();
+        if (res.ok && data.images && data.images.length > 0) {
+          const url = data.images[0].r2?.publicUrl || data.images[0].url;
+          setGeneratedImage(url);
+        }
+      } else if (toggleState === 'reimagine' && uploadedImages.length > 0 && prompt.trim()) {
+        const res = await fetch('/api/edit-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, input_image: uploadedImages[0] }),
+        });
+        const data = await res.json();
+        if (res.ok && (data.image || (data.result && data.result.sample))) {
+          const url = data.image || (data.result && data.result.sample);
+          setGeneratedImage(url);
+        }
+      }
+    } catch (err) {
+      // Optionally handle error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (imgRef.current) {
+      const rect = imgRef.current.getBoundingClientRect();
+      setImgBottom(rect.bottom);
+    }
+  }, [uploadedImages]);
+
+  // Ensure input box stays below when any image (generated or edited) is shown
+  useEffect(() => {
+    if (generatedImage) {
+      setMoveBox(true);
+    }
+  }, [generatedImage]);
+
+  // Map Firebase user to expected props
+  const dropdownUser = user
+    ? {
+        name: user.displayName || user.email || '',
+        email: user.email || '',
+        image: user.photoURL || '/google.svg',
+      }
+    : null;
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      isDarkMode 
-        ? 'bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0F0F0F]' 
-        : 'bg-gradient-to-br from-[#FDFBF7] via-[#FFFFFF] to-[#F8F8F8]'
-    }`}>
-      {/* Header */}
-      <div className="flex flex-row justify-between items-center w-full p-4 md:p-6 z-10">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push('/')}
-            className={`p-2 rounded-full transition-all duration-300 hover:scale-110 ${
-              isDarkMode 
-                ? 'bg-white/10 text-white hover:bg-white/20' 
-                : 'bg-black/10 text-black hover:bg-black/20'
-            } backdrop-blur-sm`}
-            title="Back to Home"
-          >
-            <span className="text-lg">←</span>
-          </button>
-          <div className={`text-2xl md:text-3xl font-bold transition-colors duration-300 ${
-            isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-          }`}>
-            GoLoco Demo
-          </div>
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundColor: '#191A1F',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+        fontFamily: 'Aventa, sans-serif',
+      }}
+    >
+      <Link href="/" style={{
+          position: 'absolute',
+          top: 32,
+          left: 32,
+          color: 'white',
+          textDecoration: 'none',
+          fontSize: '2rem',
+          fontWeight: 'bold',
+          letterSpacing: '2px',
+          zIndex: 10,
+        }}>
+        goloco
+      </Link>
+      <a
+        href="/my-creations"
+        style={{
+          position: 'absolute',
+          top: 32,
+          right: 280, // Increased from 160 to 200 for more spacing
+          padding: '0.5rem 2rem',
+          border: '2px solid white',
+          borderRadius: '100px',
+          color: 'white',
+          background: 'transparent',
+          fontSize: '1.2rem',
+          fontWeight: 'bold',
+          textDecoration: 'none',
+          letterSpacing: '1px',
+          zIndex: 10,
+          cursor: 'pointer',
+        }}
+      >
+        My Creations
+      </a>
+      {/* My Account dropdown */}
+      <AccountDropdown user={dropdownUser} />
+      <div
+        style={{
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        <img
+          ref={imgRef}
+          src="/bg1.jpeg"
+          alt="Centered"
+          style={{
+            borderRadius: '50px',
+            maxWidth: '80vw',
+            maxHeight: '80vh',
+            display: 'block',
+            position: 'relative',
+          }}
+        />
+        {/* Go Pro button on top right of bg1.jpeg */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '32px',
+            right: 30, // Align Go Pro button flush to the right edge
+            background: '#0E1C39',
+            color: 'white',
+            padding: '0.6rem 2rem',
+            borderRadius: '24px',
+            fontWeight: 'bold',
+            fontSize: '1.2rem',
+            letterSpacing: '1px',
+            zIndex: 50,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+            cursor: 'pointer',
+          }}
+          onClick={() => { window.location.href = '/pricing'; }}
+        >
+          Go pro 
         </div>
-        
-        <div className="flex items-center gap-2 md:gap-4">
-          {user && (
-            <button
-              onClick={() => router.push('/my-creations')}
-              className={`px-3 py-2 md:px-4 md:py-2 rounded-lg transition-all duration-300 hover:scale-105 ${
-                isDarkMode 
-                  ? 'bg-[#F3752A]/20 text-white hover:bg-[#F3752A]/40' 
-                  : 'bg-[#F3752A]/20 text-black hover:bg-[#F3752A]/40'
-              } backdrop-blur-sm flex items-center gap-2`}
-              title="View Your Creations"
-            >
-              <span className="text-sm">🖼️</span>
-              <span className="hidden md:inline">My Creations</span>
-            </button>
+        {uploadedImages.length > 0 && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '3%',
+              left: '50%',
+              transform: 'translate(-50%, 0)',
+              zIndex: 25,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              width: '90%',
+              height: '60%',
+              gap: '24px',
+              flexWrap: 'nowrap',
+              overflowX: 'auto',
+            }}
+          >
+            {uploadedImages.map((img, idx) => (
+              <img
+                key={idx}
+                src={img}
+                alt={`Uploaded ${idx + 1}`}
+                style={{
+                  borderRadius: '10px',
+                  maxWidth: '300px',
+                  maxHeight: '100%',
+                  boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
+                  objectFit: 'cover',
+                }}
+              />
+            ))}
+          </div>
+        )}
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: moveBox && imgBottom ? `calc(${imgRef.current?.offsetHeight}px - 225px)` : '50%',
+            transform: moveBox ? 'translate(-50%, 0)' : 'translate(-50%, -50%)',
+            width: moveBox ? '1150px' : '600px',
+            height: '200px',
+            zIndex: 30,
+            transition: 'top 0.6s cubic-bezier(0.4,0,0.2,1), transform 0.6s cubic-bezier(0.4,0,0.2,1), width 0.6s cubic-bezier(0.4,0,0.2,1)',
+            padding: moveBox ? '32px 32px 32px 32px' : '0',
+          }}
+        >
+          {showTitle && (
+            <div style={{
+              position: 'absolute',
+              top: '-128px',
+              left: '50%', // Center horizontally
+              transform: 'translateX(-50%)', // Center horizontally
+              width: 'auto', // Only as wide as needed
+              textAlign: 'center',
+              color: 'white',
+              fontSize: '3rem',
+              fontWeight: 'bold',
+              letterSpacing: '1px',
+              zIndex: 40,
+              whiteSpace: 'nowrap',
+            }}>
+              Ready to see what you can do?
+            </div>
           )}
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className={`p-2 md:p-3 rounded-full transition-all duration-300 hover:scale-110 ${
-              isDarkMode 
-                ? 'bg-white/10 text-white hover:bg-white/20' 
-                : 'bg-black/10 text-black hover:bg-black/20'
-            } backdrop-blur-sm`}
-            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          <textarea
+            placeholder="What are you thinking of creating?"
+            value={prompt}
+            onChange={e => setPrompt(e.target.value)}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              backgroundColor: '#211D20',
+              border: 'none',
+              borderRadius: '20px',
+              padding: '2rem 2rem',
+              fontSize: '1rem',
+              color: 'white',
+              outline: 'none',
+              width: '100%',
+              height: '100%',
+              boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
+              resize: 'none',
+              fontFamily: 'Aventa, sans-serif',
+              zIndex: 20,
+            }}
+            className="custom-input"
+          />
+          <div
+            style={{
+              position: 'absolute',
+              left: 20,
+              bottom: 20,
+              backgroundColor: '#23272F',
+              borderRadius: '10px',
+              padding: '0.1rem 0.5rem',
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: '120px',
+              zIndex: 30,
+              width: '250px',
+              height: '60px',
+              boxSizing: 'border-box',
+              overflow: 'hidden',
+            }}
           >
-            {isDarkMode ? '☀️' : '🌙'}
-          </button>
-        </div>
-      </div>
-
-      {/* Main Demo Content */}
-      <div className="flex flex-col items-center px-4 pb-16">
-        <div className="w-full max-w-5xl mx-auto">
-          {/* Hero Section */}
-          <div className="text-center mb-8 md:mb-12">
-            <h1 className={`text-4xl md:text-6xl font-bold mb-4 transition-colors duration-300 ${
-              isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-            }`}>
-              Try GoLoco Free
-            </h1>
-            <p className={`text-lg md:text-xl mb-6 max-w-3xl mx-auto transition-colors duration-300 ${
-              isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-            }`}>
-              Experience the power of AI image editing. Generate or upload an image, then edit it with simple text prompts. 
-              Get 7 free edits to see the magic! ✨
-            </p>
-            
-            {/* Edit Counter */}
-            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-300 ${
-              isDarkMode 
-                ? 'bg-white/10 text-white border border-white/20' 
-                : 'bg-black/10 text-black border border-black/20'
-            }`}>
-              <span>🎯</span>
-              <span>{imageEditsUsed}/7 free edits used</span>
-              {imageEditsUsed < 7 && (
-                <span className="text-[#E72C19] font-bold">
-                  • {7 - imageEditsUsed} remaining
-                </span>
-              )}
-              {isUnlimitedUser && (
-                <span className="text-green-600 font-bold ml-2">Unlimited</span>
-              )}
+            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <ToggleButtons onToggle={setToggleState} />
             </div>
           </div>
-            {/* Demo Section - Only shown when logged in */}
-      {user && (
-        <div className={`w-full py-8 px-4 transition-colors duration-300 ${
-          isDarkMode 
-            ? 'bg-[#1E1E1E] border-b border-[#0171B9]/20' 
-            : 'bg-[#FDFBF7] border-b border-[#0171B9]/20'
-        }`}>
-          <div className="max-w-4xl mx-auto">
-            {/* Usage Display */}
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className={`flex-1 p-4 rounded-2xl border-2 transition-colors duration-300 ${
-                isDarkMode 
-                  ? 'bg-[#333] border-[#0171B9]/20' 
-                  : 'bg-white border-[#0171B9]/20'
-              }`}>
-              <h3 className={`text-lg font-bold mb-3 transition-colors duration-300 ${
-                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-              }`}>
-                {isUnlimitedUser ? '✨ Unlimited Access' : '🎯 Your Free Credits'}
-              </h3>
-              {isUnlimitedUser ? (
-                <p className={`text-sm transition-colors duration-300 ${
-                  isDarkMode ? 'text-green-400' : 'text-green-600'
-                }`}>
-                  You have unlimited access to all features!
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className={`text-sm transition-colors duration-300 ${
-                        isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                      }`}>Image Generations</span>
-                      <span className={`text-sm font-bold transition-colors duration-300 ${
-                        isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                      }`}>{imageGenerationsUsed}/3</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-[#0171B9] h-2 rounded-full transition-all duration-300" 
-                        style={{ width: `${(imageGenerationsUsed / 3) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className={`text-sm transition-colors duration-300 ${
-                        isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-                      }`}>Image Edits</span>
-                      <span className={`text-sm font-bold transition-colors duration-300 ${
-                        isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                      }`}>{imageEditsUsed}/7</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-[#004684] h-2 rounded-full transition-all duration-300" 
-                        style={{ width: `${(imageEditsUsed / 7) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}          {/* Main Demo Interface */}
-          <div className={`rounded-3xl p-6 md:p-12 border-2 transition-colors duration-300 shadow-2xl ${
-            isDarkMode 
-              ? 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20 shadow-[#F3752A]/10' 
-              : 'bg-white border-[#F3752A]/20 shadow-[#F3752A]/5'
-          }`}>
-            
-            {/* Image Display Area */}
-            {demoImage ? (
-              <div className="flex justify-center mb-8 md:mb-12">
-                <div className="relative group">
-                  <img
-                    src={getSafeImageUrl(demoImage)}
-                    alt="Demo Image"
-                    className="rounded-2xl shadow-2xl max-w-full w-full object-contain border-4 border-white/20"
-                    style={{ maxHeight: '400px', maxWidth: '600px' }}
-                    onError={(e) => handleImageError(e, setDemoError)}
-                    loading="eager"
-                    crossOrigin="anonymous"
-                  />
-                  {(demoGenerating || demoEditing) && (
-                    <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-                      <div className="text-center text-white">
-                        <div className="animate-spin text-4xl md:text-5xl mb-4">⚡</div>
-                        <div className="text-lg md:text-xl font-semibold">
-                          {demoGenerating ? "Generating your image..." : editingProgress || "Editing..."}
-                        </div>
-                        <div className="text-sm opacity-70 mt-2">
-                          This may take 10-30 seconds
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {/* Image Action Buttons */}
-                  {!demoGenerating && !demoEditing && (
-                    <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={handleDownload}
-                        className="p-2 bg-[#F3752A] text-white rounded-full hover:bg-[#F53057] transition shadow-lg"
-                        title="Download Image"
-                      >
-                        <span className="text-lg">📥</span>
-                      </button>
-                      <button
-                        onClick={handleDemoReset}
-                        className="p-2 bg-[#A20222] text-white rounded-full hover:bg-[#F3752A] transition shadow-lg"
-                        title="Start Over"
-                      >
-                        <span className="text-lg">🗑️</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="flex justify-center mb-8 md:mb-12">
-                <div className={`w-full max-w-lg h-64 md:h-80 rounded-2xl border-2 border-dashed border-[#F3752A]/40 flex flex-col items-center justify-center transition-colors duration-300 ${
-                  isDarkMode ? 'bg-white/5' : 'bg-[#F2F2F2]'
-                } ${demoGenerating ? 'animate-pulse' : ''}`}>
-                  {demoGenerating ? (
-                    <div className="text-center">
-                      <div className="animate-spin text-6xl md:text-7xl mb-6">⚡</div>
-                      <p className={`text-center font-semibold text-lg md:text-xl transition-colors duration-300 ${
-                        isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                      }`}>
-                        Creating your image...
-                      </p>
-                      <p className={`text-center text-sm md:text-base mt-2 transition-colors duration-300 ${
-                        isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                      }`}>
-                        This may take 10-30 seconds
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="text-6xl md:text-7xl mb-6">🎨</div>
-                      <p className={`text-center text-lg md:text-xl font-semibold mb-2 transition-colors duration-300 ${
-                        isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                      }`}>
-                        Your canvas awaits
-                      </p>
-                      <p className={`text-center text-sm md:text-base transition-colors duration-300 ${
-                        isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                      }`}>
-                        Generate or upload an image to start creating
-                      </p>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Generation and Upload/Edit Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12 mb-8 md:mb-12">
-              {/* Generate Image - Only shown when no image is present */}
-              {!demoImage && (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="inline-flex items-center gap-2 mb-4">              
-                      <h3 className="text-xl md:text-2xl font-bold text-[#F3752A]">Generate Image</h3>
-                    </div>
-                    <p className={`text-sm md:text-base transition-colors duration-300 ${
-                      isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                    }`}>
-                      Describe any image and watch AI create it
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <textarea
-                      value={demoPrompt}
-                      onChange={(e) => setDemoPrompt(e.target.value)}
-                      placeholder="Describe your image... (e.g., 'a cat wearing sunglasses on a beach at sunset')"
-                      className={`w-full h-24 text-base md:text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#F3752A] transition resize-none ${
-                        isDarkMode 
-                          ? 'bg-white/10 text-white border-[#F3752A]/20 placeholder:text-white/50' 
-                          : 'bg-white text-[#1E1E1E] border-[#F3752A]/20 placeholder:text-black/50'
-                      }`}
-                      disabled={demoGenerating}
-                    />
-                    <button
-                      onClick={handleDemoGenerate}
-                      disabled={demoGenerating || !demoPrompt.trim()}
-                      className="w-full px-6 py-4 rounded-xl bg-[#F3752A] text-white font-semibold hover:bg-[#F53057] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base md:text-lg shadow-lg hover:shadow-xl"
-                    >
-                      {demoGenerating ? (
-                        <>
-                          <div className="animate-spin text-xl">⚡</div>
-                          Creating...
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-lg">🪄</span>
-                          Generate Image
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Upload Image or Edit Image based on whether an image is present */}
-              {!demoImage ? (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="inline-flex items-center gap-2 mb-4">
-                     
-                      <h3 className="text-xl md:text-2xl font-bold text-[#F53057]">Upload Image</h3>
-                    </div>
-                    <p className={`text-sm md:text-base transition-colors duration-300 ${
-                      isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                    }`}>
-                      Have an image? Upload it to start editing
-                    </p>
-                  </div>
-                  
-                  <div 
-                    className={`relative border-2 border-dashed rounded-xl p-8 md:p-12 text-center transition-all duration-300 cursor-pointer group min-h-[200px] flex flex-col justify-center ${
-                      isDragOver 
-                        ? 'border-[#F53057] bg-gradient-to-br from-[#F53057]/20 to-[#A20222]/20 scale-105 shadow-lg shadow-[#F53057]/20' 
-                        : isDarkMode 
-                          ? 'border-[#F53057]/30 hover:border-[#F53057] hover:bg-[#F53057]/5 hover:scale-102' 
-                          : 'border-[#F53057]/30 hover:border-[#F53057] hover:bg-[#F53057]/5 hover:scale-102'
-                    }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*,.heic,.heif"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                    
-                    <div className={`transition-all duration-300 ${isDragOver ? 'animate-bounce' : 'group-hover:scale-110'}`}>
-                      <div className={`text-5xl md:text-6xl mb-4 transition-all duration-300 ${
-                        isDragOver ? 'animate-pulse text-6xl md:text-7xl' : ''
-                      }`}>
-                        {isDragOver ? '🎯' : '📁'}
-                      </div>
-                      <p className={`font-bold text-lg md:text-xl mb-2 transition-colors duration-300 ${
-                        isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                      } ${isDragOver ? 'text-[#F53057]' : ''}`}>
-                        {isDragOver ? 'Perfect! Drop it here!' : 'Upload Your Image'}
-                      </p>
-                      <p className={`text-sm md:text-base mb-4 transition-colors duration-300 ${
-                        isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                      }`}>
-                        {isDragOver ? 'Release to upload and start editing' : 'Drag & drop your image here or click to browse'}
-                      </p>
-                      <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs transition-all duration-300 ${
-                        isDragOver 
-                          ? 'bg-[#F53057] text-white' 
-                          : isDarkMode 
-                            ? 'bg-white/10 text-white opacity-70' 
-                            : 'bg-black/10 text-black opacity-70'
-                      }`}>
-                        <span>✨</span>
-                        <span>Supports JPG, PNG, GIF, WebP (Max 10MB)</span>
-                      </div>
-                    </div>
-                    
-                    {/* Animated border effect when dragging */}
-                    {isDragOver && (
-                      <div className="absolute inset-0 rounded-xl pointer-events-none">
-                        <div className="absolute inset-0 rounded-xl border-2 border-[#F53057] animate-pulse"></div>
-                        <div className="absolute inset-2 rounded-lg border-2 border-[#F53057]/50 animate-ping"></div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                /* Show Edit Image area instead of Upload when image is present */
-                <div className={`space-y-6 ${demoImage ? 'lg:col-span-2' : ''}`}>
-                  <div className="text-center">
-                    <div className="inline-flex items-center gap-2 mb-4">
-                      <span className="text-xl">✏️</span>
-                      <h3 className="text-xl md:text-2xl font-bold text-[#A20222]">Edit Your Image</h3>
-                    </div>
-                    <p className={`text-sm md:text-base transition-colors duration-300 ${
-                      isDarkMode ? 'text-white opacity-70' : 'text-[#1E1E1E] opacity-70'
-                    }`}>
-                      Describe how you want to change your image
-                    </p>
-                  </div>
-                  
-                  {/* Additional Images Upload UI - place above edit prompt */}
-                  <div className="w-full flex flex-col items-center gap-2 mb-4">
-                    <div className="flex flex-wrap gap-2 justify-center w-full">
-                      {[0, 1, 2].map((idx) => (
-                        <div key={idx} className="flex flex-col items-center w-1/3 min-w-[90px] max-w-[120px] flex-shrink-0">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleAdditionalImageChange(idx, e)}
-                            className="block mb-1 w-full"
-                            disabled={idx > 0 && !additionalImages[idx - 1]}
-                            style={{ minWidth: '70px' }}
-                          />
-                          {additionalImages[idx] && (
-                            <img
-                              src={additionalImages[idx] as string}
-                              alt={`Additional ${idx + 1}`}
-                              className="w-16 h-16 object-cover rounded border mb-1"
-                            />
-                          )}
-                          <span className="text-xs text-gray-400">Image {idx + 1}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <span className="text-xs text-gray-500 text-center w-full">(Optional) Upload up to 3 additional images for editing</span>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <textarea
-                      value={demoEditPrompt}
-                      onChange={(e) => setDemoEditPrompt(e.target.value)}
-                      placeholder="Tell me what to change... (e.g., 'make the sky purple and add stars' or 'add sunglasses to the person')"
-                      className={`w-full h-24 text-base md:text-lg rounded-xl px-4 py-3 outline-none border-2 focus:border-[#A20222] transition resize-none ${
-                        isDarkMode 
-                          ? 'bg-white/10 text-white border-[#A20222]/20 placeholder:text-white/50' 
-                          : 'bg-white text-[#1E1E1E] border-[#A20222]/20 placeholder:text-black/50'
-                      }`}
-                      disabled={demoEditing}
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation(); // Prevent event bubbling
-                        handleDemoEdit();
-                      }}
-                      disabled={demoEditing || !demoEditPrompt.trim() || (imageEditsUsed >= 7 && !isUnlimitedUser)}
-                      className="w-full px-6 py-4 rounded-xl bg-[#A20222] text-white font-semibold hover:bg-[#F3752A] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 text-base md:text-lg shadow-lg hover:shadow-xl"
-                    >
-                      {demoEditing ? (
-                        <>
-                          <div className="animate-spin text-xl">🔄</div>
-                          {editingProgress || "Editing..."}
-                        </>
-                      ) : imageEditsUsed >= 7 && !isUnlimitedUser ? (
-                        <>
-                          <span>💎</span>
-                          Upgrade for More Edits
-                        </>
-                      ) : (
-                        <>
-                          <span className="text-lg">🪄</span>
-                          {isUnlimitedUser ? "Edit Image (Unlimited)" : `Edit Image (${7 - imageEditsUsed} remaining)`}
-                        </>
-                      )}
-                    </button>
-                    
-                    {imageEditsUsed >= 1 && imageEditsUsed < 7 && !demoEditing && (
-                      <div className="mt-2 p-3 bg-[#F53057]/10 border border-[#F53057]/20 rounded-xl text-center">
-                        <p className="text-sm text-[#F53057] font-semibold">
-                          🎯 {7 - imageEditsUsed} free edit{7 - imageEditsUsed === 1 ? '' : 's'} remaining! Make it count ✨
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Additional Edit Section - Only shown in wider screens on larger devices */}
-            {demoImage && (
-              <div className="lg:hidden mt-2 mb-8">
-                {/* This is intentionally empty, since the edit functionality is now in the grid above for all screen sizes */}
-                {/* We keep this to maintain the spacing and layout */}
-              </div>
-            )}
-
-            {/* Status Messages */}
-            {(demoError || demoSuccess) && (
-              <div className="mt-6 space-y-3">
-                {demoError && (
-                  <div className="p-4 bg-red-100 border border-red-300 rounded-xl text-red-700 text-center flex items-center gap-3 justify-center">
-                    <span className="text-xl">⚠️</span>
-                    <span className="flex-1">{demoError}</span>
-                    <button 
-                      onClick={() => setDemoError(null)}
-                      className="text-red-500 hover:text-red-700 font-bold text-lg"
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-                {demoSuccess && (
-                  <div className="p-4 bg-green-100 border border-green-300 rounded-xl text-green-700 text-center flex items-center gap-3 justify-center">
-                    <span className="text-xl">✅</span>
-                    <span className="flex-1">{demoSuccess}</span>
-                    <button 
-                      onClick={() => setDemoSuccess(null)}
-                      className="text-green-500 hover:text-green-700 font-bold text-lg"
-                    >
-                      ×
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Sample Prompts for Inspiration */}
-            {!demoImage && !demoGenerating && (
-              <div className="mt-8 space-y-4">
-                <h4 className={`text-lg md:text-xl font-semibold text-center transition-colors duration-300 ${
-                  isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-                }`}>
-                  Need inspiration? Try these prompts:
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {[
-                    "a golden retriever wearing a chef's hat cooking in a modern kitchen",
-                    "a cozy coffee shop in winter with snow falling outside",
-                    "a futuristic city at sunset with flying cars and neon lights",
-                    "a magical forest with glowing mushrooms and fairy lights"
-                  ].map((samplePrompt, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setDemoPrompt(samplePrompt)}
-                      className={`p-4 rounded-xl text-sm md:text-base border-2 transition-all hover:scale-105 text-left ${
-                        isDarkMode 
-                          ? 'bg-white/5 border-[#F3752A]/30 text-white hover:border-[#F3752A] hover:bg-[#F3752A]/20' 
-                          : 'bg-white border-[#F3752A]/30 text-[#1E1E1E] hover:border-[#F3752A] hover:bg-[#F3752A]/10'
-                      }`}
-                    >
-                      <span className="text-[#F3752A] font-semibold">💡 </span>
-                      {samplePrompt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Call to Action */}
-          <div className="text-center mt-12">
-            <div className={`rounded-2xl p-8 border-2 transition-colors duration-300 ${
-              isDarkMode 
-                ? 'bg-gradient-to-br from-[#F3752A]/10 to-[#F53057]/10 border-[#F3752A]/20' 
-                : 'bg-gradient-to-br from-[#F3752A]/5 to-[#F53057]/5 border-[#F3752A]/20'
-            }`}>
-              <h3 className={`text-2xl md:text-3xl font-bold mb-4 transition-colors duration-300 ${
-                isDarkMode ? 'text-white' : 'text-[#1E1E1E]'
-              }`}>
-                Love what you see?
-              </h3>
-              <p className={`text-lg mb-6 transition-colors duration-300 ${
-                isDarkMode ? 'text-white opacity-80' : 'text-[#1E1E1E] opacity-80'
-              }`}>
-                Upgrade to unlimited edits, higher resolution, and advanced features.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div style={{ position: 'absolute', right: 20, bottom: 20, display: 'flex', gap: '0.5rem', zIndex: 30 }}>
+            {toggleState === 'reimagine' && (
+              <>
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="image-upload"
+                  style={{ display: 'none' }}
+                  multiple
+                  onChange={handleImageUpload}
+                />
                 <button
-                  onClick={() => router.push('/')}
-                  className={`px-8 py-3 rounded-xl font-semibold transition border-2 ${
-                    isDarkMode 
-                      ? 'border-white/20 text-white hover:bg-white/10' 
-                      : 'border-black/20 text-black hover:bg-black/10'
-                  }`}
-                >
-                  Back to Home
-                </button>
-                <button
-                  className="px-8 py-3 rounded-xl bg-gradient-to-r from-[#F3752A] via-[#F53057] to-[#A20222] text-white font-semibold hover:shadow-lg hover:shadow-[#F3752A]/25 transition"
-                >
-                  Upgrade Now
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Pricing Modal */}
-      {showPricingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl border-2 bg-white">
-            <div className="text-center">
-              <div className="text-6xl mb-4">🚀</div>
-              <h3 className="text-2xl font-bold mb-4 text-[#E72C19]">Credits Exhausted!</h3>
-              <div className="mb-4">
-                <div className="text-sm mb-2">Your current usage:</div>
-                <div className="space-y-1 text-xs">
-                  <div>Image Generations: {imageGenerationsUsed}/3 used</div>
-                  <div>Image Edits: {imageEditsUsed}/7 used</div>
-                </div>
-              </div>
-              <p className="mb-6 text-[#1E1E1E] opacity-80">
-                You&apos;ve reached your free limit. Upgrade to get up to 1400 images per month with our premium plans!
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowPricingModal(false)}
-                  className="flex-1 px-6 py-3 rounded-xl font-semibold bg-gray-200 text-[#1E1E1E] hover:bg-gray-300"
-                >
-                  Maybe Later
-                </button>
-                <button
-                  onClick={() => {
-                    setShowPricingModal(false);
-                    router.push("/pricing");
+                  type="button"
+                  onClick={() => { document.getElementById('image-upload')?.click(); setShowTitle(false); }}
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    backgroundColor: '#23272F',
+                    border: 'none',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
                   }}
-                  className="flex-1 px-6 py-3 rounded-xl bg-[#0171B9] text-white font-semibold hover:bg-[#004684]"
                 >
-                  Upgrade Now
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="3" y="3" width="18" height="18" rx="4" stroke="white" strokeWidth="2"/>
+                    <path d="M7 17L10.5 13.5L13 16L17 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="8.5" cy="8.5" r="1.5" fill="white"/>
+                  </svg>
                 </button>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={handleSend}
+              style={{
+                width: '48px',
+                height: '48px',
+                backgroundColor: '#713995',
+                border: 'none',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4 12L20 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M14 6L20 12L14 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        {/* Show generated image if available, else show uploaded images */}
+        {(generatedImage || uploadedImages.length > 0) && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '3%',
+              left: '50%',
+              transform: 'translate(-50%, 0)',
+              zIndex: 25,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              width: '90%',
+              height: '60%',
+              gap: '24px',
+              flexWrap: 'nowrap',
+              overflowX: 'auto',
+            }}
+          >
+            {loading && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                <span style={{ color: '#fff', fontSize: '2rem', fontWeight: 'bold', marginRight: '12px' }}>Generating...</span>
+                <div style={{ width: 32, height: 32, border: '4px solid #713995', borderTop: '4px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
               </div>
+            )}
+            {!loading && generatedImage && (
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                {/* Download and Remove Icons */}
+                <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: '12px', zIndex: 100 }}>
+                  {/* Download Icon */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = generatedImage;
+                      link.download = 'image.png';
+                      link.click();
+                    }}
+                    style={{
+                      background: '#23272F',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><rect x="4" y="17" width="16" height="4" rx="2" stroke="#fff" strokeWidth="2"/></svg>
+                  </button>
+                  {/* Remove Icon */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGeneratedImage(null);
+                      setMoveBox(false);
+                      setPrompt("");
+                    }}
+                    style={{
+                      background: '#F53057',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M6 18L18 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                </div>
+                <img
+                  src={generatedImage}
+                  alt="Generated"
+                  style={{
+                    borderRadius: '10px',
+                    maxWidth: '300px',
+                    maxHeight: '100%',
+                    boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
+                    objectFit: 'cover',
+                  }}
+                />
+              </div>
+            )}
+            {!loading && !generatedImage && uploadedImages.map((img, idx) => (
+              <img
+                key={idx}
+                src={img}
+                alt={`Uploaded ${idx + 1}`}
+                style={{
+                  borderRadius: '10px',
+                  maxWidth: '300px',
+                  maxHeight: '100%',
+                  boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
+                  objectFit: 'cover',
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      <style>{`
+        .custom-input::placeholder {
+          color: #b0b0b0;
+          text-align: left;
+        }
+        @media (max-width: 600px) {
+          body, html {
+            width: 100vw;
+            min-width: 0;
+            overflow-x: hidden;
+          }
+          .custom-input {
+            font-size: 0.95rem !important;
+            padding: 1rem 1rem !important;
+          }
+          [style*='minHeight: 100vh'] {
+            flex-direction: column !important;
+            align-items: stretch !important;
+            padding: 0 !important;
+          }
+          a[href='/'] {
+            font-size: 1.3rem !important;
+            left: 12px !important;
+            top: 12px !important;
+            padding: 0 !important;
+          }
+          a[href='/my-creations'] {
+            right: 90px !important;
+            top: 12px !important;
+            padding: 0.4rem 1rem !important;
+            font-size: 1rem !important;
+          }
+          .account-dropdown {
+            right: 12px !important;
+            top: 12px !important;
+            padding: 0.4rem 1rem !important;
+            font-size: 1rem !important;
+          }
+          [style*='maxWidth: 80vw'] {
+            max-width: 98vw !important;
+            max-height: 40vh !important;
+            border-radius: 20px !important;
+          }
+          [style*='width: 1150px'], [style*='width: 600px'] {
+            width: 98vw !important;
+            min-width: 0 !important;
+            left: 50% !important;
+            transform: translate(-50%, 0) !important;
+            padding: 0.5rem !important;
+          }
+          [style*='height: 200px'] {
+            height: 120px !important;
+          }
+          [style*='fontSize: 3rem'] {
+            font-size: 1.3rem !important;
+            top: -60px !important;
+          }
+          [style*='padding: 0.6rem 2rem'] {
+            padding: 0.4rem 1rem !important;
+            font-size: 1rem !important;
+          }
+          [style*='borderRadius: 24px'] {
+            border-radius: 16px !important;
+          }
+          [style*='width: 48px'], [style*='height: 48px'] {
+            width: 38px !important;
+            height: 38px !important;
+          }
+          [style*='width: 300px'] {
+            max-width: 90vw !important;
+          }
+          [style*='gap: 24px'] {
+            gap: 10px !important;
+          }
+          [style*='padding: 32px 32px 32px 32px'] {
+            padding: 0.5rem !important;
+          }
+          [style*='top: 32px'] {
+            top: 12px !important;
+          }
+          [style*='right: 30'] {
+            right: 12px !important;
+          }
+          [style*='right: 32'] {
+            right: 12px !important;
+          }
+          [style*='minWidth: 220'] {
+            min-width: 160px !important;
+          }
+          [style*='padding: 1rem'] {
+            padding: 0.5rem !important;
+          }
+          [style*='width: 250px'] {
+            width: 120px !important;
+          }
+          [style*='height: 60px'] {
+            height: 38px !important;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// Add AccountDropdown component
+function AccountDropdown({ user }: { user: { name: string; email: string; image: string } | null }) {
+  const [open, setOpen] = useState(false);
+  if (!user) return null; // Hide dropdown if no user
+  return (
+    <div style={{ position: 'absolute', top: 32, right: 32, zIndex: 20 }}>
+      <div
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          cursor: 'pointer',
+          background: 'rgba(255,255,255,0.08)', // keep current color
+          borderRadius: '100px', // match My Creations
+          padding: '0.5rem 2rem', // match My Creations
+          fontSize: '1.2rem', // match My Creations
+          fontWeight: 'bold', // match My Creations
+          letterSpacing: '1px', // match My Creations
+          border: '2px solid transparent', // visually match border thickness
+          height: 'auto', // let padding control height
+          minHeight: 'unset', // ensure no extra height
+        }}
+      >
+        {/* My Account Icon */}
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ marginRight: 8 }}>
+          <circle cx="12" cy="8" r="4" stroke="#fff" strokeWidth="2" />
+          <path d="M4 20c0-3.333 2.667-6 8-6s8 2.667 8 6" stroke="#fff" strokeWidth="2" />
+        </svg>
+        <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem', letterSpacing: '1px' }}>{user.name}</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </div>
+      {open && (
+        <div style={{ position: 'absolute', top: '110%', right: 0, background: '#23272F', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', minWidth: 220, padding: '1rem', color: 'white' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <img src={user.image || '/google.svg'} alt="Google" style={{ width: 32, height: 32, borderRadius: '50%' }} />
+            <div>
+              <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>{user.name}</div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.7 }}>{user.email}</div>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => { /* Add your logout logic here */ }}
+            style={{ width: '100%', background: '#F53057', color: 'white', border: 'none', borderRadius: '8px', padding: '0.6rem', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}
+          >
+            Log out
+          </button>
         </div>
       )}
     </div>

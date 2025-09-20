@@ -2,6 +2,18 @@
 @import "./theme.css";
 @import "./components.css";
 
+/* Add this to the top of your globals.css file */
+@font-face {
+  font-family: 'Aventa';
+  src: url('/font/Aventa-Regular\u0020?.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+body, .aventa-font {
+  font-family: 'Aventa', sans-serif;
+}
+
 @keyframes scroll {
   0% {
     transform: translateX(0);
