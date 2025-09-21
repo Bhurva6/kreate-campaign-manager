@@ -496,10 +496,23 @@ export default function DemoPage() {
             }}
           >
             {loading && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                <span style={{ color: '#fff', fontSize: '2rem', fontWeight: 'bold', marginRight: '12px' }}>Generating...</span>
-                <div style={{ width: 32, height: 32, border: '4px solid #713995', borderTop: '4px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                width: '100vw',
+                height: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999,
+                background: 'rgba(25,26,31,0.7)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <span style={{ color: '#fff', fontSize: '2rem', fontWeight: 'bold', marginRight: '12px' }}>Generating...</span>
+                  <div style={{ width: 32, height: 32, border: '4px solid #713995', borderTop: '4px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+                </div>
               </div>
             )}
             {!loading && generatedImage && (
