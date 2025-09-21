@@ -74,7 +74,7 @@ function ToggleButtons({ onToggle }: { onToggle?: (value: string) => void }) {
 
 export default function DemoPage() {
   const { user } = useAuth(); // Get the signed-in user
-  const { imageGenerationsUsed, imageGenerationsLimit, imageEditsUsed, imageEditsLimit, isUnlimitedUser } = useCreditManagement();
+  const { imageGenerationsUsed, imageGenerationsLimit, imageEditsUsed, imageEditsLimit, isUnlimitedUser, consumeImageGeneration, consumeImageEdit } = useCreditManagement();
   const [toggleState, setToggleState] = useState('generate');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [moveBox, setMoveBox] = useState(false);
@@ -114,6 +114,8 @@ export default function DemoPage() {
         if (res.ok && data.images && data.images.length > 0) {
           const url = data.images[0].r2?.publicUrl || data.images[0].url;
           setGeneratedImage(url);
+          // Only decrease credits on successful response
+          consumeImageGeneration();
         }
       } else if (toggleState === 'reimagine' && uploadedImages.length > 0 && prompt.trim()) {
         const res = await fetch('/api/edit-image', {
@@ -125,6 +127,8 @@ export default function DemoPage() {
         if (res.ok && (data.image || (data.result && data.result.sample))) {
           const url = data.image || (data.result && data.result.sample);
           setGeneratedImage(url);
+          // Only decrease credits on successful response
+          consumeImageEdit();
         }
       }
     } catch (err) {
