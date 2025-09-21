@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth';
 
 interface RazorpayHandlerProps {
   plan: Plan;
-  onSuccess?: () => void;
+  onSuccess?: (paymentId: string) => void;
   onFailure?: () => void;
   buttonText?: string;
   customClassName?: string;
@@ -93,7 +93,7 @@ const RazorpayHandler = ({
         // Validate we have payment ID
         if (response.razorpay_payment_id) {
           handleSuccessfulPayment(plan.id, response.razorpay_payment_id);
-          if (onSuccess) onSuccess();
+          if (onSuccess) onSuccess(response.razorpay_payment_id);
         } else {
           console.error('No payment ID received:', response);
           if (onFailure) onFailure();

@@ -122,7 +122,8 @@ export default function PricingModal({ isOpen, onClose }: PricingModalProps) {
                     plan={plan}
                     buttonText={`Get ${plan.name} Now`}
                     customClassName="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all"
-                    onSuccess={() => {
+                    onSuccess={(paymentId) => {
+                      handleSuccessfulPayment(plan.id, paymentId);
                       alert(`Thank you for purchasing the ${plan.name} plan!`);
                       onClose();
                     }}
