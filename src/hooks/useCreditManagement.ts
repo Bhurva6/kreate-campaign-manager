@@ -61,9 +61,9 @@ export const useCreditManagement = () => {
             activePlan.id
           );
         } 
-        // Free user
+        // Free user: set limits to 5 generations and 7 edits
         else {
-          initializeUserCredit(user.uid);
+          initializeUserCredit(user.uid, 5, 7);
         }
       }
     }

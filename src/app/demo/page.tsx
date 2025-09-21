@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../lib/auth';
 import Link from 'next/link';
+import { useCreditManagement } from '@/hooks/useCreditManagement';
 
 function ToggleButtons({ onToggle }: { onToggle?: (value: string) => void }) {
   const [selected, setSelected] = useState('generate');
@@ -73,6 +74,7 @@ function ToggleButtons({ onToggle }: { onToggle?: (value: string) => void }) {
 
 export default function DemoPage() {
   const { user } = useAuth(); // Get the signed-in user
+  const { imageGenerationsUsed, imageGenerationsLimit, imageEditsUsed, imageEditsLimit, isUnlimitedUser } = useCreditManagement();
   const [toggleState, setToggleState] = useState('generate');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [moveBox, setMoveBox] = useState(false);
@@ -155,6 +157,15 @@ export default function DemoPage() {
       }
     : null;
 
+  useEffect(() => {
+    // If the user has reached the free limit, show pricing screen
+    if (!isUnlimitedUser && (
+      imageGenerationsUsed >= imageGenerationsLimit || imageEditsUsed >= imageEditsLimit
+    )) {
+      window.location.href = '/pricing';
+    }
+  }, [imageGenerationsUsed, imageGenerationsLimit, imageEditsUsed, imageEditsLimit, isUnlimitedUser]);
+
   return (
     <div
       style={{
@@ -167,6 +178,69 @@ export default function DemoPage() {
         fontFamily: 'Aventa, sans-serif',
       }}
     >
+      {/* Top-right controls container */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 32,
+          right: 32,
+          zIndex: 40,
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: '24px',
+          width: 'auto',
+        }}
+      >
+        {/* Credit usage display */}
+        <div style={{
+          background: '#23272F',
+          color: 'white',
+          borderRadius: '16px',
+          padding: '0.6rem 1.5rem',
+          fontWeight: 'bold',
+          fontSize: '1.1rem',
+          letterSpacing: '1px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+          minWidth: '180px',
+          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          {isUnlimitedUser
+            ? 'Generations: Unlimited | Edits: Unlimited'
+            : `Generations: ${imageGenerationsUsed}/${imageGenerationsLimit} | Edits: ${imageEditsUsed}/${imageEditsLimit}`}
+        </div>
+        {/* My Creations Button */}
+        <a
+          href="/my-creations"
+          style={{
+            border: '2px solid white',
+            borderRadius: '100px',
+            color: 'white',
+            background: 'transparent',
+            fontSize: '1.2rem',
+            fontWeight: 'bold',
+            textDecoration: 'none',
+            letterSpacing: '1px',
+            cursor: 'pointer',
+            padding: '0.5rem 2rem',
+            minWidth: '120px',
+            textAlign: 'center',
+            boxSizing: 'border-box',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          My Creations
+        </a>
+        {/* Account Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <AccountDropdown user={dropdownUser} />
+        </div>
+      </div>
       <Link href="/" style={{
           position: 'absolute',
           top: 32,
@@ -180,29 +254,6 @@ export default function DemoPage() {
         }}>
         goloco
       </Link>
-      <a
-        href="/my-creations"
-        style={{
-          position: 'absolute',
-          top: 32,
-          right: 280, // Increased from 160 to 200 for more spacing
-          padding: '0.5rem 2rem',
-          border: '2px solid white',
-          borderRadius: '100px',
-          color: 'white',
-          background: 'transparent',
-          fontSize: '1.2rem',
-          fontWeight: 'bold',
-          textDecoration: 'none',
-          letterSpacing: '1px',
-          zIndex: 10,
-          cursor: 'pointer',
-        }}
-      >
-        My Creations
-      </a>
-      {/* My Account dropdown */}
-      <AccountDropdown user={dropdownUser} />
       <div
         style={{
           position: 'relative',
@@ -623,12 +674,12 @@ export default function DemoPage() {
   );
 }
 
-// Add AccountDropdown component
+// Update AccountDropdown to remove absolute positioning and use relative for dropdown
 function AccountDropdown({ user }: { user: { name: string; email: string; image: string } | null }) {
   const [open, setOpen] = useState(false);
-  if (!user) return null; // Hide dropdown if no user
+  if (!user) return null;
   return (
-    <div style={{ position: 'absolute', top: 32, right: 32, zIndex: 20 }}>
+    <div style={{ position: 'relative', zIndex: 20 }}>
       <div
         onClick={() => setOpen((v) => !v)}
         style={{
@@ -636,15 +687,15 @@ function AccountDropdown({ user }: { user: { name: string; email: string; image:
           alignItems: 'center',
           gap: '0.5rem',
           cursor: 'pointer',
-          background: 'rgba(255,255,255,0.08)', // keep current color
-          borderRadius: '100px', // match My Creations
-          padding: '0.5rem 2rem', // match My Creations
-          fontSize: '1.2rem', // match My Creations
-          fontWeight: 'bold', // match My Creations
-          letterSpacing: '1px', // match My Creations
-          border: '2px solid transparent', // visually match border thickness
-          height: 'auto', // let padding control height
-          minHeight: 'unset', // ensure no extra height
+          background: 'rgba(255,255,255,0.08)',
+          borderRadius: '100px',
+          padding: '0.5rem 2rem',
+          fontSize: '1.2rem',
+          fontWeight: 'bold',
+          letterSpacing: '1px',
+          border: '2px solid transparent',
+          height: 'auto',
+          minHeight: 'unset',
         }}
       >
         {/* My Account Icon */}
