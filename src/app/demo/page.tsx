@@ -118,10 +118,18 @@ export default function DemoPage() {
           consumeImageGeneration();
         }
       } else if (toggleState === 'reimagine' && uploadedImages.length > 0 && prompt.trim()) {
+        // Send first image as input_image, rest as additional_images
+        const body: { prompt: string; input_image: string; additional_images?: string[] } = {
+          prompt,
+          input_image: uploadedImages[0],
+        };
+        if (uploadedImages.length > 1) {
+          body.additional_images = uploadedImages.slice(1);
+        }
         const res = await fetch('/api/edit-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, input_image: uploadedImages[0] }),
+          body: JSON.stringify(body),
         });
         const data = await res.json();
         if (res.ok && (data.image || (data.result && data.result.sample))) {
@@ -501,11 +509,37 @@ export default function DemoPage() {
                   {/* Download Icon */}
                   <button
                     type="button"
-                    onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = generatedImage;
-                      link.download = 'image.png';
-                      link.click();
+                    onClick={async () => {
+                      if (!generatedImage) return;
+                      try {
+                        if (generatedImage.startsWith('data:')) {
+                          // Data URL: direct download
+                          const link = document.createElement('a');
+                          link.href = generatedImage;
+                          link.download = 'image.png';
+                          link.rel = 'noopener';
+                          link.target = '_self';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                        } else {
+                          // Remote URL: fetch as blob
+                          const response = await fetch(generatedImage);
+                          const blob = await response.blob();
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = 'image.png';
+                          link.rel = 'noopener';
+                          link.target = '_self';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          URL.revokeObjectURL(url);
+                        }
+                      } catch (err) {
+                        // Optionally handle error
+                      }
                     }}
                     style={{
                       background: '#23272F',
