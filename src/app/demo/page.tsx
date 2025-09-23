@@ -189,6 +189,7 @@ export default function DemoPage() {
         position: 'relative',
         fontFamily: 'Aventa, sans-serif',
       }}
+      className="demo-page"
     >
       {/* Top-right controls container */}
       <div
@@ -203,6 +204,7 @@ export default function DemoPage() {
           gap: '24px',
           width: 'auto',
         }}
+        className="top-controls"
       >
         {/* Credit usage display */}
         <div style={{
@@ -219,7 +221,9 @@ export default function DemoPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-        }}>
+        }}
+        className="credit-usage"
+        >
           {isUnlimitedUser
             ? 'Generations: Unlimited | Edits: Unlimited'
             : `Generations: ${imageGenerationsUsed}/${imageGenerationsLimit} | Edits: ${imageEditsUsed}/${imageEditsLimit}`}
@@ -245,11 +249,12 @@ export default function DemoPage() {
             alignItems: 'center',
             justifyContent: 'center',
           }}
+          className="my-creations-btn"
         >
           My Creations
         </a>
         {/* Account Dropdown */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="account-dropdown">
           <AccountDropdown user={dropdownUser} />
         </div>
       </div>
@@ -285,6 +290,7 @@ export default function DemoPage() {
             display: 'block',
             position: 'relative',
           }}
+          className="bg-image"
         />
         {/* Go Pro button on top right of bg1.jpeg */}
         <div
@@ -303,6 +309,7 @@ export default function DemoPage() {
             boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
             cursor: 'pointer',
           }}
+          className="go-pro-btn"
           onClick={() => { window.location.href = '/pricing'; }}
         >
           Go pro 
@@ -324,6 +331,7 @@ export default function DemoPage() {
               flexWrap: 'nowrap',
               overflowX: 'auto',
             }}
+            className="uploads-scroller"
           >
             {uploadedImages.map((img, idx) => (
               <img
@@ -353,6 +361,7 @@ export default function DemoPage() {
             transition: 'top 0.6s cubic-bezier(0.4,0,0.2,1), transform 0.6s cubic-bezier(0.4,0,0.2,1), width 0.6s cubic-bezier(0.4,0,0.2,1)',
             padding: moveBox ? '32px 32px 32px 32px' : '0',
           }}
+          className="prompt-container"
         >
           {showTitle && (
             <div style={{
@@ -368,7 +377,9 @@ export default function DemoPage() {
               letterSpacing: '1px',
               zIndex: 40,
               whiteSpace: 'nowrap',
-            }}>
+            }}
+            className="title-text"
+            >
               Ready to see what you can do?
             </div>
           )}
@@ -415,12 +426,13 @@ export default function DemoPage() {
               boxSizing: 'border-box',
               overflow: 'hidden',
             }}
+            className="toggle-container"
           >
             <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <ToggleButtons onToggle={setToggleState} />
             </div>
           </div>
-          <div style={{ position: 'absolute', right: 20, bottom: 20, display: 'flex', gap: '0.5rem', zIndex: 30 }}>
+          <div style={{ position: 'absolute', right: 20, bottom: 20, display: 'flex', gap: '0.5rem', zIndex: 30 }} className="actions-container">
             {toggleState === 'reimagine' && (
               <>
                 <input
@@ -445,6 +457,7 @@ export default function DemoPage() {
                     justifyContent: 'center',
                     cursor: 'pointer',
                   }}
+                  className="upload-btn"
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="3" y="3" width="18" height="18" rx="4" stroke="white" strokeWidth="2"/>
@@ -468,6 +481,7 @@ export default function DemoPage() {
                 justifyContent: 'center',
                 cursor: 'pointer',
               }}
+              className="send-btn"
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M4 12L20 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -494,27 +508,8 @@ export default function DemoPage() {
               flexWrap: 'nowrap',
               overflowX: 'auto',
             }}
+            className="results-scroller"
           >
-            {loading && (
-              <div style={{
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                width: '100vw',
-                height: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 9999,
-                background: 'rgba(25,26,31,0.7)',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ color: '#fff', fontSize: '2rem', fontWeight: 'bold', marginRight: '12px' }}>Generating...</span>
-                  <div style={{ width: 32, height: 32, border: '4px solid #713995', borderTop: '4px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-                  <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-                </div>
-              </div>
-            )}
             {!loading && generatedImage && (
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 {/* Download and Remove Icons */}
@@ -621,6 +616,27 @@ export default function DemoPage() {
           </div>
         )}
       </div>
+      {loading && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100000,
+          background: 'rgba(25,26,31,0.72)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', textAlign: 'center', gap: '8px' }}>
+            <span style={{ color: '#fff', fontSize: '2rem', fontWeight: 'bold' }}>Generating...</span>
+            <span style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 600, background: 'rgba(0,0,0,0.35)', padding: '8px 12px', borderRadius: '8px' }}>Please wait — do not refresh</span>
+            <div style={{ width: 36, height: 36, marginTop: 8, border: '4px solid #713995', borderTop: '4px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+          </div>
+        </div>
+      )}
       <style>{`
         .custom-input::placeholder {
           color: #b0b0b0;
@@ -659,6 +675,29 @@ export default function DemoPage() {
             padding: 0.4rem 1rem !important;
             font-size: 1rem !important;
           }
+          /* Make background image cover full viewport on mobile */
+          .demo-page .bg-image {
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: 100vw !important;
+            max-height: 100vh !important;
+            object-fit: cover !important;
+            border-radius: 0 !important;
+          }
+          /* Position Go Pro at top-right and shift top-controls below it to avoid overlap */
+          .demo-page .go-pro-btn {
+            top: 12px !important;
+            right: 12px !important;
+          }
+          .demo-page .top-controls {
+            top: 60px !important;
+            right: 12px !important;
+            gap: 8px !important;
+          }
+          .custom-input {
+            font-size: 0.95rem !important;
+            padding: 1rem 1rem !important;
+          }
           [style*='maxWidth: 80vw'] {
             max-width: 98vw !important;
             max-height: 40vh !important;
@@ -670,6 +709,17 @@ export default function DemoPage() {
             left: 50% !important;
             transform: translate(-50%, 0) !important;
             padding: 0.5rem !important;
+          }
+          /* Anchor the prompt container to the bottom inside the mobile viewport */
+          .demo-page .prompt-container {
+            position: fixed !important;
+            left: 50% !important;
+            bottom: 94px !important;
+            top: auto !important;
+            transform: translate(-50%, 0) !important;
+            width: calc(100vw - 24px) !important;
+            height: 140px !important;
+            z-index: 30 !important;
           }
           [style*='height: 200px'] {
             height: 120px !important;
@@ -719,6 +769,23 @@ export default function DemoPage() {
           [style*='height: 60px'] {
             height: 38px !important;
           }
+
+          /* Custom mobile-only overrides via class hooks */
+          .demo-page .top-controls { gap: 12px !important; }
+          .demo-page .credit-usage { padding: 0.4rem 1rem !important; font-size: 0.95rem !important; }
+          .demo-page .my-creations-btn { padding: 0.4rem 1rem !important; font-size: 1rem !important; }
+          .demo-page .go-pro-btn { padding: 0.4rem 1rem !important; font-size: 1rem !important; border-radius: 16px !important; }
+          .demo-page .prompt-container { height: 140px !important; }
+          .demo-page .toggle-container { width: 210px !important; height: 40px !important; }
+          .demo-page .toggle-container button { font-size: 0.85rem !important; }
+          .demo-page .actions-container .upload-btn, .demo-page .actions-container .send-btn { width: 38px !important; height: 38px !important; }
+          .demo-page .uploads-scroller, .demo-page .results-scroller { height: 50% !important; gap: 10px !important; }
+          .demo-page .title-text { font-size: 1.2rem !important; top: -50px !important; }
+          /* Stack top controls vertically and show credits below on mobile */
+          .demo-page .top-controls { flex-direction: column !important; align-items: flex-end !important; }
+          .demo-page .my-creations-btn { order: 1 !important; }
+          .demo-page .account-dropdown { order: 2 !important; }
+          .demo-page .credit-usage { order: 3 !important; width: auto !important; }
         }
       `}</style>
     </div>
