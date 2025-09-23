@@ -84,6 +84,8 @@ export default function DemoPage() {
   const [prompt, setPrompt] = useState("");
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+  const [sampleCount, setSampleCount] = useState<number>(1);
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
@@ -103,17 +105,18 @@ export default function DemoPage() {
     setShowTitle(false);
     setLoading(true);
     setGeneratedImage(null); // Clear previous image so loader is shown immediately
+    setGeneratedImages([]); // Clear previous images
     try {
       if (toggleState === 'generate' && prompt.trim()) {
         const res = await fetch('/api/generate-image', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt, sampleCount: 1, aspectRatio: '1:1' }),
+          body: JSON.stringify({ prompt, sampleCount, aspectRatio: '1:1' }),
         });
         const data = await res.json();
         if (res.ok && data.images && data.images.length > 0) {
-          const url = data.images[0].r2?.publicUrl || data.images[0].url;
-          setGeneratedImage(url);
+          const urls = data.images.map((img: any) => img.r2?.publicUrl || img.url).filter(Boolean);
+          setGeneratedImages(urls);
           // Only decrease credits on successful response
           consumeImageGeneration();
         }
@@ -135,6 +138,7 @@ export default function DemoPage() {
         if (res.ok && (data.image || (data.result && data.result.sample))) {
           const url = data.image || (data.result && data.result.sample);
           setGeneratedImage(url);
+          setGeneratedImages([]);
           // Only decrease credits on successful response
           consumeImageEdit();
         }
@@ -155,10 +159,10 @@ export default function DemoPage() {
 
   // Ensure input box stays below when any image (generated or edited) is shown
   useEffect(() => {
-    if (generatedImage) {
+    if (generatedImage || generatedImages.length > 0) {
       setMoveBox(true);
     }
-  }, [generatedImage]);
+  }, [generatedImage, generatedImages]);
 
   // Map Firebase user to expected props
   const dropdownUser = user
@@ -433,6 +437,27 @@ export default function DemoPage() {
             </div>
           </div>
           <div style={{ position: 'absolute', right: 20, bottom: 20, display: 'flex', gap: '0.5rem', zIndex: 30 }} className="actions-container">
+            {toggleState === 'generate' && (
+              <select
+                value={sampleCount}
+                onChange={(e) => setSampleCount(Number(e.target.value))}
+                style={{
+                  backgroundColor: '#23272F',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '0.4rem 0.6rem',
+                  height: '48px',
+                  minWidth: '64px',
+                  cursor: 'pointer',
+                }}
+                className="sample-count"
+              >
+                {[1,2,3,4].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            )}
             {toggleState === 'reimagine' && (
               <>
                 <input
@@ -491,7 +516,7 @@ export default function DemoPage() {
           </div>
         </div>
         {/* Show generated image if available, else show uploaded images */}
-        {(generatedImage || uploadedImages.length > 0) && (
+        {(generatedImages.length > 0 || generatedImage || uploadedImages.length > 0) && (
           <div
             style={{
               position: 'absolute',
@@ -510,6 +535,89 @@ export default function DemoPage() {
             }}
             className="results-scroller"
           >
+            {!loading && generatedImages.length > 0 && generatedImages.map((url, idx) => (
+              <div key={idx} style={{ position: 'relative', display: 'inline-block' }}>
+                <div style={{ position: 'absolute', top: 12, right: 12, display: 'flex', gap: '12px', zIndex: 100 }}>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        if (url.startsWith('data:')) {
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.download = 'golocologo.png';
+                          link.rel = 'noopener';
+                          link.target = '_self';
+                          document.body.appendChild(link);
+                          link.click();
+                          document.body.removeChild(link);
+                          return;
+                        }
+                        const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
+                        const response = await fetch(proxyUrl, { cache: 'no-store' });
+                        const blob = await response.blob();
+                        const objUrl = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = objUrl;
+                        link.download = 'image.png';
+                        link.rel = 'noopener';
+                        link.target = '_self';
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(objUrl);
+                      } catch {}
+                    }}
+                    style={{
+                      background: '#23272F',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0 0l-4-4m4 4l4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><rect x="4" y="17" width="16" height="4" rx="2" stroke="#fff" strokeWidth="2"/></svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGeneratedImages((prev) => prev.filter((_, i) => i !== idx));
+                      if (generatedImages.length - 1 === 0) {
+                        setMoveBox(false);
+                      }
+                    }}
+                    style={{
+                      background: '#F53057',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '40px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M6 18L18 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                </div>
+                <img
+                  src={url}
+                  alt={`Generated ${idx + 1}`}
+                  style={{
+                    borderRadius: '10px',
+                    maxWidth: '300px',
+                    maxHeight: '100%',
+                    boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
+                    objectFit: 'cover',
+                  }}
+                />
+              </div>
+            ))}
             {!loading && generatedImage && (
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 {/* Download and Remove Icons */}
@@ -531,8 +639,9 @@ export default function DemoPage() {
                           link.click();
                           document.body.removeChild(link);
                         } else {
-                          // Remote URL: fetch as blob
-                          const response = await fetch(generatedImage);
+                          // Remote URL: fetch via proxy as blob
+                          const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(generatedImage)}`;
+                          const response = await fetch(proxyUrl, { cache: 'no-store' });
                           const blob = await response.blob();
                           const url = URL.createObjectURL(blob);
                           const link = document.createElement('a');
@@ -779,6 +888,7 @@ export default function DemoPage() {
           .demo-page .toggle-container { width: 210px !important; height: 40px !important; }
           .demo-page .toggle-container button { font-size: 0.85rem !important; }
           .demo-page .actions-container .upload-btn, .demo-page .actions-container .send-btn { width: 38px !important; height: 38px !important; }
+          .demo-page .sample-count { height: 38px !important; min-width: 56px !important; font-size: 0.95rem !important; }
           .demo-page .uploads-scroller, .demo-page .results-scroller { height: 50% !important; gap: 10px !important; }
           .demo-page .title-text { font-size: 1.2rem !important; top: -50px !important; }
           /* Stack top controls vertically and show credits below on mobile */

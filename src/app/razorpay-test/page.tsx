@@ -69,7 +69,7 @@ export default function RazorpayTest() {
         currency: 'INR',
         name: 'GoLoco',
         description: `${plan.name} Plan - TEST`,
-        image: '/logo.png',
+        image: '/golocologo.png',
         handler: function(response: any) {
           addLog(`✅ Payment successful with ID: ${response.razorpay_payment_id}`);
           alert(`Test successful! Payment ID: ${response.razorpay_payment_id}`);

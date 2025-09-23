@@ -11,7 +11,6 @@ import AuthModal from "../components/AuthModal";
 import UserDropdown from "../components/UserDropdown";
 import RazorpayHandler from "../components/RazorpayHandler";
 import { useTheme, ThemeProvider } from "@/context/ThemeContext";
-import ThemeToggle from "@/components/ThemeToggle";
 
 type GeneratedImage = { url: string; prompt?: string };
 
@@ -195,7 +194,7 @@ function LandingPageContent() {
   } = useCredits();
 
   // Theme state
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode } = useTheme();
 
   // Auth modal state
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -544,12 +543,10 @@ function LandingPageContent() {
               <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
             ) : user ? (
               <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 relative z-[999999]">
-                <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
                 <UserDropdown />
               </div>
             ) : (
               <>
-                <ThemeToggle isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
                 <button
                   className="px-2 py-1 sm:px-3 sm:py-1.5 md:px-6 md:py-2 rounded-lg bg-[#FF5E32] text-white font-semibold hover:shadow-lg hover:shadow-[#1A018D]/25 transition-all duration-300 text-xs sm:text-sm md:text-base whitespace-nowrap"
                   onClick={() => setShowAuthModal(true)}
@@ -1334,7 +1331,7 @@ function LandingPageContent() {
                 </div>
               </div>
               <h3 className="text-xl md:text-2xl font-bold text-[#0171B9] mb-4">
-                Edit Like It’s Magic
+                Edit Like It&apos;s Magic
               </h3>
               <p
                 className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
@@ -1572,7 +1569,7 @@ function LandingPageContent() {
                 }`}
               >
                 Moodboards, shared galleries, teamwork — creativity works better
-                when it’s social.
+                when it&apos;s social.
               </p>
             </div>
           </div>
@@ -1758,7 +1755,7 @@ function LandingPageContent() {
                 <h3 className="text-xl font-bold text-[#0171B9] mb-2">Free</h3>
                 <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹0</div>
                 <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>7 creditsⓘ free</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>7 credits free</span></div>
                   <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">💳</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>No credit card required</span></div>
                   <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins and APIs</span></div>
                   <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process up to 7 hifi assets</span></div>
@@ -1793,9 +1790,9 @@ function LandingPageContent() {
                 <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹1,600</div>
                 <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? "text-white opacity-60" : "text-[#1E1E1E] opacity-60"}`}>/month</div>
                 <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>20,000 creditsⓘ / month</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>20,000 credits / month</span></div>
                   <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process up to 25 hifiⓘ or 100 lofiⓘ assets</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process up to 25 hifi or 100 lofi assets</span></div>
                   <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🔋</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Top-up credits as you go</span></div>
                   <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🚀</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Perfect for early / start-up teams</span></div>
                 </div>
@@ -1813,9 +1810,9 @@ function LandingPageContent() {
                 <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹6,700</div>
                 <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? "text-white opacity-60" : "text-[#1E1E1E] opacity-60"}`}>/month</div>
                 <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>100,000 creditsⓘ / month</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>100,000 credits / month</span></div>
                   <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process up to 125 hifiⓘ or 500 lofiⓘ assets</span></div>
+                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process up to 125 hifi or 500 lofi assets</span></div>
                   <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🛠️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Build Your Own (Localization) Model</span></div>
                   <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🧑‍💻</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated technical support</span></div>
                   <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🔋</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Top-up credits as you go</span></div>
@@ -1833,9 +1830,9 @@ function LandingPageContent() {
                 <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹25,000</div>
                 <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? "text-white opacity-60" : "text-[#1E1E1E] opacity-60"}`}>/month</div>
                 <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>500,000 creditsⓘ per month</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>500,000 credits per month</span></div>
                   <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process upto 500 hifiⓘ or 2K lofiⓘ assets</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process upto 500 hifi or 2K lofi assets</span></div>
                   <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🛠️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Build Your Own (Localization) Model</span></div>
                   <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">⚡</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Priority technical support</span></div>
                   <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🎯</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated onboarding</span></div>
@@ -1858,9 +1855,9 @@ function LandingPageContent() {
                 <h3 className="text-xl font-bold text-gray-600 mb-2">Enterprise</h3>
                 <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>Talk to us</div>
                 <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Unlimited creditsⓘ per month</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Unlimited credits per month</span></div>
                   <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process unlimited hifiⓘ / lofiⓘ assets</span></div>
+                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process unlimited hifi or lofi assets</span></div>
                   <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🛠️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Build Your Own (Localization) Model</span></div>
                   <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🎯</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated priority onboarding</span></div>
                   <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🧑‍💻</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated 24x7 technical support</span></div>
@@ -1932,23 +1929,21 @@ function LandingPageContent() {
                     }`}
                   >
                     <div className="text-lg font-bold text-[#0171B9]">
-                      Pro Plan
+                      Plus Plan
                     </div>
                     <div
                       className={`text-2xl font-bold transition-colors duration-300 ${
                         isDarkMode ? "text-white" : "text-[#1E1E1E]"
                       }`}
                     >
-                      ₹2,200
+                      ₹6,700
                     </div>
                     <div
                       className={`text-sm transition-colors duration-300 ${
-                        isDarkMode
-                          ? "text-white opacity-70"
-                          : "text-[#1E1E1E] opacity-70"
+                        isDarkMode ? "text-white opacity-70" : "text-[#1E1E1E] opacity-70"
                       }`}
                     >
-                      600 credits • Unlimited generations & edits
+                      100,000 credits • Unlimited generations & edits
                     </div>
                   </div>
                 </div>

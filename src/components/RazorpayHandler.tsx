@@ -82,7 +82,7 @@ const RazorpayHandler = ({
       currency: 'INR',
       name: 'GoLoco',
       description: `${plan.name} Plan`,
-      image: '/logo.png', // Your logo URL
+      image: '/golocologo.png', // Your logo URL
       
       // Order ID is not required for test payments
       // order_id: "order_DBJOWzybf0sJbb", // Generate this server-side for production

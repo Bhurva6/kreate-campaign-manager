@@ -67,7 +67,7 @@ export default function GraphicsPage() {
     { url: "/bright-cereal.png", prompt: "Colorful product showcase design" },
     { url: "/image.png", prompt: "Architectural visualization and design" },
     { url: "/images.jpeg", prompt: "Creative marketing visuals" },
-    { url: "/logo.png", prompt: "Professional brand logo design" },
+    { url: "/golocologo.png", prompt: "Professional brand logo design" },
     { url: "/unnamed.png", prompt: "Minimalist graphic design concept" },
   ]);
 

@@ -64,61 +64,98 @@ export default function BillingPage() {
   // Define the pricing plans for the billing page
   const billingPlans: Plan[] = [
     {
-      id: 'starter',
-      name: 'Starter',
-      price: 49,
-      imageGenerations: 10,
-      imageEdits: 10,
-      description: "Quick start",
+      id: 'free',
+      name: 'Free',
+      price: 0,
+      imageGenerations: 0,
+      imageEdits: 0,
+      description: "Try it out",
       features: [
-        '10 image generations',
-        'Basic tools',
-        'Download & share'
+        '7 credits free',
+        'No credit card required',
+        'Access to plugins and APIs',
+        'Process up to 7 hifi assets'
+      ]
+    },
+    {
+      id: 'payg',
+      name: 'Pay-As-You-Go',
+      price: 0,
+      imageGenerations: 0,
+      imageEdits: 0,
+      description: "Top-up as needed",
+      features: [
+        'No monthly charges',
+        'Top-up credits as you go',
+        'Access to plugins, APIs, and Dashboard',
+        'Build Your Own (Localization) Model',
+        'Great for variable needs'
       ]
     },
     {
       id: 'basic',
       name: 'Basic',
-      price: 700,
-      imageGenerations: 140,
-      imageEdits: 140,
-      description: "Get started",
+      price: 1600,
+      imageGenerations: 20000,
+      imageEdits: 20000,
+      description: "Perfect for starters",
       features: [
-        '140 image generations',
-        'Basic editing tools',
-        'HD quality',
-        'Download & share'
+        '20,000 credits / month',
+        'Access to plugins, APIs, and Dashboard',
+        'Process up to 25 hifi or 100 lofi assets',
+        'Top-up credits as you go',
+        'Great for early/start-up teams'
       ]
     },
     {
-      id: 'pro',
-      name: 'Pro',
-      price: 2200,
-      imageGenerations: 600,
-      imageEdits: 600,
-      description: "For creators",
+      id: 'plus',
+      name: 'Plus',
+      price: 6700,
+      imageGenerations: 100000,
+      imageEdits: 100000,
+      description: "Most popular",
       features: [
-        '600 image generations',
-        'Priority processing',
-        'Advanced editing tools',
-        '4K quality',
-        'AI style transfer'
+        '100,000 credits / month',
+        'Access to plugins, APIs, and Dashboard',
+        'Process up to 125 hifi or 500 lofi assets',
+        'Build Your Own (Localization) Model',
+        'Dedicated technical support',
+        'Top-up credits as you go',
+        'Ideal for mid-tier marketing and creative teams'
       ]
     },
     {
-      id: 'max',
-      name: 'Max',
-      price: 6000,
-      imageGenerations: 1000,
-      imageEdits: 1000,
-      description: "Power user",
+      id: 'premium',
+      name: 'Premium',
+      price: 25000,
+      imageGenerations: 500000,
+      imageEdits: 500000,
+      description: "For scale-ups",
       features: [
-        '1000 image generations',
-        'Fastest processing',
-        'All editing tools',
-        '8K quality',
-        'Batch processing',
-        'API access'
+        '500,000 credits per month',
+        'Access to plugins, APIs, and Dashboard',
+        'Process up to 500 hifi or 2K lofi assets',
+        'Build Your Own (Localization) Model',
+        'Priority technical support',
+        'Dedicated onboarding',
+        'Top-up credits as you go'
+      ]
+    },
+    {
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: 0,
+      imageGenerations: Number.MAX_SAFE_INTEGER,
+      imageEdits: Number.MAX_SAFE_INTEGER,
+      description: "Talk to us",
+      features: [
+        'Unlimited credits per month',
+        'Access to plugins, APIs, and Dashboard',
+        'Process unlimited hifi or lofi assets',
+        'Build Your Own (Localization) Model',
+        'Dedicated priority onboarding',
+        'Dedicated 24x7 technical support',
+        'TMS and DAM integrations'
       ]
     },
   ];
@@ -150,15 +187,15 @@ export default function BillingPage() {
         {
           id: 'txn_123456',
           date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          planName: 'Pro Plan',
-          amount: 2200,
+          planName: 'Plus Plan',
+          amount: 6700,
           status: 'completed'
         },
         {
           id: 'txn_123455',
           date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
           planName: 'Basic Plan',
-          amount: 700,
+          amount: 1600,
           status: 'completed'
         }
       ];

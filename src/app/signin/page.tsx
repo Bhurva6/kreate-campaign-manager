@@ -54,7 +54,7 @@ export default function SignInPage() {
       {/* Header */}
       <div className="flex flex-row justify-between items-center w-full p-6">
         <Link href="/">
-          <Image src="/logo.png" alt="Juicebox Logo" width={48} height={48} className="cursor-pointer" />
+          <Image src="/golocologo.png" alt="Juicebox Logo" width={48} height={48} className="cursor-pointer" />
         </Link>
         <Link href="/signup">
           <button className="px-6 py-2 rounded-lg bg-lime-400 text-black font-semibold hover:bg-lime-300 transition">
