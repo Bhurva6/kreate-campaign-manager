@@ -1,24 +1,20 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import ClientWrapper from "../components/ClientWrapper";
-
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-ibm-plex-mono",
-  subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700"],
-});
 
 export const metadata: Metadata = {
   title: "GoLoco",
   description: "One Image. Endless Worlds. Remix reality at lightning speed.",
   manifest: "/manifest.json",
-  themeColor: "#000000",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "GoLoco",
   },
+};
+
+export const viewport = {
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
@@ -40,7 +36,7 @@ export default function RootLayout({
         <link rel="icon" type="image/png" sizes="16x16" href="/goloco.png" />
       </head>
       <body
-        className={`${ibmPlexMono.variable} antialiased font-mono`}
+        className="antialiased font-mono"
         suppressHydrationWarning={true}
       >
         <ClientWrapper>

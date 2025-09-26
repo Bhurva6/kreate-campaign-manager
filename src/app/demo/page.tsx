@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useCreditManagement } from '@/hooks/useCreditManagement';
 
 function ToggleButtons({ onToggle }: { onToggle?: (value: string) => void }) {
-  const [selected, setSelected] = useState('generate');
+  const [selected, setSelected] = useState('reimagine');
   React.useEffect(() => {
     if (onToggle) onToggle(selected);
   }, [selected, onToggle]);
@@ -75,7 +75,7 @@ function ToggleButtons({ onToggle }: { onToggle?: (value: string) => void }) {
 export default function DemoPage() {
   const { user } = useAuth(); // Get the signed-in user
   const { imageGenerationsUsed, imageGenerationsLimit, imageEditsUsed, imageEditsLimit, isUnlimitedUser, consumeImageGeneration, consumeImageEdit } = useCreditManagement();
-  const [toggleState, setToggleState] = useState('generate');
+  const [toggleState, setToggleState] = useState('reimagine');
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [moveBox, setMoveBox] = useState(false);
   const [imgBottom, setImgBottom] = useState<number | null>(null);
@@ -889,7 +889,7 @@ export default function DemoPage() {
           .demo-page .toggle-container button { font-size: 0.85rem !important; }
           .demo-page .actions-container .upload-btn, .demo-page .actions-container .send-btn { width: 38px !important; height: 38px !important; }
           .demo-page .sample-count { height: 38px !important; min-width: 56px !important; font-size: 0.95rem !important; }
-          .demo-page .uploads-scroller, .demo-page .results-scroller { height: 50% !important; gap: 10px !important; }
+          .demo-page .uploads-scroller, .demo-page .results-scroller { height: 50% !important; gap: 10px !important; z-index: 99999 !important; }
           .demo-page .title-text { font-size: 1.2rem !important; top: -50px !important; }
           /* Stack top controls vertically and show credits below on mobile */
           .demo-page .top-controls { flex-direction: column !important; align-items: flex-end !important; }

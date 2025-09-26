@@ -177,4 +177,4 @@ async function processAndUploadImages(data: any, prompt: string, userId?: string
     console.log(`Returning ${images.length} fallback images (R2 upload failed)`);
     return NextResponse.json({ images, success: false, error: "R2 upload failed" });
   }
-} 
+}
