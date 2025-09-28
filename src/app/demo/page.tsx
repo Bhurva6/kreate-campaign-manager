@@ -86,6 +86,9 @@ export default function DemoPage() {
   const [loading, setLoading] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [sampleCount, setSampleCount] = useState<number>(1);
+  const [showCanvas, setShowCanvas] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
@@ -182,6 +185,36 @@ export default function DemoPage() {
     }
   }, [imageGenerationsUsed, imageGenerationsLimit, imageEditsUsed, imageEditsLimit, isUnlimitedUser]);
 
+  useEffect(() => {
+    if (showCanvas && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Fill white background
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Draw grid lines
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+        const gridSize = 40;
+        for (let x = gridSize; x < canvas.width; x += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, canvas.height);
+          ctx.stroke();
+        }
+        for (let y = gridSize; y < canvas.height; y += gridSize) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(canvas.width, y);
+          ctx.stroke();
+        }
+      }
+    }
+  }, [showCanvas]);
+
   return (
     <div
       style={{
@@ -195,6 +228,88 @@ export default function DemoPage() {
       }}
       className="demo-page"
     >
+      {/* Canvas overlay and tool panel when Go Pro is clicked */}
+      {showCanvas && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 10001,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'auto',
+          }}
+        >
+          {/* Tool Panel */}
+          <div
+            style={{
+              position: 'relative',
+              height: '600px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              background: '#23272F',
+              borderRadius: '24px 0 0 24px',
+              boxShadow: '0 2px 16px rgba(0,0,0,0.10)',
+              padding: '24px 8px',
+              marginRight: '0px',
+              width: '72px',
+              gap: '18px',
+            }}
+          >
+            {/* Example tool icons/buttons */}
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} title="Select">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="4" y="4" width="16" height="16" stroke="#fff" strokeWidth="2"/></svg>
+            </button>
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} title="Brush">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M4 20c0-2 2-4 4-4s4 2 4 4" stroke="#fff" strokeWidth="2"/><path d="M16 4l4 4-8 8-4-4 8-8z" stroke="#fff" strokeWidth="2"/></svg>
+            </button>
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} title="Eraser">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><rect x="3" y="17" width="18" height="4" rx="2" stroke="#fff" strokeWidth="2"/><path d="M7 17L17 7" stroke="#fff" strokeWidth="2"/></svg>
+            </button>
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} title="Text">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M12 6v12" stroke="#fff" strokeWidth="2"/></svg>
+            </button>
+            <button style={{ background: 'none', border: 'none', cursor: 'pointer' }} title="Shapes">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="8" r="4" stroke="#fff" strokeWidth="2"/><rect x="12" y="12" width="8" height="8" stroke="#fff" strokeWidth="2"/></svg>
+            </button>
+          </div>
+          {/* Canvas */}
+          <div
+            style={{
+              background: 'rgba(0,0,0,0.10)',
+              borderRadius: '0 32px 32px 0',
+              padding: '32px',
+              boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '600px',
+            }}
+          >
+            <canvas
+              ref={canvasRef}
+              width={600}
+              height={600}
+              style={{
+                background: '#fff',
+                borderRadius: '24px',
+                boxShadow: '0 2px 16px rgba(0,0,0,0.10)',
+                display: 'block',
+                maxWidth: '90vw',
+                maxHeight: '90vw',
+                width: '600px',
+                height: '600px',
+              }}
+            />
+          </div>
+        </div>
+      )}
       {/* Top-right controls container */}
       <div
         style={{
@@ -314,7 +429,7 @@ export default function DemoPage() {
             cursor: 'pointer',
           }}
           className="go-pro-btn"
-          onClick={() => { window.location.href = '/pricing'; }}
+          onClick={() => { setShowCanvas(true); }}
         >
           Go pro 
         </div>
@@ -367,7 +482,8 @@ export default function DemoPage() {
           }}
           className="prompt-container"
         >
-          {showTitle && (
+          {/* Hide title when canvas/tool panel is visible */}
+          {!showCanvas && showTitle && (
             <div style={{
               position: 'absolute',
               top: '-128px',
