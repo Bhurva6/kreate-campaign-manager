@@ -5,10 +5,12 @@ import { useCampaignStore } from '../../../store/campaignStore';
 import { useEffect, useState } from 'react';
 
 export default function ResultsPage() {
-  const { description, imageKeys, campaignId, clearCampaignData } = useCampaignStore();
+  const { description, imageKeys, campaignId, errors, captions, clearCampaignData } = useCampaignStore();
   const [isLoading, setIsLoading] = useState(true);
   const [localDescription, setLocalDescription] = useState('');
   const [localImages, setLocalImages] = useState<string[]>([]);
+  const [localErrors, setLocalErrors] = useState<string[]>([]);
+  const [localCaptions, setLocalCaptions] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -30,11 +32,13 @@ export default function ResultsPage() {
         }
       }
       setLocalDescription(description);
+      setLocalErrors(errors);
+      setLocalCaptions(captions);
       setIsLoading(false);
     };
 
     fetchImages();
-  }, [description, imageKeys, campaignId]);
+  }, [description, imageKeys, campaignId, errors, captions]);
 
   // Clear data when component unmounts or on page leave
   useEffect(() => {
@@ -70,7 +74,7 @@ export default function ResultsPage() {
 
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-6 text-center">Campaign Results</h1>
-        {(!localDescription && localImages.length === 0) ? (
+        {(!localDescription && localImages.length === 0 && localErrors.length === 0) ? (
           <div className="text-center">
             <p className="text-lg text-gray-600">No campaign data found. Please create a new campaign.</p>
             <Link href="/campaign">
@@ -87,6 +91,19 @@ export default function ResultsPage() {
                 <p className="text-gray-700">{localDescription}</p>
               </div>
             )}
+            {localErrors.length > 0 && (
+              <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <h2 className="text-xl font-semibold mb-2 text-red-800">Generation Issues</h2>
+                <p className="text-red-700 mb-2">
+                  {localErrors.length} image{localErrors.length > 1 ? 's' : ''} couldn&apos;t be generated:
+                </p>
+                <ul className="list-disc list-inside text-red-700 space-y-1">
+                  {localErrors.map((error, i) => (
+                    <li key={i}>{error}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {localImages.length > 0 && (
               <div>
                 <h2 className="text-2xl font-semibold mb-4">Generated Images</h2>
@@ -95,7 +112,10 @@ export default function ResultsPage() {
                     <div key={i} className="bg-white rounded-lg shadow-lg overflow-hidden">
                       <img src={img} alt={`Generated Post ${i + 1}`} className="w-full h-auto" />
                       <div className="p-4">
-                        <p className="text-sm text-gray-600">Post {i + 1}</p>
+                        <p className="text-sm text-gray-600 mb-2">Post {i + 1}</p>
+                        {localCaptions[i] && (
+                          <p className="text-sm text-gray-800 italic">&ldquo;{localCaptions[i]}&rdquo;</p>
+                        )}
                       </div>
                     </div>
                   ))}

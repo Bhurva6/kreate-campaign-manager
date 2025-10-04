@@ -4,7 +4,9 @@ interface CampaignStore {
   description: string;
   imageKeys: string[];
   campaignId: string;
-  setCampaignData: (description: string, imageKeys: string[], campaignId: string) => void;
+  errors: string[];
+  captions: string[];
+  setCampaignData: (description: string, imageKeys: string[], campaignId: string, errors?: string[], captions?: string[]) => void;
   clearCampaignData: () => void;
 }
 
@@ -12,6 +14,8 @@ export const useCampaignStore = create<CampaignStore>((set) => ({
   description: '',
   imageKeys: [],
   campaignId: '',
-  setCampaignData: (description, imageKeys, campaignId) => set({ description, imageKeys, campaignId }),
-  clearCampaignData: () => set({ description: '', imageKeys: [], campaignId: '' }),
+  errors: [],
+  captions: [],
+  setCampaignData: (description, imageKeys, campaignId, errors = [], captions = []) => set({ description, imageKeys, campaignId, errors, captions }),
+  clearCampaignData: () => set({ description: '', imageKeys: [], campaignId: '', errors: [], captions: [] }),
 }));

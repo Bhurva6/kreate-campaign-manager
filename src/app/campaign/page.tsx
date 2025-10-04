@@ -14,17 +14,23 @@ export default function CampaignPage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const setCampaignData = useCampaignStore(state => state.setCampaignData);
   const [companyName, setCompanyName] = useState('');
+  const [additionalInfo, setAdditionalInfo] = useState('');
+  const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const [showIndustry, setShowIndustry] = useState(false);
   const [selectedIndustry, setSelectedIndustry] = useState('');
   const [showCampaignType, setShowCampaignType] = useState(false);
   const [selectedCampaignType, setSelectedCampaignType] = useState('');
   const [showDemographic, setShowDemographic] = useState(false);
   const [selectedDemographic, setSelectedDemographic] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('');
   const [showAge, setShowAge] = useState(false);
+  const [showCountry, setShowCountry] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
   const [selectedAges, setSelectedAges] = useState<string[]>([]);
   const [showSocialMedia, setShowSocialMedia] = useState(false);
   const [selectedSocialMedia, setSelectedSocialMedia] = useState('');
   const [numPosts, setNumPosts] = useState(1);
+  const [wantCaption, setWantCaption] = useState('');
   const [loading, setLoading] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [campaignDescription, setCampaignDescription] = useState('');
@@ -76,6 +82,28 @@ export default function CampaignPage() {
     'Low Income'
   ];
 
+  const countries = [
+    'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 'Argentina', 'Armenia', 'Australia', 'Austria',
+    'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan',
+    'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cabo Verde', 'Cambodia',
+    'Cameroon', 'Canada', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica',
+    'Croatia', 'Cuba', 'Cyprus', 'Czech Republic', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Ecuador', 'Egypt',
+    'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Fiji', 'Finland', 'France', 'Gabon',
+    'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana', 'Haiti',
+    'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy', 'Jamaica', 'Japan',
+    'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati', 'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia',
+    'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg', 'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta',
+    'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco',
+    'Mozambique', 'Myanmar', 'Namibia', 'Nauru', 'Nepal', 'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea',
+    'North Macedonia', 'Norway', 'Oman', 'Pakistan', 'Palau', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland',
+    'Portugal', 'Qatar', 'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines',
+    'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore',
+    'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Korea', 'South Sudan', 'Spain', 'Sri Lanka',
+    'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria', 'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo',
+    'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates',
+    'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
+  ];
+
   const ageGroups = [
     '18-24',
     '25-34',
@@ -117,7 +145,7 @@ export default function CampaignPage() {
 
       {/* Company Name Input */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 pt-20">
-        {!showIndustry ? (
+        {!showAdditionalInfo ? (
           <>
             <h2 className="text-2xl font-bold mb-4 text-center">Enter Company Name</h2>
             <input
@@ -128,11 +156,39 @@ export default function CampaignPage() {
               className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
             />
             <button
-              onClick={() => setShowIndustry(true)}
+              onClick={() => setShowAdditionalInfo(true)}
               className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               Next
             </button>
+          </>
+        ) : !showIndustry ? (
+          <>
+            <h2 className="text-2xl font-bold mb-4 text-center">Additional Information (Optional)</h2>
+            <textarea
+              value={additionalInfo}
+              onChange={(e) => setAdditionalInfo(e.target.value)}
+              placeholder="Enter any relevant links, websites, or additional context about your company (e.g., website URL, social media handles, brand guidelines, etc.)"
+              rows={4}
+              className="w-full max-w-md px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 resize-none"
+            />
+            <div className="flex space-x-4">
+              <button
+                onClick={() => {
+                  setShowAdditionalInfo(false);
+                  setAdditionalInfo('');
+                }}
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => setShowIndustry(true)}
+                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Next
+              </button>
+            </div>
           </>
         ) : !showCampaignType ? (
           <div className="w-full max-w-md flex flex-col items-center">
@@ -154,6 +210,7 @@ export default function CampaignPage() {
                 onClick={() => {
                   setShowIndustry(false);
                   setSelectedIndustry('');
+                  setShowAdditionalInfo(true);
                 }}
                 className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
@@ -205,12 +262,12 @@ export default function CampaignPage() {
           </div>
         ) : !showSocialMedia ? (
           <div className="w-full max-w-2xl flex flex-col items-center">
-            <h2 className="text-2xl font-bold mb-4 text-center">Select Demographics and Age Groups</h2>
-            <div className="flex space-x-4 w-full">
+            <h2 className="text-2xl font-bold mb-4 text-center">Select Demographics, Age Groups, and Country</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
               <select
                 value={selectedDemographic}
                 onChange={(e) => setSelectedDemographic(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Demographic</option>
                 {demographics.map((demo) => (
@@ -219,12 +276,12 @@ export default function CampaignPage() {
                   </option>
                 ))}
               </select>
-              <div className="flex-1 relative">
+              <div className="relative">
                 <button
                   onClick={() => setShowAge(!showAge)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-left"
                 >
-                  Select Age Groups ({selectedAges.length} selected)
+                  Age Groups ({selectedAges.length} selected)
                 </button>
                 {showAge && (
                   <div className="absolute top-full mt-1 w-full bg-gray-800 text-white border border-gray-600 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
@@ -248,14 +305,54 @@ export default function CampaignPage() {
                   </div>
                 )}
               </div>
+              <div className="relative">
+                <button
+                  onClick={() => setShowCountry(!showCountry)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-left"
+                >
+                  {selectedCountry || 'Select Country'}
+                </button>
+                {showCountry && (
+                  <div className="absolute top-full mt-1 w-full bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                    <input
+                      type="text"
+                      placeholder="Search countries..."
+                      value={countrySearch}
+                      onChange={(e) => setCountrySearch(e.target.value)}
+                      className="w-full px-3 py-2 border-b border-gray-600 bg-gray-800 text-white placeholder-gray-400 focus:outline-none"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <div className="max-h-40 overflow-y-auto">
+                      {countries
+                        .filter(country => country.toLowerCase().includes(countrySearch.toLowerCase()))
+                        .map((country) => (
+                          <button
+                            key={country}
+                            onClick={() => {
+                              setSelectedCountry(country);
+                              setShowCountry(false);
+                              setCountrySearch('');
+                            }}
+                            className="w-full text-left px-4 py-2 text-white hover:bg-gray-700 focus:outline-none"
+                          >
+                            {country}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex space-x-4 mt-54">
               <button
                 onClick={() => {
                   setShowDemographic(false);
                   setShowAge(false);
+                  setShowCountry(false);
                   setSelectedDemographic('');
                   setSelectedAges([]);
+                  setSelectedCountry('');
+                  setCountrySearch('');
                 }}
                 className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
@@ -271,12 +368,12 @@ export default function CampaignPage() {
           </div>
         ) : (
           <div className="w-full max-w-2xl flex flex-col items-center">
-            <h2 className="text-2xl font-bold mb-4 text-center">Select Social Media Type and Number of Posts</h2>
-            <div className="flex space-x-4 w-full">
+            <h2 className="text-2xl font-bold mb-4 text-center">Select Social Media Type, Number of Posts, and Caption</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
               <select
                 value={selectedSocialMedia}
                 onChange={(e) => setSelectedSocialMedia(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select Social Media Type</option>
                 {socialMediaOptions.map((option) => (
@@ -292,8 +389,17 @@ export default function CampaignPage() {
                 value={numPosts}
                 onChange={(e) => setNumPosts(Number(e.target.value))}
                 placeholder="Number of posts"
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              <select
+                value={wantCaption}
+                onChange={(e) => setWantCaption(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Do you want captions?</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
             </div>
             <div className="flex space-x-4 mt-12">
               <button
@@ -301,6 +407,7 @@ export default function CampaignPage() {
                   setShowSocialMedia(false);
                   setSelectedSocialMedia('');
                   setNumPosts(1);
+                  setWantCaption('');
                 }}
                 className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
@@ -310,16 +417,19 @@ export default function CampaignPage() {
                 onClick={async () => {
                   setLoading(true);
                   const campaignId = crypto.randomUUID();
-                  const prompt = `Generate a social media campaign for ${companyName} in the ${selectedIndustry} industry. Campaign type: ${selectedCampaignType}. Target audience: ${selectedDemographic} demographics, ages ${selectedAges.join(', ')}. Platform: ${selectedSocialMedia}.
+                  const prompt = `Generate a social media campaign for ${companyName} in the ${selectedIndustry} industry. Campaign type: ${selectedCampaignType}. Target audience: ${selectedDemographic} demographics, ages ${selectedAges.join(', ')}, located in ${selectedCountry}. Platform: ${selectedSocialMedia}.
+
+${additionalInfo ? `Additional information: ${additionalInfo}` : ''}
 
 Provide the response as a valid JSON object with the following structure:
 
 {
   "description": "A short campaign description in 2-3 sentences",
-  "imagePrompts": ["Detailed prompt for image 1", "Detailed prompt for image 2", ..., "Detailed prompt for image ${numPosts}"]
+  "imagePrompts": ["Detailed prompt for image 1", "Detailed prompt for image 2", ..., "Detailed prompt for image ${numPosts}"]${wantCaption === 'yes' ? `,
+  "captions": ["Engaging caption for image 1", "Engaging caption for image 2", ..., "Engaging caption for image ${numPosts}"]` : ''}
 }
 
-Ensure the JSON is valid and the imagePrompts array has exactly ${numPosts} items. Make prompts creative, brand-aligned, and varied.`;
+Ensure the JSON is valid and the imagePrompts array has exactly ${numPosts} items. Make prompts creative, brand-aligned, and varied.${wantCaption === 'yes' ? ' Also provide engaging, platform-appropriate captions for each image.' : ''}`;
 
                   try {
                     const response = await fetch('/api/perplexity', {
@@ -353,25 +463,36 @@ Ensure the JSON is valid and the imagePrompts array has exactly ${numPosts} item
                     }
                     const description = parsed.description || '';
                     const imagePrompts = parsed.imagePrompts?.slice(0, numPosts) || [];
+                    const captions = wantCaption === 'yes' ? (parsed.captions?.slice(0, numPosts) || []) : [];
 
                     // Generate images
                     const imageKeys: string[] = [];
+                    const errors: string[] = [];
                     const aspectRatio = getAspectRatio(selectedSocialMedia);
                     for (let i = 0; i < imagePrompts.length; i++) {
                       const imgPrompt = imagePrompts[i];
-                      if (!imgPrompt.trim()) continue; // Skip empty prompts
-                      const res = await fetch('/api/generate-image', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ prompt: imgPrompt, sampleCount: 1, aspectRatio, campaignId, index: i }),
-                      });
-                      const imgData = await res.json();
-                      if (res.ok && imgData.key) {
-                        imageKeys.push(imgData.key);
+                      if (!imgPrompt.trim()) {
+                        errors.push(`Image ${i + 1}: Empty prompt`);
+                        continue;
+                      }
+                      try {
+                        const res = await fetch('/api/generate-image', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ prompt: imgPrompt, sampleCount: 1, aspectRatio, campaignId, index: i }),
+                        });
+                        const imgData = await res.json();
+                        if (res.ok && imgData.key) {
+                          imageKeys.push(imgData.key);
+                        } else {
+                          errors.push(`Image ${i + 1}: ${imgData.error || 'Unknown error'}`);
+                        }
+                      } catch (error) {
+                        errors.push(`Image ${i + 1}: Network error - ${error instanceof Error ? error.message : 'Unknown error'}`);
                       }
                     }
-                    // Set data in store with campaignId and keys
-                    setCampaignData(description, imageKeys, campaignId);
+                    // Set data in store with campaignId, keys, and errors
+                    setCampaignData(description, imageKeys, campaignId, errors, captions);
                     // Navigate to results page
                     router.push('/campaign/results');
                   } catch (error) {
@@ -393,10 +514,10 @@ Ensure the JSON is valid and the imagePrompts array has exactly ${numPosts} item
       {/* Display Results */}
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+          <div className="bg-gray-800 p-8 rounded-lg shadow-lg text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-lg font-semibold">Generating your campaign...</p>
-            <p className="text-sm text-gray-600 mt-2">This may take a few moments</p>
+            <p className="text-lg font-semibold text-white">Generating your campaign...</p>
+            <p className="text-sm text-white mt-2">This may take a few moments</p>
           </div>
         </div>
       )}
