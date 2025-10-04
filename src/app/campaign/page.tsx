@@ -21,7 +21,7 @@ export default function CampaignPage() {
   const [showCampaignType, setShowCampaignType] = useState(false);
   const [selectedCampaignType, setSelectedCampaignType] = useState('');
   const [showDemographic, setShowDemographic] = useState(false);
-  const [selectedDemographic, setSelectedDemographic] = useState('');
+  const [selectedDemographic, setSelectedDemographic] = useState<string[]>([]);
   const [selectedCountry, setSelectedCountry] = useState('');
   const [showAge, setShowAge] = useState(false);
   const [showCountry, setShowCountry] = useState(false);
@@ -41,6 +41,7 @@ export default function CampaignPage() {
   const [wantLogo, setWantLogo] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPosition, setLogoPosition] = useState('');
+  const [showDemo, setShowDemo] = useState(false);
 
   const industries = [
     'Technology',
@@ -347,18 +348,35 @@ export default function CampaignPage() {
           <div className="w-full max-w-2xl flex flex-col items-center">
             <h2 className="text-2xl font-bold mb-4 text-center">Select Demographics, Age Groups, Country, Region, and State</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
-              <select
-                value={selectedDemographic}
-                onChange={(e) => setSelectedDemographic(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select Demographic</option>
-                {demographics.map((demo) => (
-                  <option key={demo} value={demo}>
-                    {demo}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <button
+                  onClick={() => setShowDemo(!showDemo)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-left"
+                >
+                  Demographics ({selectedDemographic.length} selected)
+                </button>
+                {showDemo && (
+                  <div className="absolute top-full mt-1 w-full bg-gray-800 text-white border border-gray-600 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                    {demographics.map((demo) => (
+                      <label key={demo} className="flex items-center px-4 py-2 hover:bg-gray-700 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedDemographic.includes(demo)}
+                          onChange={() => {
+                            setSelectedDemographic((prev) =>
+                              prev.includes(demo)
+                                ? prev.filter((d) => d !== demo)
+                                : [...prev, demo]
+                            );
+                          }}
+                          className="mr-2"
+                        />
+                        {demo}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="relative">
                 <button
                   onClick={() => setShowAge(!showAge)}
@@ -485,7 +503,7 @@ export default function CampaignPage() {
                   setShowDemographic(false);
                   setShowAge(false);
                   setShowCountry(false);
-                  setSelectedDemographic('');
+                  setSelectedDemographic([]);
                   setSelectedAges([]);
                   setSelectedCountry('');
                   setCountrySearch('');
@@ -493,6 +511,7 @@ export default function CampaignPage() {
                   setShowRegion(false);
                   setSelectedState('');
                   setShowState(false);
+                  setShowDemo(false);
                 }}
                 className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
@@ -605,7 +624,7 @@ export default function CampaignPage() {
                     }
                   }
                   
-                  const prompt = `Generate a social media campaign for ${companyName} in the ${selectedIndustry} industry. Campaign type: ${selectedCampaignType}. Target audience: ${selectedDemographic} demographics, ages ${selectedAges.join(', ')}, located in ${selectedCountry}${selectedRegion ? `, ${selectedRegion} region` : ''}${selectedState ? `, ${selectedState} state/province` : ''}. Platform: ${selectedSocialMedia}.
+                  const prompt = `Generate a social media campaign for ${companyName} in the ${selectedIndustry} industry. Campaign type: ${selectedCampaignType}. Target audience: ${selectedDemographic.join(', ')} demographics, ages ${selectedAges.join(', ')}, located in ${selectedCountry}${selectedRegion ? `, ${selectedRegion} region` : ''}${selectedState ? `, ${selectedState} state/province` : ''}. Platform: ${selectedSocialMedia}.
 
 ${additionalInfo ? `Additional information: ${additionalInfo}` : ''}
 
