@@ -26,6 +26,10 @@ export default function CampaignPage() {
   const [showAge, setShowAge] = useState(false);
   const [showCountry, setShowCountry] = useState(false);
   const [countrySearch, setCountrySearch] = useState('');
+  const [selectedRegion, setSelectedRegion] = useState('');
+  const [showRegion, setShowRegion] = useState(false);
+  const [selectedState, setSelectedState] = useState('');
+  const [showState, setShowState] = useState(false);
   const [selectedAges, setSelectedAges] = useState<string[]>([]);
   const [showSocialMedia, setShowSocialMedia] = useState(false);
   const [selectedSocialMedia, setSelectedSocialMedia] = useState('');
@@ -34,6 +38,9 @@ export default function CampaignPage() {
   const [loading, setLoading] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<string[]>([]);
   const [campaignDescription, setCampaignDescription] = useState('');
+  const [wantLogo, setWantLogo] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPosition, setLogoPosition] = useState('');
 
   const industries = [
     'Technology',
@@ -104,6 +111,73 @@ export default function CampaignPage() {
     'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe'
   ];
 
+  const regions = [
+    'Asia',
+    'North America',
+    'South America',
+    'Europe',
+    'Africa',
+    'Oceania',
+    'Antarctica'
+  ];
+
+  const countryStates: { [key: string]: string[] } = {
+    'United States': [
+      'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia',
+      'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland',
+      'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey',
+      'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina',
+      'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
+    ],
+    'India': [
+      'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+      'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+      'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+    ],
+    'Canada': [
+      'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick', 'Newfoundland and Labrador', 'Northwest Territories', 'Nova Scotia', 'Nunavut', 'Ontario', 'Prince Edward Island',
+      'Quebec', 'Saskatchewan', 'Yukon'
+    ],
+    'Australia': [
+      'Australian Capital Territory', 'New South Wales', 'Northern Territory', 'Queensland', 'South Australia', 'Tasmania', 'Victoria', 'Western Australia'
+    ],
+    'United Kingdom': [
+      'England', 'Scotland', 'Wales', 'Northern Ireland'
+    ],
+    'Germany': [
+      'Baden-Württemberg', 'Bavaria', 'Berlin', 'Brandenburg', 'Bremen', 'Hamburg', 'Hesse', 'Lower Saxony', 'Mecklenburg-Vorpommern', 'North Rhine-Westphalia',
+      'Rhineland-Palatinate', 'Saarland', 'Saxony', 'Saxony-Anhalt', 'Schleswig-Holstein', 'Thuringia'
+    ],
+    'France': [
+      'Auvergne-Rhône-Alpes', 'Bourgogne-Franche-Comté', 'Brittany', 'Centre-Val de Loire', 'Corsica', 'Grand Est', 'Hauts-de-France', 'Île-de-France', 'Normandy', 'Nouvelle-Aquitaine',
+      'Occitanie', 'Pays de la Loire', 'Provence-Alpes-Côte d\'Azur'
+    ],
+    'China': [
+      'Anhui', 'Beijing', 'Chongqing', 'Fujian', 'Gansu', 'Guangdong', 'Guangxi', 'Guizhou', 'Hainan', 'Hebei',
+      'Heilongjiang', 'Henan', 'Hong Kong', 'Hubei', 'Hunan', 'Inner Mongolia', 'Jiangsu', 'Jiangxi', 'Jilin', 'Liaoning',
+      'Macau', 'Ningxia', 'Qinghai', 'Shaanxi', 'Shandong', 'Shanghai', 'Shanxi', 'Sichuan', 'Tianjin', 'Tibet',
+      'Xinjiang', 'Yunnan', 'Zhejiang'
+    ],
+    'Japan': [
+      'Aichi', 'Akita', 'Aomori', 'Chiba', 'Ehime', 'Fukui', 'Fukuoka', 'Fukushima', 'Gifu', 'Gunma',
+      'Hiroshima', 'Hokkaido', 'Hyogo', 'Ibaraki', 'Ishikawa', 'Iwate', 'Kagawa', 'Kagoshima', 'Kanagawa', 'Kochi',
+      'Kumamoto', 'Kyoto', 'Mie', 'Miyagi', 'Miyazaki', 'Nagano', 'Nagasaki', 'Nara', 'Niigata', 'Oita',
+      'Okayama', 'Okinawa', 'Osaka', 'Saga', 'Saitama', 'Shiga', 'Shimane', 'Shizuoka', 'Tochigi', 'Tokushima',
+      'Tokyo', 'Tottori', 'Toyama', 'Wakayama', 'Yamagata', 'Yamaguchi', 'Yamanashi'
+    ],
+    'Brazil': [
+      'Acre', 'Alagoas', 'Amapá', 'Amazonas', 'Bahia', 'Ceará', 'Distrito Federal', 'Espírito Santo', 'Goiás', 'Maranhão',
+      'Mato Grosso', 'Mato Grosso do Sul', 'Minas Gerais', 'Pará', 'Paraíba', 'Paraná', 'Pernambuco', 'Piauí', 'Rio de Janeiro', 'Rio Grande do Norte',
+      'Rio Grande do Sul', 'Rondônia', 'Roraima', 'Santa Catarina', 'São Paulo', 'Sergipe', 'Tocantins'
+    ],
+    'Mexico': [
+      'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche', 'Chiapas', 'Chihuahua', 'Coahuila', 'Colima', 'Durango', 'Guanajuato',
+      'Guerrero', 'Hidalgo', 'Jalisco', 'Mexico City', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca', 'Puebla',
+      'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa', 'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán',
+      'Zacatecas'
+    ]
+  };
+
   const ageGroups = [
     '18-24',
     '25-34',
@@ -130,6 +204,15 @@ export default function CampaignPage() {
     if (media.includes('16:9')) return '16:9';
     if (media.includes('1.91:1')) return '16:9'; // Approximate to 16:9
     return '1:1'; // default
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   };
 
   return (
@@ -262,7 +345,7 @@ export default function CampaignPage() {
           </div>
         ) : !showSocialMedia ? (
           <div className="w-full max-w-2xl flex flex-col items-center">
-            <h2 className="text-2xl font-bold mb-4 text-center">Select Demographics, Age Groups, and Country</h2>
+            <h2 className="text-2xl font-bold mb-4 text-center">Select Demographics, Age Groups, Country, Region, and State</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
               <select
                 value={selectedDemographic}
@@ -342,6 +425,59 @@ export default function CampaignPage() {
                   </div>
                 )}
               </div>
+              <div className="relative">
+                <button
+                  onClick={() => setShowRegion(!showRegion)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-left"
+                >
+                  {selectedRegion || 'Select Region'}
+                </button>
+                {showRegion && (
+                  <div className="absolute top-full mt-1 w-full bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                    <div className="max-h-40 overflow-y-auto">
+                      {regions.map((region) => (
+                        <button
+                          key={region}
+                          onClick={() => {
+                            setSelectedRegion(region);
+                            setShowRegion(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-white hover:bg-gray-700 focus:outline-none"
+                        >
+                          {region}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                <button
+                  onClick={() => setShowState(!showState)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-left"
+                  disabled={!selectedCountry}
+                >
+                  {selectedState || 'Select State/Province'}
+                </button>
+                {showState && selectedCountry && (
+                  <div className="absolute top-full mt-1 w-full bg-gray-800 border border-gray-600 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                    <div className="max-h-40 overflow-y-auto">
+                      {countryStates[selectedCountry]?.map((state) => (
+                        <button
+                          key={state}
+                          onClick={() => {
+                            setSelectedState(state);
+                            setShowState(false);
+                          }}
+                          className="w-full text-left px-4 py-2 text-white hover:bg-gray-700 focus:outline-none"
+                        >
+                          {state}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex space-x-4 mt-54">
               <button
@@ -353,6 +489,10 @@ export default function CampaignPage() {
                   setSelectedAges([]);
                   setSelectedCountry('');
                   setCountrySearch('');
+                  setSelectedRegion('');
+                  setShowRegion(false);
+                  setSelectedState('');
+                  setShowState(false);
                 }}
                 className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
@@ -369,7 +509,7 @@ export default function CampaignPage() {
         ) : (
           <div className="w-full max-w-2xl flex flex-col items-center">
             <h2 className="text-2xl font-bold mb-4 text-center">Select Social Media Type, Number of Posts, and Caption</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
               <select
                 value={selectedSocialMedia}
                 onChange={(e) => setSelectedSocialMedia(e.target.value)}
@@ -400,7 +540,38 @@ export default function CampaignPage() {
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
               </select>
+              <select
+                value={wantLogo}
+                onChange={(e) => setWantLogo(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Include Logo?</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
             </div>
+            {wantLogo === 'yes' && (
+              <div className="mt-4 flex gap-4 w-full max-w-2xl">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <select
+                  value={logoPosition}
+                  onChange={(e) => setLogoPosition(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select logo position</option>
+                  <option value="top-left">Top Left</option>
+                  <option value="top-right">Top Right</option>
+                  <option value="bottom-left">Bottom Left</option>
+                  <option value="bottom-right">Bottom Right</option>
+                  <option value="center">Center</option>
+                </select>
+              </div>
+            )}
             <div className="flex space-x-4 mt-12">
               <button
                 onClick={() => {
@@ -408,6 +579,9 @@ export default function CampaignPage() {
                   setSelectedSocialMedia('');
                   setNumPosts(1);
                   setWantCaption('');
+                  setWantLogo('');
+                  setLogoFile(null);
+                  setLogoPosition('');
                 }}
                 className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
@@ -417,7 +591,21 @@ export default function CampaignPage() {
                 onClick={async () => {
                   setLoading(true);
                   const campaignId = crypto.randomUUID();
-                  const prompt = `Generate a social media campaign for ${companyName} in the ${selectedIndustry} industry. Campaign type: ${selectedCampaignType}. Target audience: ${selectedDemographic} demographics, ages ${selectedAges.join(', ')}, located in ${selectedCountry}. Platform: ${selectedSocialMedia}.
+                  
+                  // Convert logo to base64 if uploaded
+                  let logoBase64 = '';
+                  if (wantLogo === 'yes' && logoFile) {
+                    try {
+                      logoBase64 = await fileToBase64(logoFile);
+                    } catch (error) {
+                      console.error('Error converting logo to base64:', error);
+                      alert('Error processing logo file.');
+                      setLoading(false);
+                      return;
+                    }
+                  }
+                  
+                  const prompt = `Generate a social media campaign for ${companyName} in the ${selectedIndustry} industry. Campaign type: ${selectedCampaignType}. Target audience: ${selectedDemographic} demographics, ages ${selectedAges.join(', ')}, located in ${selectedCountry}${selectedRegion ? `, ${selectedRegion} region` : ''}${selectedState ? `, ${selectedState} state/province` : ''}. Platform: ${selectedSocialMedia}.
 
 ${additionalInfo ? `Additional information: ${additionalInfo}` : ''}
 
@@ -492,7 +680,7 @@ Ensure the JSON is valid and the imagePrompts array has exactly ${numPosts} item
                       }
                     }
                     // Set data in store with campaignId, keys, and errors
-                    setCampaignData(description, imageKeys, campaignId, errors, captions);
+                    setCampaignData(description, imageKeys, campaignId, errors, captions, logoBase64, logoPosition, selectedRegion, selectedState);
                     // Navigate to results page
                     router.push('/campaign/results');
                   } catch (error) {

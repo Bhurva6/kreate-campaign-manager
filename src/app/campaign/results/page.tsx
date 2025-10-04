@@ -11,6 +11,13 @@ export default function ResultsPage() {
   const [localImages, setLocalImages] = useState<string[]>([]);
   const [localErrors, setLocalErrors] = useState<string[]>([]);
   const [localCaptions, setLocalCaptions] = useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedCaption, setEditedCaption] = useState('');
+  const [isEditingImage, setIsEditingImage] = useState(false);
+  const [editImagePrompt, setEditImagePrompt] = useState('');
+  const [isImageEditingLoading, setIsImageEditingLoading] = useState(false);
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -19,7 +26,10 @@ export default function ResultsPage() {
           const response = await fetch('/api/get-campaign-images', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ campaignId, keys: imageKeys }),
+            body: JSON.stringify({ 
+              campaignId, 
+              keys: imageKeys,
+            }),
           });
           const data = await response.json();
           if (response.ok && data.images) {
@@ -46,6 +56,109 @@ export default function ResultsPage() {
       clearCampaignData();
     };
   }, [clearCampaignData]);
+
+  const handleImageClick = (image: string, caption: string) => {
+    setSelectedImage(image);
+    setEditedCaption(caption);
+    setIsModalOpen(true);
+    setIsEditing(false);
+    setIsEditingImage(false);
+    setEditImagePrompt('');
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setIsEditing(false);
+    setIsEditingImage(false);
+    setEditImagePrompt('');
+  };
+
+  const handleEditClick = () => {
+    setIsEditing(true);
+  };
+
+  const handleCaptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setEditedCaption(e.target.value);
+  };
+
+  const handleCaptionSave = () => {
+    const updatedCaptions = [...localCaptions];
+    const index = localImages.indexOf(selectedImage!);
+    updatedCaptions[index] = editedCaption;
+    setLocalCaptions(updatedCaptions);
+    setIsEditing(false);
+  };
+
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  };
+
+  const handleEditImage = async () => {
+    if (!selectedImage || !editImagePrompt.trim()) return;
+    
+    setIsImageEditingLoading(true);
+    try {
+      // Fetch the image and convert to base64
+      const response = await fetch(selectedImage);
+      const blob = await response.blob();
+      const base64 = await blobToBase64(blob);
+      
+      // Call the edit-image API
+      const editResponse = await fetch('/api/edit-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          prompt: editImagePrompt.trim(), 
+          input_image: base64, 
+          userId: 'anonymous' // Since we don't have user context here
+        }),
+      });
+      
+      const data = await editResponse.json();
+      
+      if (editResponse.ok && data.result?.sample) {
+        // Update the image in the grid and modal
+        const index = localImages.indexOf(selectedImage);
+        const updatedImages = [...localImages];
+        updatedImages[index] = data.result.sample;
+        setLocalImages(updatedImages);
+        setSelectedImage(data.result.sample);
+        setIsEditingImage(false);
+        setEditImagePrompt('');
+      } else {
+        alert('Failed to edit image: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error editing image:', error);
+      alert('Error editing image. Please try again.');
+    } finally {
+      setIsImageEditingLoading(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!selectedImage) return;
+    try {
+      const response = await fetch(selectedImage);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `campaign-image-${Date.now()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      alert('Failed to download image. Please try again.');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -87,7 +200,7 @@ export default function ResultsPage() {
           <>
             {localDescription && (
               <div className="mb-8 p-4 bg-white rounded-lg shadow-lg">
-                <h2 className="text-2xl font-semibold mb-2">Campaign Description</h2>
+                <h2 className="text-2xl text-black font-semibold mb-2">Campaign Description</h2>
                 <p className="text-gray-700">{localDescription}</p>
               </div>
             )}
@@ -106,19 +219,134 @@ export default function ResultsPage() {
             )}
             {localImages.length > 0 && (
               <div>
-                <h2 className="text-2xl font-semibold mb-4">Generated Images</h2>
+                <h2 className="text-2xl font-semibold mb-4">Generated Images - Click to edit</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {localImages.map((img: string, i: number) => (
                     <div key={i} className="bg-white rounded-lg shadow-lg overflow-hidden">
-                      <img src={img} alt={`Generated Post ${i + 1}`} className="w-full h-auto" />
+                      <img
+                        src={img}
+                        alt={`Generated Post ${i + 1}`}
+                        className="w-full h-auto cursor-pointer"
+                        onClick={() => handleImageClick(img, localCaptions[i] || '')}
+                      />
                       <div className="p-4">
-                        <p className="text-sm text-gray-600 mb-2">Post {i + 1}</p>
-                        {localCaptions[i] && (
-                          <p className="text-sm text-gray-800 italic">&ldquo;{localCaptions[i]}&rdquo;</p>
-                        )}
+                        <p className="text-sm text-gray-600 mb-2">{localCaptions[i] || `Post ${i + 1}`}</p>
                       </div>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Modal for image and caption editing */}
+            {isModalOpen && (
+              <div className="fixed inset-0 flex items-center justify-center z-50">
+                <div className="absolute inset-0 bg-black opacity-50" onClick={handleModalClose}></div>
+                <div className="bg-white rounded-lg shadow-lg max-w-md w-full z-10 mx-4">
+                  <div className="relative">
+                    <img
+                      src={selectedImage!}
+                      alt="Selected"
+                      className="w-full h-auto rounded-t-lg max-h-96 object-contain"
+                    />
+                    <div className="absolute top-2 right-2 flex space-x-2">
+                      <button
+                        className="text-white bg-blue-500 hover:bg-blue-600 rounded-full p-2"
+                        onClick={handleDownload}
+                        title="Download Image"
+                      >
+                        ⬇️
+                      </button>
+                      <button
+                        className="text-white bg-red-500 hover:bg-red-600 rounded-full p-2"
+                        onClick={handleModalClose}
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h2 className="text-xl text-black font-semibold mb-2">Edit Caption</h2>
+                    {isEditing ? (
+                      <textarea 
+                        value={editedCaption}
+                        onChange={handleCaptionChange}
+                        className="text-black w-full p-2 border border-gray-300 rounded-lg mb-4"
+                        rows={3}
+                      />
+                    ) : isEditingImage ? (
+                      <div className="mb-4">
+                        <textarea
+                          value={editImagePrompt}
+                          onChange={(e) => setEditImagePrompt(e.target.value)}
+                          placeholder="Describe how to edit the image (e.g., 'make it more colorful', 'add a sunset background')..."
+                          className="w-full p-2 border border-gray-300 rounded-lg mb-2 text-black"
+                          rows={3}
+                        />
+                        {isImageEditingLoading && (
+                          <div className="text-sm text-gray-600 mb-2">Editing image...</div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-black mb-4">{editedCaption}</p>
+                    )}
+                    <div className="flex justify-end space-x-2">
+                      {isEditing ? (
+                        <>
+                          <button
+                            className="px-4 py-2 bg-green-500 text-black rounded-lg hover:bg-green-600"
+                            onClick={handleCaptionSave}
+                          >
+                            Save
+                          </button>
+                          <button
+                            className="px-4 py-2 bg-gray-300 text-black rounded-lg hover:bg-gray-400"
+                            onClick={() => setIsEditing(false)}
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : isEditingImage ? (
+                        <>
+                          <button
+                            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50"
+                            onClick={handleEditImage}
+                            disabled={isImageEditingLoading || !editImagePrompt.trim()}
+                          >
+                            {isImageEditingLoading ? 'Editing...' : 'Submit Edit'}
+                          </button>
+                          <button
+                            className="px-4 py-2 bg-gray-300 text-black rounded-lg hover:bg-gray-400"
+                            onClick={() => { setIsEditingImage(false); setEditImagePrompt(''); }}
+                            disabled={isImageEditingLoading}
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="px-4 py-2 bg-blue-500 text-black rounded-lg hover:bg-blue-600"
+                            onClick={handleEditClick}
+                          >
+                            Edit Caption
+                          </button>
+                          <button
+                            className="px-4 py-2 bg-purple-500 text-black rounded-lg hover:bg-purple-600"
+                            onClick={() => setIsEditingImage(true)}
+                          >
+                            Edit Image
+                          </button>
+                          <button
+                            className="px-4 py-2 bg-green-500 text-black rounded-lg hover:bg-green-600"
+                            onClick={handleDownload}
+                          >
+                            Download Image
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

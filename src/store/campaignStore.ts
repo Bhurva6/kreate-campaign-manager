@@ -6,7 +6,11 @@ interface CampaignStore {
   campaignId: string;
   errors: string[];
   captions: string[];
-  setCampaignData: (description: string, imageKeys: string[], campaignId: string, errors?: string[], captions?: string[]) => void;
+  logoBase64: string;
+  logoPosition: string;
+  region: string;
+  state: string;
+  setCampaignData: (description: string, imageKeys: string[], campaignId: string, errors?: string[], captions?: string[], logoBase64?: string, logoPosition?: string, region?: string, state?: string) => void;
   clearCampaignData: () => void;
 }
 
@@ -16,6 +20,10 @@ export const useCampaignStore = create<CampaignStore>((set) => ({
   campaignId: '',
   errors: [],
   captions: [],
-  setCampaignData: (description, imageKeys, campaignId, errors = [], captions = []) => set({ description, imageKeys, campaignId, errors, captions }),
-  clearCampaignData: () => set({ description: '', imageKeys: [], campaignId: '', errors: [], captions: [] }),
+  logoBase64: '',
+  logoPosition: '',
+  region: '',
+  state: '',
+  setCampaignData: (description, imageKeys, campaignId, errors = [], captions = [], logoBase64 = '', logoPosition = '', region = '', state = '') => set({ description, imageKeys, campaignId, errors, captions, logoBase64, logoPosition, region, state }),
+  clearCampaignData: () => set({ description: '', imageKeys: [], campaignId: '', errors: [], captions: [], logoBase64: '', logoPosition: '', region: '', state: '' }),
 }));
