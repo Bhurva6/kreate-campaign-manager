@@ -531,6 +531,17 @@ function LandingPageContent() {
     <div className="min-h-screen flex flex-col relative overflow-x-hidden bg-[var(--background)] font-sans">
       {/* First Viewport - Completely Black */}
       <div className="min-h-screen flex flex-col bg-black relative">
+        {/* Background Video */}
+        <video
+          autoPlay
+          muted
+          loop
+          className="absolute inset-0 w-full h-full object-cover z-0"
+        >
+          <source src="/download.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+
         {/* Logo Top Left and Auth Buttons Top Right */}
         <div className="flex flex-row justify-between items-center w-full p-3 sm:p-4 md:p-6 bg-black z-[999999]">
           <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
@@ -567,7 +578,7 @@ function LandingPageContent() {
         {/* Hero Content - Full Black Viewport */}
         <div className="flex-1 flex flex-col justify-center items-center pt-0 md:pt-0 lg:pt-0 pb-16 lg:pb-24 px-4 md:px-8 lg:px-12 relative bg-black">
           {/* Subtle gradient overlay for depth */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black via-black to-gray-900/30"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-gray-900/30 z-5"></div>
 
           {/* Content - Centered */}
           <div className="relative z-10 text-center max-w-4xl px-1 sm:px-6">
@@ -614,6 +625,20 @@ function LandingPageContent() {
   >
     <span className="hidden sm:inline">✨</span>
     <span>Enterprise</span>
+    <span className="text-[10px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
+  </button>
+  <button
+    className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-3 sm:px-8 md:px-10 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#0171B9] text-white hover:shadow-[#1A018D]/30 w-full md:w-auto whitespace-nowrap"
+    onClick={() => {
+      if (user) {
+        router.push("/campaign");
+      } else {
+        setShowAuthModal(true);
+      }
+    }}
+  >
+    <span className="hidden sm:inline">✨</span>
+    <span>Create Campaign</span>
     <span className="text-[10px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
   </button>
 </div>

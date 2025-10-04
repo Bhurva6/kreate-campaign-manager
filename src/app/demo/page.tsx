@@ -122,6 +122,7 @@ export default function DemoPage() {
           setGeneratedImages(urls);
           // Only decrease credits on successful response
           consumeImageGeneration();
+          setUploadedImages([]); // Clear previous uploaded images
         }
       } else if (toggleState === 'reimagine' && uploadedImages.length > 0 && prompt.trim()) {
         // Send first image as input_image, rest as additional_images
@@ -144,6 +145,7 @@ export default function DemoPage() {
           setGeneratedImages([]);
           // Only decrease credits on successful response
           consumeImageEdit();
+          setUploadedImages([]); // Clear previous uploaded images
         }
       }
     } catch (err) {
@@ -388,7 +390,7 @@ export default function DemoPage() {
           letterSpacing: '2px',
           zIndex: 10,
         }}>
-        goloco
+        GoLoco
       </Link>
       <div
         style={{

@@ -77,7 +77,7 @@ export async function uploadImageToR2({
       // Public access is controlled via bucket settings or custom domains
       Metadata: {
         category,
-        prompt: prompt || '',
+        prompt: Buffer.from(prompt || '').toString('base64'),
         userId: userId || '',
         uploadedAt: new Date().toISOString(),
       },

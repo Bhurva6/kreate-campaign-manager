@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { uploadMultipleImagesToR2, base64ToBuffer, getMimeTypeFromDataUrl } from "@/lib/r2-upload";
 import { tokenManager } from "@/lib/google-auth";
+import { randomUUID } from 'crypto';
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, sampleCount = 1, aspectRatio = "1:1", userId } = await req.json();
+    const { prompt, sampleCount = 1, aspectRatio = "1:1", campaignId, index } = await req.json();
 
     // Validate input
     if (!prompt || typeof prompt !== "string") {
@@ -12,6 +13,12 @@ export async function POST(req: NextRequest) {
     }
     if (sampleCount < 1 || sampleCount > 4) {
       return NextResponse.json({ error: "sampleCount must be 1-4." }, { status: 400 });
+    }
+    if (!campaignId || typeof campaignId !== "string") {
+      return NextResponse.json({ error: "campaignId is required." }, { status: 400 });
+    }
+    if (typeof index !== "number") {
+      return NextResponse.json({ error: "index is required and must be a number." }, { status: 400 });
     }
 
     // Get fresh access token from token manager
@@ -75,7 +82,7 @@ export async function POST(req: NextRequest) {
         }
 
         const data = await retryRes.json();
-        return await processAndUploadImages(data, prompt, userId);
+        return await processAndUploadImages(data, prompt, campaignId, index);
       } catch (retryError) {
         console.error("Token refresh retry failed:", retryError);
         return NextResponse.json({ error: "Authentication failed after retry" }, { status: 401 });
@@ -88,13 +95,13 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await vertexRes.json();
-    return await processAndUploadImages(data, prompt, userId);
+    return await processAndUploadImages(data, prompt, campaignId, index);
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Unknown error" }, { status: 500 });
   }
 }
 
-async function processAndUploadImages(data: any, prompt: string, userId?: string) {
+async function processAndUploadImages(data: any, prompt: string, campaignId: string, index: number) {
   try {
     console.log("Processing Vertex AI response:", JSON.stringify(data, null, 2));
     
@@ -126,55 +133,18 @@ async function processAndUploadImages(data: any, prompt: string, userId?: string
     const uploadResults = await uploadMultipleImagesToR2(
       imagesToUpload,
       "generate-image",
-      userId
+      `campaigns/${campaignId}/image-${index}.png`
     );
 
     console.log("R2 upload results:", uploadResults);
 
-    // Return both R2 URLs and base64 data URLs for immediate display
-    const images = uploadResults.map((result, index) => {
-      const pred = data.predictions[index];
-      const dataUrl = `data:${pred.mimeType || 'image/png'};base64,${pred.bytesBase64Encoded}`;
-      
-      // Use public URL as primary since we're setting ACL to public-read
-      const displayUrl = result.url; // This is now the public URL
-      
-      console.log(`Image ${index}: Public URL = ${displayUrl}, Data URL length = ${dataUrl.length}`);
-      
-      return {
-        url: displayUrl, // Use public URL as primary display URL
-        dataUrl: dataUrl, // For immediate display fallback
-        publicUrl: result.publicUrl, // Same as url now
-        prompt: pred.prompt || prompt,
-        r2Key: result.key,
-      };
-    });
-
-    console.log(`Successfully processed and uploaded ${images.length} images`);
-    return NextResponse.json({ images, success: true });
+    // Return the R2 key for the uploaded image
+    const imageKey = uploadResults[0].key;
+    
+    console.log(`Successfully uploaded image with key: ${imageKey}`);
+    return NextResponse.json({ key: imageKey, success: true });
   } catch (uploadError) {
     console.error("Failed to upload images to R2:", uploadError);
-    
-    // Ensure we have valid data before falling back
-    if (!data.predictions || !Array.isArray(data.predictions)) {
-      console.error("Cannot create fallback images due to invalid data:", data);
-      throw uploadError; // Re-throw if we can't even create fallback
-    }
-    
-    // Return images with base64 URLs even if upload fails
-    const images = data.predictions.map((pred: any, index: number) => {
-      const dataUrl = `data:${pred.mimeType || 'image/png'};base64,${pred.bytesBase64Encoded}`;
-      console.log(`Fallback image ${index}: Data URL length = ${dataUrl.length}`);
-      
-      return {
-        url: dataUrl, // Use data URL as main URL when R2 fails
-        dataUrl: dataUrl,
-        prompt: pred.prompt || prompt,
-        error: "R2 upload failed, using base64 data",
-      };
-    });
-    
-    console.log(`Returning ${images.length} fallback images (R2 upload failed)`);
-    return NextResponse.json({ images, success: false, error: "R2 upload failed" });
+    return NextResponse.json({ success: false, error: "Failed to upload image to R2" });
   }
 }

@@ -12,6 +12,15 @@ export default function PWAInstall() {
       navigator.serviceWorker.register('/sw.js')
         .then(registration => {
           console.log('Service Worker registered with scope:', registration.scope);
+          
+          // Clear any cached requests to /genai/banners
+          caches.open('start-url').then(cache => {
+            cache.delete('/genai/banners').then(deleted => {
+              if (deleted) {
+                console.log('Cleared cached request to /genai/banners');
+              }
+            });
+          });
         })
         .catch(error => {
           console.error('Service Worker registration failed:', error);
