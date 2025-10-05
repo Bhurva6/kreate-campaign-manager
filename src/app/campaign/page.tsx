@@ -42,6 +42,7 @@ export default function CampaignPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPosition, setLogoPosition] = useState('');
   const [showDemo, setShowDemo] = useState(false);
+  const [festivalName, setFestivalName] = useState('');
 
   const industries = [
     'Technology',
@@ -323,11 +324,21 @@ export default function CampaignPage() {
                 </option>
               ))}
             </select>
+            {selectedCampaignType === 'Festive' && (
+              <input
+                type="text"
+                value={festivalName}
+                onChange={(e) => setFestivalName(e.target.value)}
+                placeholder="Enter festival name (e.g., Diwali, Christmas)"
+                className="w-full mt-4 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            )}
             <div className="flex space-x-4 mt-12">
               <button
                 onClick={() => {
                   setShowCampaignType(false);
                   setSelectedCampaignType('');
+                  setFestivalName('');
                 }}
                 className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
@@ -397,6 +408,7 @@ export default function CampaignPage() {
                                 ? prev.filter((a) => a !== age)
                                 : [...prev, age]
                             );
+                            setShowAge(false);
                           }}
                           className="mr-2"
                         />
@@ -624,7 +636,7 @@ export default function CampaignPage() {
                     }
                   }
                   
-                  const prompt = `Generate a social media campaign for ${companyName} in the ${selectedIndustry} industry. Campaign type: ${selectedCampaignType}. Target audience: ${selectedDemographic.join(', ')} demographics, ages ${selectedAges.join(', ')}, located in ${selectedCountry}${selectedRegion ? `, ${selectedRegion} region` : ''}${selectedState ? `, ${selectedState} state/province` : ''}. Platform: ${selectedSocialMedia}.
+                  const prompt = `Generate a social media campaign for ${companyName} in the ${selectedIndustry} industry. Campaign type: ${selectedCampaignType}${selectedCampaignType === 'Festive' && festivalName ? ` - Festival: ${festivalName}` : ''}. Target audience: ${selectedDemographic.join(', ')} demographics, ages ${selectedAges.join(', ')}, located in ${selectedCountry}${selectedRegion ? `, ${selectedRegion} region` : ''}${selectedState ? `, ${selectedState} state/province` : ''}. Platform: ${selectedSocialMedia}.
 
 ${additionalInfo ? `Additional information: ${additionalInfo}` : ''}
 
