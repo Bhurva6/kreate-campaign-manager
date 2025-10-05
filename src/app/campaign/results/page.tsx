@@ -5,7 +5,7 @@ import { useCampaignStore } from '../../../store/campaignStore';
 import { useEffect, useState } from 'react';
 
 export default function ResultsPage() {
-  const { description, imageKeys, campaignId, errors, captions, clearCampaignData } = useCampaignStore();
+  const { description, imageKeys, campaignId, errors, captions, clearCampaignData, region, state } = useCampaignStore();
   const [isLoading, setIsLoading] = useState(true);
   const [localDescription, setLocalDescription] = useState('');
   const [localImages, setLocalImages] = useState<string[]>([]);
@@ -15,7 +15,6 @@ export default function ResultsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedCaption, setEditedCaption] = useState('');
-  const [isEditingImage, setIsEditingImage] = useState(false);
   const [editImagePrompt, setEditImagePrompt] = useState('');
   const [isImageEditingLoading, setIsImageEditingLoading] = useState(false);
 
@@ -62,14 +61,12 @@ export default function ResultsPage() {
     setEditedCaption(caption);
     setIsModalOpen(true);
     setIsEditing(false);
-    setIsEditingImage(false);
     setEditImagePrompt('');
   };
 
   const handleModalClose = () => {
     setIsModalOpen(false);
     setIsEditing(false);
-    setIsEditingImage(false);
     setEditImagePrompt('');
   };
 
@@ -128,7 +125,6 @@ export default function ResultsPage() {
         updatedImages[index] = data.result.sample;
         setLocalImages(updatedImages);
         setSelectedImage(data.result.sample);
-        setIsEditingImage(false);
         setEditImagePrompt('');
       } else {
         alert('Failed to edit image: ' + (data.error || 'Unknown error'));
@@ -249,6 +245,14 @@ export default function ResultsPage() {
                       alt="Selected"
                       className="w-full h-auto rounded-t-lg max-h-96 object-contain"
                     />
+                    {isImageEditingLoading && (
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+                        <div className="text-white text-center">
+                          <p className="text-lg font-bold">Edit Image</p>
+                          <p>{editImagePrompt}</p>
+                        </div>
+                      </div>
+                    )}
                     <div className="absolute top-2 right-2 flex space-x-2">
                       <button
                         className="text-white bg-blue-500 hover:bg-blue-600 rounded-full p-2"
@@ -274,19 +278,6 @@ export default function ResultsPage() {
                         className="text-black w-full p-2 border border-gray-300 rounded-lg mb-4"
                         rows={3}
                       />
-                    ) : isEditingImage ? (
-                      <div className="mb-4">
-                        <textarea
-                          value={editImagePrompt}
-                          onChange={(e) => setEditImagePrompt(e.target.value)}
-                          placeholder="Describe how to edit the image (e.g., 'make it more colorful', 'add a sunset background')..."
-                          className="w-full p-2 border border-gray-300 rounded-lg mb-2 text-black"
-                          rows={3}
-                        />
-                        {isImageEditingLoading && (
-                          <div className="text-sm text-gray-600 mb-2">Editing image...</div>
-                        )}
-                      </div>
                     ) : (
                       <p className="text-black mb-4">{editedCaption}</p>
                     )}
@@ -306,23 +297,6 @@ export default function ResultsPage() {
                             Cancel
                           </button>
                         </>
-                      ) : isEditingImage ? (
-                        <>
-                          <button
-                            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50"
-                            onClick={handleEditImage}
-                            disabled={isImageEditingLoading || !editImagePrompt.trim()}
-                          >
-                            {isImageEditingLoading ? 'Editing...' : 'Submit Edit'}
-                          </button>
-                          <button
-                            className="px-4 py-2 bg-gray-300 text-black rounded-lg hover:bg-gray-400"
-                            onClick={() => { setIsEditingImage(false); setEditImagePrompt(''); }}
-                            disabled={isImageEditingLoading}
-                          >
-                            Cancel
-                          </button>
-                        </>
                       ) : (
                         <>
                           <button
@@ -333,9 +307,14 @@ export default function ResultsPage() {
                           </button>
                           <button
                             className="px-4 py-2 bg-purple-500 text-black rounded-lg hover:bg-purple-600"
-                            onClick={() => setIsEditingImage(true)}
+                            onClick={() => {
+                              const location = [region, state].filter(Boolean).join(', ');
+                              setEditImagePrompt(location ? `${editedCaption} in ${location}` : editedCaption);
+                              handleEditImage();
+                            }}
+                            disabled={isImageEditingLoading}
                           >
-                            Edit Image
+                            {isImageEditingLoading ? 'Editing...' : 'Edit Image'}
                           </button>
                           <button
                             className="px-4 py-2 bg-green-500 text-black rounded-lg hover:bg-green-600"
