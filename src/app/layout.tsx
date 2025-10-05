@@ -31,9 +31,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="GoLoco" />
         <link rel="apple-touch-icon" href="/golocologo.png" />
-        <link rel="icon" href="/goloco.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/goloco.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/goloco.png" />
+        <link rel="icon" href="/golocologo.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/golocologo.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/golocologo.png" />
       </head>
       <body
         className="antialiased font-mono"

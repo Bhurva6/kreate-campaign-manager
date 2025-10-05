@@ -88,6 +88,7 @@ export default function DemoPage() {
   const [sampleCount, setSampleCount] = useState<number>(1);
   const [showCanvas, setShowCanvas] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -109,6 +110,7 @@ export default function DemoPage() {
     setLoading(true);
     setGeneratedImage(null); // Clear previous image so loader is shown immediately
     setGeneratedImages([]); // Clear previous images
+    setErrorMessage(null); // Clear any previous errors
     try {
       if (toggleState === 'generate' && prompt.trim()) {
         const res = await fetch('/api/generate-image', {
@@ -116,19 +118,27 @@ export default function DemoPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ prompt, sampleCount, aspectRatio: '1:1' }),
         });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          setErrorMessage(errorData.message || 'Failed to generate image. Please try again.');
+          return;
+        }
         const data = await res.json();
-        if (res.ok && data.images && data.images.length > 0) {
+        if (data.images && data.images.length > 0) {
           const urls = data.images.map((img: any) => img.r2?.publicUrl || img.url).filter(Boolean);
           setGeneratedImages(urls);
           // Only decrease credits on successful response
           consumeImageGeneration();
           setUploadedImages([]); // Clear previous uploaded images
+        } else {
+          setErrorMessage('No images generated. Please try again.');
         }
       } else if (toggleState === 'reimagine' && uploadedImages.length > 0 && prompt.trim()) {
         // Send first image as input_image, rest as additional_images
-        const body: { prompt: string; input_image: string; additional_images?: string[] } = {
+        const body: { prompt: string; input_image: string; additional_images?: string[]; priority?: string[] } = {
           prompt,
           input_image: uploadedImages[0],
+          priority: ['flux', 'nano_banana'],
         };
         if (uploadedImages.length > 1) {
           body.additional_images = uploadedImages.slice(1);
@@ -138,18 +148,27 @@ export default function DemoPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         });
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          setErrorMessage(errorData.message || 'Failed to edit image. Please try again.');
+          return;
+        }
         const data = await res.json();
-        if (res.ok && (data.image || (data.result && data.result.sample))) {
+        if (data.image || (data.result && data.result.sample)) {
           const url = data.image || (data.result && data.result.sample);
           setGeneratedImage(url);
           setGeneratedImages([]);
           // Only decrease credits on successful response
           consumeImageEdit();
           setUploadedImages([]); // Clear previous uploaded images
+        } else {
+          setErrorMessage('No image edited. Please try again.');
         }
+      } else {
+        setErrorMessage('Please provide a prompt and, if reimagining, upload an image.');
       }
     } catch (err) {
-      // Optionally handle error
+      setErrorMessage('An unexpected error occurred. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -633,6 +652,45 @@ export default function DemoPage() {
             </button>
           </div>
         </div>
+        {/* Error message display */}
+        {errorMessage && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 'calc(100% + 20px)',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              backgroundColor: '#F53057',
+              color: 'white',
+              padding: '1rem 2rem',
+              borderRadius: '10px',
+              fontSize: '1rem',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              zIndex: 35,
+              maxWidth: '80%',
+              boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
+            }}
+          >
+            {errorMessage}
+            <button
+              type="button"
+              onClick={() => setErrorMessage(null)}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                background: 'none',
+                border: 'none',
+                color: 'white',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+              }}
+            >
+              ×
+            </button>
+          </div>
+        )}
         {/* Show generated image if available, else show uploaded images */}
         {(generatedImages.length > 0 || generatedImage || uploadedImages.length > 0) && (
           <div
@@ -673,6 +731,10 @@ export default function DemoPage() {
                         }
                         const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`;
                         const response = await fetch(proxyUrl, { cache: 'no-store' });
+                        if (!response.ok) {
+                          setErrorMessage('Failed to download image. Please try again.');
+                          return;
+                        }
                         const blob = await response.blob();
                         const objUrl = URL.createObjectURL(blob);
                         const link = document.createElement('a');
@@ -684,7 +746,9 @@ export default function DemoPage() {
                         link.click();
                         document.body.removeChild(link);
                         URL.revokeObjectURL(objUrl);
-                      } catch {}
+                      } catch (err) {
+                        setErrorMessage('An error occurred while downloading the image. Please try again.');
+                      }
                     }}
                     style={{
                       background: '#23272F',
@@ -760,6 +824,10 @@ export default function DemoPage() {
                           // Remote URL: fetch via proxy as blob
                           const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(generatedImage)}`;
                           const response = await fetch(proxyUrl, { cache: 'no-store' });
+                          if (!response.ok) {
+                            setErrorMessage('Failed to download image. Please try again.');
+                            return;
+                          }
                           const blob = await response.blob();
                           const url = URL.createObjectURL(blob);
                           const link = document.createElement('a');
@@ -773,7 +841,7 @@ export default function DemoPage() {
                           URL.revokeObjectURL(url);
                         }
                       } catch (err) {
-                        // Optionally handle error
+                        setErrorMessage('An error occurred while downloading the image. Please try again.');
                       }
                     }}
                     style={{
@@ -862,6 +930,26 @@ export default function DemoPage() {
             <div style={{ width: 36, height: 36, marginTop: 8, border: '4px solid #713995', borderTop: '4px solid #fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
             <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
           </div>
+        </div>
+      )}
+      {errorMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '20%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 100000,
+          background: '#F53057',
+          color: 'white',
+          padding: '1rem 2rem',
+          borderRadius: '12px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.3)',
+          fontSize: '1.1rem',
+          fontWeight: 'bold',
+          textAlign: 'center',
+          maxWidth: '90%',
+        }}>
+          {errorMessage}
         </div>
       )}
       <style>{`
