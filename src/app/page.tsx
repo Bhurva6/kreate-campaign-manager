@@ -643,6 +643,23 @@ function LandingPageContent() {
   </button>
 </div>
      
+            <div className="flex justify-center px-1 sm:px-0 mt-4">
+              <button
+                className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-3 sm:px-8 md:px-10 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#FF4500] text-white hover:shadow-[#1A018D]/30 w-full md:w-auto whitespace-nowrap"
+                onClick={() => {
+                  if (user) {
+                    router.push("/festive");
+                  } else {
+                    setShowAuthModal(true);
+                  }
+                }}
+              >
+                <span className="hidden sm:inline">✨</span>
+                <span>Festive Freedom</span>
+                <span className="text-[10px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
+              </button>
+            </div>
+     
             {/* Brands Carousel */}
             <div className="w-full max-w-5xl mx-auto mt-6 sm:mt-10">
               <p className="text-white/70 text-xs sm:text-sm mb-4 sm:mb-6 text-center">Trusted by innovative brands</p>
@@ -1641,7 +1658,7 @@ function LandingPageContent() {
                 <div className="text-[#0171B9] font-semibold mt-3 text-xs md:text-sm">
                   - Ananya K.
                 </div>
-              </div>
+                           </div>
             </div>
 
             {/* Testimonial 2 - Right aligned */}
