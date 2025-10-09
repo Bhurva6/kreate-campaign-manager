@@ -221,78 +221,98 @@ async function addTextOverlay(imageUrl: string, festival: string): Promise<strin
     }
     
     // Generate subtitle/wish text
+    let subtitle = `Wishing you a wonderful ${festival}`; // Default subtitle
+    
     const subtitlePrompt = `Generate a one-line warm, festive wish for ${festival}. Make it personal and heartfelt, suitable for a brand greeting. Keep it under 15 words. Use perfect spelling and grammar. Examples: "Wishing you and your loved ones a very radiant Diwali" or "May your Holi be filled with colors of joy and happiness". Ensure the text is clear, professional, and error-free.`;
     
-    const subtitleResponse = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/generate-prompt`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        brand: 'Generic Brand',
-        industry: 'General',
-        festival,
-        customPrompt: subtitlePrompt,
-      }),
-    });
+    try {
+      const subtitleResponse = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/generate-prompt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          brand: 'Generic Brand',
+          industry: 'General',
+          festival,
+          customPrompt: subtitlePrompt,
+        }),
+      });
 
-    let subtitle = '';
-    if (subtitleResponse.ok) {
-      const subtitleData = await subtitleResponse.json();
-      subtitle = subtitleData.prompt || '';
-      // Clean up the subtitle to be one line and ensure no spelling mistakes
-      subtitle = subtitle.replace(/\n/g, ' ').trim();
-      // Remove any extra quotes or unwanted characters
-      subtitle = subtitle.replace(/^["']|["']$/g, '');
-      if (subtitle.length > 100) {
-        subtitle = subtitle.substring(0, 100) + '...';
+      if (subtitleResponse.ok) {
+        const subtitleData = await subtitleResponse.json();
+        const generatedSubtitle = subtitleData.prompt || '';
+        // Clean up the subtitle to be one line and ensure no spelling mistakes
+        const cleanedSubtitle = generatedSubtitle.replace(/\n/g, ' ').trim();
+        // Remove any extra quotes or unwanted characters
+        const finalSubtitle = cleanedSubtitle.replace(/^["']|["']$/g, '');
+        if (finalSubtitle.length > 10 && finalSubtitle.length <= 100) {
+          // Basic validation - ensure it contains the festival name or common festive words
+          const festiveWords = ['diwali', 'holi', 'christmas', 'eid', 'new year', 'thanksgiving', 'halloween', 'wishing', 'happy', 'joy', 'love', 'peace', 'prosperity'];
+          const hasFestiveContent = festiveWords.some(word => finalSubtitle.toLowerCase().includes(word));
+          if (hasFestiveContent) {
+            subtitle = finalSubtitle;
+          }
+        }
       }
-      // Basic validation - ensure it contains the festival name or common festive words
-      const festiveWords = ['diwali', 'holi', 'christmas', 'eid', 'new year', 'thanksgiving', 'halloween', 'wishing', 'happy', 'joy', 'love', 'peace', 'prosperity'];
-      const hasFestiveContent = festiveWords.some(word => subtitle.toLowerCase().includes(word));
-      if (!hasFestiveContent || subtitle.length < 10) {
-        subtitle = `Wishing you a wonderful ${festival}`;
-      }
+    } catch (error) {
+      console.error('Error generating subtitle:', error);
+      // Keep the default subtitle
     }
     
     // Create text overlay prompt with both title and subtitle - enhanced for visibility
     const greeting = festivalGreetings[festival] || `Happy ${festival}`;
-    const textOverlayPrompt = `Add visible text overlay to this image. Write "${greeting}" in large, bold, white letters at the top center of the image. Below it, write "${subtitle || `Wishing you a wonderful ${festival}`}" in smaller white letters. Make sure both texts are clearly visible and readable against the background. Use high contrast if needed. Do not change the background image, only add the text on top.`;
+    const textOverlayPrompt = `Take this image and add two lines of visible text overlay at the top center of the image:
+
+First line: Write "${greeting}" in large, bold, white letters.
+
+Second line: Write "${subtitle}" in smaller white letters below the first line.
+
+Make sure both lines of text are clearly visible and readable against the background. Use high contrast colors (white text with dark outline/shadow if needed). Position the text at the top center with appropriate spacing between the two lines. Do not change anything else in the image - keep all existing content exactly as it is.`;
     
-    // Use edit API to add text overlay
-    const editResponse = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/edit-image`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    // Use Gemini to add text overlay
+    const parts: any[] = [];
+    parts.push({
+      inlineData: {
+        mimeType: 'image/png',
+        data: base64Image,
       },
-      body: JSON.stringify({
-        prompt: textOverlayPrompt,
-        input_image: `data:image/png;base64,${base64Image}`,
-      }),
     });
-
-    if (!editResponse.ok) {
-      throw new Error('Failed to add text overlay using edit API');
-    }
-
-    const editData = await editResponse.json();
+    parts.push({ text: textOverlayPrompt });
     
-    if (editData.error) {
-      throw new Error(`Edit API error: ${editData.error}`);
+    const req = {
+      model: model,
+      contents: [
+        { role: 'user', parts }
+      ],
+      generationConfig: generationConfig,
+    };
+    
+    const streamingResp = await ai.models.generateContentStream(req);
+    
+    const generatedImages: string[] = [];
+    
+    for await (const chunk of streamingResp) {
+      if (chunk.candidates && chunk.candidates[0]?.content?.parts) {
+        for (const part of chunk.candidates[0].content.parts) {
+          if (part.inlineData && part.inlineData.data) {
+            generatedImages.push(part.inlineData.data);
+          }
+        }
+      }
     }
-
-    // The edit API returns a data URL, extract the base64 and upload to R2
-    let finalImageBase64 = editData.image;
-    if (finalImageBase64.startsWith('data:image/')) {
-      finalImageBase64 = finalImageBase64.split(',')[1];
+    
+    if (generatedImages.length === 0) {
+      throw new Error('No image generated with text overlay');
     }
-
-    const finalBuffer = Buffer.from(finalImageBase64, 'base64');
+    
+    // Use the first generated image
+    const generatedBuffer = Buffer.from(generatedImages[0], 'base64');
     
     // Upload to R2
     const uploadResult = await uploadMultipleImagesToR2(
       [{
-        buffer: finalBuffer,
+        buffer: generatedBuffer,
         prompt: `festive-image-with-text-${festival}`,
         mimeType: 'image/png',
       }],
