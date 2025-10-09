@@ -19,6 +19,7 @@ export default function PricingPage() {
   const [brandName, setBrandName] = useState('');
   const [industry, setIndustry] = useState('');
   const [logo, setLogo] = useState<File | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string>('');
   const [references, setReferences] = useState<File[]>([]);
   const [festivals, setFestivals] = useState<string[]>([]);
   const [search, setSearch] = useState('');
@@ -254,11 +255,29 @@ export default function PricingPage() {
                 <input
                   type="file"
                   accept=".png,.jpg,.jpeg,.pdf"
-                  onChange={(e) => setLogo(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setLogo(file);
+                    if (file) {
+                      setLogoUrl(URL.createObjectURL(file));
+                    } else {
+                      setLogoUrl('');
+                    }
+                  }}
                   className="w-full p-3 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-800 text-white file:bg-blue-600 file:text-white file:border-none file:rounded file:px-3 file:py-1 file:mr-3"
                   required
                 />
                 <p className="text-xs text-gray-400 mt-1">Accepted formats: PNG, JPG, PDF (max 1 file)</p>
+                {logoUrl && (
+                  <div className="mt-4">
+                    <p className="text-sm text-white mb-2">Logo Preview:</p>
+                    <img
+                      src={logoUrl}
+                      alt="Logo Preview"
+                      className="w-full h-auto rounded-lg border-2 border-blue-600"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Upload References */}
@@ -379,6 +398,14 @@ export default function PricingPage() {
                       className="w-full h-64 object-cover cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => setSelectedImage(item)}
                     />
+                    {/* Logo Overlay */}
+                    {logoUrl && (
+                      <img
+                        src={logoUrl}
+                        alt="Logo overlay"
+                        className="absolute top-2 right-16 w-12 h-12 object-contain opacity-80"
+                      />
+                    )}
                     {/* Download Button */}
                     <button
                       onClick={(e) => {
@@ -407,7 +434,7 @@ export default function PricingPage() {
           {loading && (
             <div className="mt-12 text-center">
               <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <p className="text-white mt-2">Generating your festive images...</p>
+              <p className="text-white mt-2">Generating your festive images. This might take some time, please do not refresh.</p>
             </div>
           )}
         </div>
@@ -422,6 +449,14 @@ export default function PricingPage() {
               alt={`Festive image for ${selectedImage.festival}`}
               className="max-w-full max-h-full object-contain rounded-lg"
             />
+            {/* Logo Overlay */}
+            {logoUrl && (
+              <img
+                src={logoUrl}
+                alt="Logo overlay"
+                className="absolute top-4 right-4 w-16 h-16 object-contain opacity-80"
+              />
+            )}
             <button
               onClick={() => setSelectedImage(null)}
               className="absolute top-2 right-2 bg-black bg-opacity-50 text-white rounded-full w-10 h-10 flex items-center justify-center hover:bg-opacity-70 transition-colors"

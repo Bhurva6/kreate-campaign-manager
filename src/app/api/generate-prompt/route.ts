@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { brand, industry, festival } = await request.json();
+    const { brand, industry, festival, customPrompt } = await request.json();
 
-    const prompt = `Create a highly detailed, hyper-realistic image generation prompt for a ${industry} company called "${brand}" celebrating ${festival}. 
+    // Use custom prompt if provided, otherwise use the default image generation prompt
+    const prompt = customPrompt || `Create a highly detailed, hyper-realistic image generation prompt for a ${industry} company called "${brand}" celebrating ${festival}. 
 
 Requirements:
 - Hyper-realistic photography style with professional lighting and composition

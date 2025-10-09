@@ -34,6 +34,50 @@ const generationConfig = {
   ],
 };
 
+const festivalGreetings: { [key: string]: string } = {
+  'Diwali': 'Happy Diwali',
+  'Holi': 'Happy Holi',
+  'Eid': 'Happy Eid',
+  'Christmas': 'Merry Christmas',
+  'New Year': 'Happy New Year',
+  'Halloween': 'Happy Halloween',
+  'Thanksgiving': 'Happy Thanksgiving',
+  'Easter': 'Happy Easter',
+  'Pongal': 'Happy Pongal',
+  'Baisakhi': 'Happy Baisakhi',
+  'Durga Puja': 'Happy Durga Puja',
+  'Ganesh Chaturthi': 'Happy Ganesh Chaturthi',
+  'Raksha Bandhan': 'Happy Raksha Bandhan',
+  'Valentine\'s Day': 'Happy Valentine\'s Day',
+  'Mother\'s Day': 'Happy Mother\'s Day',
+  'Father\'s Day': 'Happy Father\'s Day',
+  'Independence Day': 'Happy Independence Day',
+  'Republic Day': 'Happy Republic Day',
+  'Makar Sankranti': 'Happy Makar Sankranti',
+  'Maha Shivaratri': 'Happy Maha Shivaratri',
+  'Ram Navami': 'Happy Ram Navami',
+  'Janmashtami': 'Happy Janmashtami',
+  'Navratri': 'Happy Navratri',
+  'Onam': 'Happy Onam',
+  'Vijayadashami': 'Happy Vijayadashami',
+  'Karva Chauth': 'Happy Karva Chauth',
+  'Tej': 'Happy Tej',
+  'Guru Nanak Jayanti': 'Happy Guru Nanak Jayanti',
+  'Mahavir Jayanti': 'Happy Mahavir Jayanti',
+  'Buddha Purnima': 'Happy Buddha Purnima',
+  'Good Friday': 'Happy Good Friday',
+  'Boxing Day': 'Happy Boxing Day',
+  'St. Patrick\'s Day': 'Happy St. Patrick\'s Day',
+  'Cinco de Mayo': 'Happy Cinco de Mayo',
+  'Bastille Day': 'Happy Bastille Day',
+  'Oktoberfest': 'Happy Oktoberfest',
+  'Hanukkah': 'Happy Hanukkah',
+  'Kwanzaa': 'Happy Kwanzaa',
+  'Tet Nguyen Dan': 'Happy Tet Nguyen Dan',
+  'Diwali (Overseas)': 'Happy Diwali',
+  'Holi (Overseas)': 'Happy Holi',
+};
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -47,38 +91,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate base image using existing API
-    const campaignId = `festive-${randomUUID()}`;
-    const generateResponse = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/generate-image`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        prompt,
-        sampleCount: 1,
-        aspectRatio: '1:1',
-        campaignId,
-        index: 0,
-      }),
-    });
-
-    if (!generateResponse.ok) {
-      throw new Error('Failed to generate base image');
-    }
-
-    const generateData = await generateResponse.json();
-    const imageKey = generateData.key;
-
-    // Get the public URL of the generated image
-    const imageUrl = `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${imageKey}`;
+    // Generate base image using Gemini
+    const baseImageUrl = await generateBaseImage(prompt);
 
     // Convert logo file to base64
     const logoBuffer = await logo.arrayBuffer();
     const logoBase64 = `data:${logo.type};base64,${Buffer.from(logoBuffer).toString('base64')}`;
 
-    // Add text overlay using Nano Banana API
-    const imageWithTextUrl = await addTextOverlay(imageUrl, festival);
+    // Add text overlay using Gemini
+    const imageWithTextUrl = await addTextOverlay(baseImageUrl, festival);
 
     // Overlay logo using edit API
     const finalImageUrl = await overlayLogoUsingEditAPI(imageWithTextUrl, logoBase64);
@@ -90,19 +111,48 @@ export async function POST(request: NextRequest) {
   }
 }
 
+async function generateBaseImage(prompt: string): Promise<string> {
+  const generateResponse = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/generate-image`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      prompt,
+      sampleCount: 1,
+      aspectRatio: '1:1',
+      campaignId: `festive-${Date.now()}`,
+      index: 0,
+    }),
+  });
+
+  if (!generateResponse.ok) {
+    const errorText = await generateResponse.text();
+    throw new Error(`Failed to generate base image: ${errorText}`);
+  }
+
+  const generateData = await generateResponse.json();
+  const imageKey = generateData.key;
+  return `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${imageKey}`;
+}
+
 async function overlayLogoUsingEditAPI(imageUrl: string, logoBase64: string): Promise<string> {
   try {
-    // Fetch the image with text overlay
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error('Failed to fetch image for logo overlay');
+    let base64Image: string;
+    if (imageUrl.startsWith('data:image/')) {
+      base64Image = imageUrl.split(',')[1];
+    } else {
+      // Fetch the image with text overlay
+      const imageResponse = await fetch(imageUrl);
+      if (!imageResponse.ok) {
+        throw new Error('Failed to fetch image for logo overlay');
+      }
+      const imageBuffer = await imageResponse.arrayBuffer();
+      base64Image = Buffer.from(imageBuffer).toString('base64');
     }
     
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const base64Image = Buffer.from(imageBuffer).toString('base64');
-    
     // Create logo overlay prompt
-    const logoOverlayPrompt = `Overlay this logo on the top-right corner of the image. Place the logo in the top-right corner with a small margin from the edges. Make the logo visible but not too large - it should be proportional to the image size. Keep the logo's original colors and transparency. Do not change anything else in the image.`;
+    const logoOverlayPrompt = `Take this image and overlay the provided logo on the top-right corner. Place the logo in the top-right corner with a small margin from the edges. Make the logo clearly visible but not too large - it should be proportional to the image size (about 10-15% of the image width). Keep the logo's original colors and transparency. Do not change anything else in the image - keep all existing content including any text overlays exactly as they are.`;
     
     // Use edit API to overlay logo
     const editResponse = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/edit-image`, {
@@ -157,65 +207,92 @@ async function overlayLogoUsingEditAPI(imageUrl: string, logoBase64: string): Pr
 
 async function addTextOverlay(imageUrl: string, festival: string): Promise<string> {
   try {
-    // Fetch the image with logo
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error('Failed to fetch image for text overlay');
+    let base64Image: string;
+    if (imageUrl.startsWith('data:image/')) {
+      base64Image = imageUrl.split(',')[1];
+    } else {
+      // Fetch the image
+      const imageResponse = await fetch(imageUrl);
+      if (!imageResponse.ok) {
+        throw new Error('Failed to fetch image for text overlay');
+      }
+      const imageBuffer = await imageResponse.arrayBuffer();
+      base64Image = Buffer.from(imageBuffer).toString('base64');
     }
     
-    const imageBuffer = await imageResponse.arrayBuffer();
-    const base64Image = Buffer.from(imageBuffer).toString('base64');
+    // Generate subtitle/wish text
+    const subtitlePrompt = `Generate a one-line warm, festive wish for ${festival}. Make it personal and heartfelt, suitable for a brand greeting. Keep it under 15 words. Use perfect spelling and grammar. Examples: "Wishing you and your loved ones a very radiant Diwali" or "May your Holi be filled with colors of joy and happiness". Ensure the text is clear, professional, and error-free.`;
     
-    // Create text overlay prompt
-    const textOverlayPrompt = `Add a prominent, elegant text overlay to this image with the greeting "Happy ${festival}" in a stylish, festive font. The text should be clearly visible, well-positioned, and integrated naturally into the composition. Make the text overlay look professional and brand-appropriate.`;
-    
-    // Use Nano Banana API to add text overlay
-    const parts: any[] = [];
-    
-    // Add the image with logo
-    parts.push({
-      inlineData: {
-        mimeType: 'image/png',
-        data: base64Image,
+    const subtitleResponse = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/generate-prompt`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        brand: 'Generic Brand',
+        industry: 'General',
+        festival,
+        customPrompt: subtitlePrompt,
+      }),
     });
-    
-    // Add text prompt for overlay
-    parts.push({ text: textOverlayPrompt });
-    
-    const req = {
-      model: model,
-      contents: [
-        { role: 'user', parts }
-      ],
-      generationConfig: generationConfig,
-    };
-    
-    const streamingResp = await ai.models.generateContentStream(req);
-    
-    const generatedImages: string[] = [];
-    
-    for await (const chunk of streamingResp) {
-      if (chunk.candidates && chunk.candidates[0]?.content?.parts) {
-        for (const part of chunk.candidates[0].content.parts) {
-          if (part.inlineData && part.inlineData.data) {
-            generatedImages.push(part.inlineData.data);
-          }
-        }
+
+    let subtitle = '';
+    if (subtitleResponse.ok) {
+      const subtitleData = await subtitleResponse.json();
+      subtitle = subtitleData.prompt || '';
+      // Clean up the subtitle to be one line and ensure no spelling mistakes
+      subtitle = subtitle.replace(/\n/g, ' ').trim();
+      // Remove any extra quotes or unwanted characters
+      subtitle = subtitle.replace(/^["']|["']$/g, '');
+      if (subtitle.length > 100) {
+        subtitle = subtitle.substring(0, 100) + '...';
+      }
+      // Basic validation - ensure it contains the festival name or common festive words
+      const festiveWords = ['diwali', 'holi', 'christmas', 'eid', 'new year', 'thanksgiving', 'halloween', 'wishing', 'happy', 'joy', 'love', 'peace', 'prosperity'];
+      const hasFestiveContent = festiveWords.some(word => subtitle.toLowerCase().includes(word));
+      if (!hasFestiveContent || subtitle.length < 10) {
+        subtitle = `Wishing you a wonderful ${festival}`;
       }
     }
     
-    if (generatedImages.length === 0) {
-      throw new Error('No image generated from Nano Banana API');
-    }
+    // Create text overlay prompt with both title and subtitle - enhanced for visibility
+    const greeting = festivalGreetings[festival] || `Happy ${festival}`;
+    const textOverlayPrompt = `Add visible text overlay to this image. Write "${greeting}" in large, bold, white letters at the top center of the image. Below it, write "${subtitle || `Wishing you a wonderful ${festival}`}" in smaller white letters. Make sure both texts are clearly visible and readable against the background. Use high contrast if needed. Do not change the background image, only add the text on top.`;
     
-    // Use the first generated image
-    const generatedBuffer = Buffer.from(generatedImages[0], 'base64');
+    // Use edit API to add text overlay
+    const editResponse = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/edit-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt: textOverlayPrompt,
+        input_image: `data:image/png;base64,${base64Image}`,
+      }),
+    });
+
+    if (!editResponse.ok) {
+      throw new Error('Failed to add text overlay using edit API');
+    }
+
+    const editData = await editResponse.json();
+    
+    if (editData.error) {
+      throw new Error(`Edit API error: ${editData.error}`);
+    }
+
+    // The edit API returns a data URL, extract the base64 and upload to R2
+    let finalImageBase64 = editData.image;
+    if (finalImageBase64.startsWith('data:image/')) {
+      finalImageBase64 = finalImageBase64.split(',')[1];
+    }
+
+    const finalBuffer = Buffer.from(finalImageBase64, 'base64');
     
     // Upload to R2
     const uploadResult = await uploadMultipleImagesToR2(
       [{
-        buffer: generatedBuffer,
+        buffer: finalBuffer,
         prompt: `festive-image-with-text-${festival}`,
         mimeType: 'image/png',
       }],
@@ -228,7 +305,7 @@ async function addTextOverlay(imageUrl: string, festival: string): Promise<strin
     
   } catch (error) {
     console.error('Error adding text overlay:', error);
-    // Return the image with logo if text overlay fails
+    // Return the original image if text overlay fails
     return imageUrl;
   }
 }
