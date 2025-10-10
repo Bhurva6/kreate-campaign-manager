@@ -9,17 +9,17 @@ export async function POST(request: NextRequest) {
 
 Requirements:
 - Clean, minimalistic design with few meaningful elements
-- Include essential ${industry} industry elements and branding that represent "${brand}"
+- Include essential ${industry} industry elements and subtle branding elements that represent "${brand}" (do not include any logos, text, or company names)
 - Incorporate subtle ${festival} cultural elements and decorations
 - Create a warm, celebratory atmosphere with festive colors
 - Simple composition with ample white space
+- IMPORTANT: Leave significant empty/clear space at the top center of the image (about 30-40% of the image height) for text overlays - do not place any elements, decorations, or content in the top portion
 - Ensure all elements are culturally appropriate and respectful
 - Avoid including any humans or people in the image
+- Do not include any text overlays, greetings, or written elements
 - Make it elegant and brand-appropriate for marketing campaigns
 
-IMPORTANT: Include a prominent, elegant text overlay on the image with the greeting "Happy ${festival}" in a clean, modern font that complements the minimalistic design. The text should be clearly visible and well-positioned.
-
-Generate a concise prompt that an AI image generator can use to create a minimalistic festive celebration image that represents this ${industry} brand during ${festival}. Focus on simplicity, key elements only, and no human figures.`;
+Generate a concise prompt that an AI image generator can use to create a minimalistic festive celebration image that represents this ${industry} brand during ${festival}. Focus on simplicity, key elements only, and no human figures, logos, or text. Ensure the top portion of the image remains completely clear and empty for text overlay placement.`;
 
     // Call Gemini API directly using API key
     const geminiApiKey = process.env.GEMINI_API_KEY;

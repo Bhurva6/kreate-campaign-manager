@@ -28,6 +28,7 @@ export default function PricingPage() {
   const [generatedImages, setGeneratedImages] = useState<{festival: string, imageUrl: string}[]>([]);
   const [selectedImage, setSelectedImage] = useState<{festival: string, imageUrl: string} | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [customTexts, setCustomTexts] = useState<{[festival: string]: {title: string, subtitle: string}}>({});
 
   const festivalOptions = [
     'Diwali', 'Holi', 'Eid', 'Christmas', 'New Year', 'Halloween', 'Thanksgiving', 'Easter',
@@ -73,7 +74,7 @@ export default function PricingPage() {
         const prompt = await generateFestivePrompt(brandName, industry, festival);
         
         // Generate image using your API
-        const imageUrl = await generateFestiveImage(prompt, logo, references, festival);
+        const imageUrl = await generateFestiveImage(prompt, logo, references, festival, customTexts[festival]?.title, customTexts[festival]?.subtitle);
         
         results.push({ festival, imageUrl });
       }
@@ -117,11 +118,13 @@ export default function PricingPage() {
     return data.prompt;
   };
 
-  const generateFestiveImage = async (prompt: string, logo: File, references: File[], festival: string): Promise<string> => {
+  const generateFestiveImage = async (prompt: string, logo: File, references: File[], festival: string, customTitle?: string, customSubtitle?: string): Promise<string> => {
     const formData = new FormData();
     formData.append('prompt', prompt);
     formData.append('logo', logo);
     formData.append('festival', festival);
+    if (customTitle) formData.append('customTitle', customTitle);
+    if (customSubtitle) formData.append('customSubtitle', customSubtitle);
     references.forEach((ref, index) => {
       formData.append(`reference_${index}`, ref);
     });
@@ -375,6 +378,49 @@ export default function PricingPage() {
               </div>
             </div>
 
+            {/* Custom Title and Subtitle for each selected festival */}
+            {festivals.length > 0 && (
+              <div className="space-y-6">
+                <h3 className="text-lg font-medium text-white">Custom Text for Each Festival</h3>
+                {festivals.map((festival) => (
+                  <div key={festival} className="border border-gray-600 rounded-lg p-4 bg-gray-800/50">
+                    <h4 className="text-md font-medium text-white mb-3">{festival}</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Custom Title */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-white">Custom Title</label>
+                        <input
+                          type="text"
+                          value={customTexts[festival]?.title || ''}
+                          onChange={(e) => setCustomTexts({
+                            ...customTexts,
+                            [festival]: { ...customTexts[festival], title: e.target.value },
+                          })}
+                          className="w-full p-3 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-800 text-white placeholder-gray-400"
+                          placeholder={`Enter custom title for ${festival}`}
+                        />
+                      </div>
+
+                      {/* Custom Subtitle */}
+                      <div>
+                        <label className="block text-sm font-medium mb-2 text-white">Custom Subtitle</label>
+                        <input
+                          type="text"
+                          value={customTexts[festival]?.subtitle || ''}
+                          onChange={(e) => setCustomTexts({
+                            ...customTexts,
+                            [festival]: { ...customTexts[festival], subtitle: e.target.value },
+                          })}
+                          className="w-full p-3 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-800 text-white placeholder-gray-400"
+                          placeholder={`Enter custom subtitle for ${festival}`}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Submit Button - Centered */}
             <div className="flex justify-center">
               <button
@@ -413,7 +459,7 @@ export default function PricingPage() {
                       <img
                         src={logoUrl}
                         alt="Logo overlay"
-                        className="absolute top-2 right-16 w-12 h-12 object-contain opacity-80"
+                        className="absolute top-2 right-16 w-16 h-16 object-contain opacity-80"
                       />
                     )}
                     {/* Download Button */}

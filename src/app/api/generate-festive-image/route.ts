@@ -80,10 +80,18 @@ const festivalGreetings: { [key: string]: string } = {
 
 export async function POST(request: NextRequest) {
   try {
+    // Construct base URL from request headers for internal API calls
+    const host = request.headers.get('host') || 'localhost:3000';
+    const protocol = request.headers.get('x-forwarded-proto') || 
+                    (host.includes('localhost') ? 'http' : 'https');
+    const baseUrl = `${protocol}://${host}`;
+
     const formData = await request.formData();
     const prompt = formData.get('prompt') as string;
     const logo = formData.get('logo') as File;
     const festival = formData.get('festival') as string;
+    const customTitle = formData.get('customTitle') as string | null;
+    const customSubtitle = formData.get('customSubtitle') as string | null;
     const references = [];
     for (const [key, value] of formData.entries()) {
       if (key.startsWith('reference_')) {
@@ -92,17 +100,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate base image using Gemini
-    const baseImageUrl = await generateBaseImage(prompt);
+    const baseImageUrl = await generateBaseImage(prompt, baseUrl);
 
     // Convert logo file to base64
     const logoBuffer = await logo.arrayBuffer();
     const logoBase64 = `data:${logo.type};base64,${Buffer.from(logoBuffer).toString('base64')}`;
 
     // Add text overlay using Gemini
-    const imageWithTextUrl = await addTextOverlay(baseImageUrl, festival);
+    const imageWithTextUrl = await addTextOverlay(baseImageUrl, festival, customTitle, customSubtitle, baseUrl);
 
     // Overlay logo using edit API
-    const finalImageUrl = await overlayLogoUsingEditAPI(imageWithTextUrl, logoBase64);
+    const finalImageUrl = await overlayLogoUsingEditAPI(imageWithTextUrl, logoBase64, baseUrl);
 
     return NextResponse.json({ imageUrl: finalImageUrl });
   } catch (error) {
@@ -111,8 +119,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function generateBaseImage(prompt: string): Promise<string> {
-  const generateResponse = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/generate-image`, {
+async function generateBaseImage(prompt: string, baseUrl: string): Promise<string> {
+  const generateResponse = await fetch(`${baseUrl}/api/generate-image`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -136,7 +144,7 @@ async function generateBaseImage(prompt: string): Promise<string> {
   return `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${imageKey}`;
 }
 
-async function overlayLogoUsingEditAPI(imageUrl: string, logoBase64: string): Promise<string> {
+async function overlayLogoUsingEditAPI(imageUrl: string, logoBase64: string, baseUrl: string): Promise<string> {
   try {
     let base64Image: string;
     if (imageUrl.startsWith('data:image/')) {
@@ -155,7 +163,7 @@ async function overlayLogoUsingEditAPI(imageUrl: string, logoBase64: string): Pr
     const logoOverlayPrompt = `Take this image and overlay the provided logo on the top-right corner. Place the logo in the top-right corner with a small margin from the edges. Make the logo clearly visible but not too large - it should be proportional to the image size (about 10-15% of the image width). Keep the logo's original colors and transparency. Do not change anything else in the image - keep all existing content including any text overlays exactly as they are.`;
     
     // Use edit API to overlay logo
-    const editResponse = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/edit-image`, {
+    const editResponse = await fetch(`${baseUrl}/api/edit-image`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -205,7 +213,7 @@ async function overlayLogoUsingEditAPI(imageUrl: string, logoBase64: string): Pr
   }
 }
 
-async function addTextOverlay(imageUrl: string, festival: string): Promise<string> {
+async function addTextOverlay(imageUrl: string, festival: string, customTitle: string | null, customSubtitle: string | null, baseUrl: string): Promise<string> {
   try {
     let base64Image: string;
     if (imageUrl.startsWith('data:image/')) {
@@ -220,53 +228,58 @@ async function addTextOverlay(imageUrl: string, festival: string): Promise<strin
       base64Image = Buffer.from(imageBuffer).toString('base64');
     }
     
-    // Generate subtitle/wish text
+    // Generate subtitle/wish text only if custom subtitle is not provided
     let subtitle = `Wishing you a wonderful ${festival}`; // Default subtitle
     
-    const subtitlePrompt = `Generate a one-line warm, festive wish for ${festival}. Make it personal and heartfelt, suitable for a brand greeting. Keep it under 15 words. Use perfect spelling and grammar. Examples: "Wishing you and your loved ones a very radiant Diwali" or "May your Holi be filled with colors of joy and happiness". Ensure the text is clear, professional, and error-free.`;
-    
-    try {
-      const subtitleResponse = await fetch(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/generate-prompt`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          brand: 'Generic Brand',
-          industry: 'General',
-          festival,
-          customPrompt: subtitlePrompt,
-        }),
-      });
+    if (!customSubtitle) {
+      const subtitlePrompt = `Generate a one-line warm, festive wish for ${festival}. Make it personal and heartfelt, suitable for a brand greeting. Keep it under 15 words. Use perfect spelling and grammar. Examples: "Wishing you and your loved ones a very radiant Diwali" or "May your Holi be filled with colors of joy and happiness". Ensure the text is clear, professional, and error-free.`;
+      
+      try {
+        const subtitleResponse = await fetch(`${baseUrl}/api/generate-prompt`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            brand: 'Generic Brand',
+            industry: 'General',
+            festival,
+            customPrompt: subtitlePrompt,
+          }),
+        });
 
-      if (subtitleResponse.ok) {
-        const subtitleData = await subtitleResponse.json();
-        const generatedSubtitle = subtitleData.prompt || '';
-        // Clean up the subtitle to be one line and ensure no spelling mistakes
-        const cleanedSubtitle = generatedSubtitle.replace(/\n/g, ' ').trim();
-        // Remove any extra quotes or unwanted characters
-        const finalSubtitle = cleanedSubtitle.replace(/^["']|["']$/g, '');
-        if (finalSubtitle.length > 10 && finalSubtitle.length <= 100) {
-          // Basic validation - ensure it contains the festival name or common festive words
-          const festiveWords = ['diwali', 'holi', 'christmas', 'eid', 'new year', 'thanksgiving', 'halloween', 'wishing', 'happy', 'joy', 'love', 'peace', 'prosperity'];
-          const hasFestiveContent = festiveWords.some(word => finalSubtitle.toLowerCase().includes(word));
-          if (hasFestiveContent) {
-            subtitle = finalSubtitle;
+        if (subtitleResponse.ok) {
+          const subtitleData = await subtitleResponse.json();
+          const generatedSubtitle = subtitleData.prompt || '';
+          // Clean up the subtitle to be one line and ensure no spelling mistakes
+          const cleanedSubtitle = generatedSubtitle.replace(/\n/g, ' ').trim();
+          // Remove any extra quotes or unwanted characters
+          const finalSubtitle = cleanedSubtitle.replace(/^["']|["']$/g, '');
+          if (finalSubtitle.length > 10 && finalSubtitle.length <= 100) {
+            // Basic validation - ensure it contains the festival name or common festive words
+            const festiveWords = ['diwali', 'holi', 'christmas', 'eid', 'new year', 'thanksgiving', 'halloween', 'wishing', 'happy', 'joy', 'love', 'peace', 'prosperity'];
+            const hasFestiveContent = festiveWords.some(word => finalSubtitle.toLowerCase().includes(word));
+            if (hasFestiveContent) {
+              subtitle = finalSubtitle;
+            }
           }
         }
+      } catch (error) {
+        console.error('Error generating subtitle:', error);
+        // Keep the default subtitle
       }
-    } catch (error) {
-      console.error('Error generating subtitle:', error);
-      // Keep the default subtitle
     }
     
     // Create text overlay prompt with both title and subtitle - enhanced for visibility
     const greeting = festivalGreetings[festival] || `Happy ${festival}`;
+    const titleLine = customTitle || greeting;
+    const subtitleLine = customSubtitle || subtitle;
+    
     const textOverlayPrompt = `Take this image and add two lines of visible text overlay at the top center of the image:
 
-First line: Write "${greeting}" in large, bold, white letters.
+First line: Write "${titleLine}" in large, bold, white letters.
 
-Second line: Write "${subtitle}" in smaller white letters below the first line.
+Second line: Write "${subtitleLine}" in smaller white letters below the first line.
 
 Make sure both lines of text are clearly visible and readable against the background. Use high contrast colors (white text with dark outline/shadow if needed). Position the text at the top center with appropriate spacing between the two lines. Do not change anything else in the image - keep all existing content exactly as it is.`;
     
