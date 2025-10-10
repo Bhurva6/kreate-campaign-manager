@@ -301,28 +301,7 @@ export default function PricingPage() {
                     />
                   </div>
                 )}
-              </div>
-
-              {/* Upload References */}
-              <div>
-                <label className="block text-sm font-medium mb-2 text-white">Upload References (Optional)</label>
-                <input
-                  type="file"
-                  accept=".png,.jpg,.jpeg"
-                  multiple
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    if (files.length > 4) {
-                      alert('Maximum 4 reference files allowed');
-                      setReferences(files.slice(0, 4));
-                    } else {
-                      setReferences(files);
-                    }
-                  }}
-                  className="w-full p-3 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-800 text-white file:bg-blue-600 file:text-white file:border-none file:rounded file:px-3 file:py-1 file:mr-3"
-                />
-                <p className="text-xs text-gray-400 mt-1">Accepted formats: PNG, JPG, JPEG (max 4 files)</p>
-              </div>
+              </div>            
             </div>
 
             {/* Bottom Row - Industry and Festivals */}
