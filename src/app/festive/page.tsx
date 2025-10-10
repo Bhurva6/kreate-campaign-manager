@@ -27,6 +27,7 @@ export default function PricingPage() {
   const [loading, setLoading] = useState(false);
   const [generatedImages, setGeneratedImages] = useState<{festival: string, imageUrl: string}[]>([]);
   const [selectedImage, setSelectedImage] = useState<{festival: string, imageUrl: string} | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const festivalOptions = [
     'Diwali', 'Holi', 'Eid', 'Christmas', 'New Year', 'Halloween', 'Thanksgiving', 'Easter',
@@ -49,19 +50,20 @@ export default function PricingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!industry) {
-      alert('Please select an industry');
+      setErrorMessage('Please select an industry');
       return;
     }
     if (festivals.length === 0) {
-      alert('Please select at least one festival');
+      setErrorMessage('Please select at least one festival');
       return;
     }
     if (!logo) {
-      alert('Please upload a logo');
+      setErrorMessage('Please upload a logo');
       return;
     }
 
     setLoading(true);
+    setErrorMessage('');
     setGeneratedImages([]);
 
     try {
@@ -78,7 +80,7 @@ export default function PricingPage() {
       setGeneratedImages(results);
     } catch (error) {
       console.error('Error generating images:', error);
-      alert('Error generating images. Please try again.');
+      setErrorMessage(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -99,7 +101,16 @@ export default function PricingPage() {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate prompt');
+      let errorMessage = `Failed to generate prompt: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage += ` - ${errorData.message}`;
+        }
+      } catch (e) {
+        // Ignore if can't parse error
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -121,7 +132,16 @@ export default function PricingPage() {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate image');
+      let errorMessage = `Failed to generate image: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage += ` - ${errorData.message}`;
+        }
+      } catch (e) {
+        // Ignore if can't parse error
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
@@ -131,6 +151,9 @@ export default function PricingPage() {
   const downloadImage = async (imageUrl: string, filename: string) => {
     try {
       const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       
@@ -144,7 +167,7 @@ export default function PricingPage() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading image:', error);
-      alert('Failed to download image. Please try again.');
+      alert(error instanceof Error ? error.message : 'Failed to download image. Please try again.');
     }
   };
 
@@ -384,6 +407,14 @@ export default function PricingPage() {
               </button>
             </div>
           </form>
+
+          {/* Error Message Display */}
+          {errorMessage && (
+            <div className="mt-6 p-4 bg-red-600 text-white rounded-lg text-center">
+              <p className="font-semibold">Error:</p>
+              <p>{errorMessage}</p>
+            </div>
+          )}
 
           {/* Generated Images Display */}
           {generatedImages.length > 0 && (
