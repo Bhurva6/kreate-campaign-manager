@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadMultipleImagesToR2, base64ToBuffer, getMimeTypeFromDataUrl } from "@/lib/r2-upload";
-import { tokenManager } from "@/lib/google-auth";
 import { randomUUID } from 'crypto';
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 
@@ -87,7 +86,8 @@ export async function POST(request: NextRequest) {
     const baseUrl = `${protocol}://${host}`;
 
     const formData = await request.formData();
-    const prompt = formData.get('prompt') as string;
+    const brandName = formData.get('brandName') as string;
+    const industry = formData.get('industry') as string;
     const logo = formData.get('logo') as File;
     const festival = formData.get('festival') as string;
     const customTitle = formData.get('customTitle') as string | null;
@@ -99,12 +99,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate base image using Gemini
-    const baseImageUrl = await generateBaseImage(prompt, baseUrl);
-
     // Convert logo file to base64
     const logoBuffer = await logo.arrayBuffer();
     const logoBase64 = `data:${logo.type};base64,${Buffer.from(logoBuffer).toString('base64')}`;
+
+    // Generate festive prompt
+    const prompt = await generateFestivePrompt(brandName, industry, festival, '');
+
+    // Generate base image using Gemini
+    const baseImageUrl = await generateBaseImage(prompt, baseUrl);
 
     // Add text overlay using Gemini
     const imageWithTextUrl = await addTextOverlay(baseImageUrl, festival, customTitle, customSubtitle, baseUrl);
@@ -160,7 +163,7 @@ async function overlayLogoUsingEditAPI(imageUrl: string, logoBase64: string, bas
     }
     
     // Create logo overlay prompt
-    const logoOverlayPrompt = `Take this image and overlay the provided logo on the top-right corner. Place the logo in the top-right corner with a small margin from the edges. Make the logo clearly visible but not too large - it should be proportional to the image size (about 10-15% of the image width). Keep the logo's original colors and transparency. Do not change anything else in the image - keep all existing content including any text overlays exactly as they are.`;
+    const logoOverlayPrompt = `Take this image and overlay the provided logo on the top-right corner. Place the logo in the top-right corner with exactly 10 pixels of margin from the edges. Make the logo clearly visible and appropriately sized - it should be proportional to the image size (at least 40% of the image width). Keep the logo's original colors and transparency. Do not change anything else in the image - keep all existing content including any text overlays exactly as they are.`;
     
     // Use edit API to overlay logo
     const editResponse = await fetch(`${baseUrl}/api/edit-image`, {
@@ -229,10 +232,11 @@ async function addTextOverlay(imageUrl: string, festival: string, customTitle: s
     }
     
     // Generate subtitle/wish text only if custom subtitle is not provided
+    const greeting = festivalGreetings[festival] || `Happy ${festival}`;
     let subtitle = `Wishing you a wonderful ${festival}`; // Default subtitle
     
     if (!customSubtitle) {
-      const subtitlePrompt = `Generate a one-line warm, festive wish for ${festival}. Make it personal and heartfelt, suitable for a brand greeting. Keep it under 15 words. Use perfect spelling and grammar. Examples: "Wishing you and your loved ones a very radiant Diwali" or "May your Holi be filled with colors of joy and happiness". Ensure the text is clear, professional, and error-free.`;
+      const subtitlePrompt = `Generate a one-line warm, heartfelt wish for ${festival} that does NOT include the words "${greeting}" or repeat the festival name. Make it personal and suitable for a brand greeting. Keep it under 15 words. Use perfect spelling and grammar. Examples: "Wishing you and your loved ones joy and prosperity" or "May your celebrations be filled with warmth and happiness". Focus on emotional warmth, well-wishes, and positive sentiments without mentioning the specific festival name or repeating greeting phrases. Ensure the text is clear, professional, and error-free.`;
       
       try {
         const subtitleResponse = await fetch(`${baseUrl}/api/generate-prompt`, {
@@ -271,17 +275,16 @@ async function addTextOverlay(imageUrl: string, festival: string, customTitle: s
     }
     
     // Create text overlay prompt with both title and subtitle - enhanced for visibility
-    const greeting = festivalGreetings[festival] || `Happy ${festival}`;
     const titleLine = customTitle || greeting;
     const subtitleLine = customSubtitle || subtitle;
     
-    const textOverlayPrompt = `Take this image and add two lines of visible text overlay at the top center of the image:
+    const textOverlayPrompt = `Take this image and add two lines of visible text overlay in the top part of the image:
 
-First line: Write "${titleLine}" in large, bold, white letters.
+First line: Write "${titleLine}" in a randomly chosen elegant, festive font style from these options: cursive script, decorative calligraphy, ornate serif, stylish sans-serif, or artistic brush script - make it large, visually striking, and decorative.
 
 Second line: Write "${subtitleLine}" in smaller white letters below the first line.
 
-Make sure both lines of text are clearly visible and readable against the background. Use high contrast colors (white text with dark outline/shadow if needed). Position the text at the top center with appropriate spacing between the two lines. Do not change anything else in the image - keep all existing content exactly as it is.`;
+Make sure both lines of text are clearly visible and readable against the background. Use high contrast colors (white text with dark outline/shadow if needed). Position the text in the upper portion with appropriate spacing between the two lines. Do not change anything else in the image - keep all existing content exactly as it is.`;
     
     // Use Gemini to add text overlay
     const parts: any[] = [];
@@ -340,5 +343,135 @@ Make sure both lines of text are clearly visible and readable against the backgr
     console.error('Error adding text overlay:', error);
     // Return the original image if text overlay fails
     return imageUrl;
+  }
+}
+
+async function generateFestivePrompt(brand: string, industry: string, festival: string, logoColors?: string): Promise<string> {
+  try {
+    // Festival-specific color schemes
+    const festivalColors: { [key: string]: string } = {
+      'Diwali': 'golden yellows, deep oranges, warm reds, rich maroons, bright whites',
+      'Holi': 'vibrant pinks, electric blues, sunny yellows, bright greens, purple hues',
+      'Eid': 'soft greens, creamy whites, elegant golds, serene blues, warm beiges',
+      'Christmas': 'deep reds, forest greens, metallic golds, snowy whites, festive silvers',
+      'New Year': 'sparkling silvers, midnight blues, champagne golds, white accents, celebratory purples',
+      'Halloween': 'deep oranges, midnight blacks, glowing yellows, purple shadows, spooky greens',
+      'Thanksgiving': 'warm oranges, earthy browns, harvest golds, autumn reds, creamy whites',
+      'Easter': 'pastel pinks, soft blues, spring greens, yellow sunshine, white purity',
+      'Pongal': 'earthy browns, harvest oranges, golden yellows, fresh greens, traditional whites',
+      'Baisakhi': 'bright yellows, royal blues, festive pinks, golden accents, vibrant greens',
+      'Durga Puja': 'rich reds, golden yellows, white purity, traditional oranges, auspicious greens',
+      'Ganesh Chaturthi': 'marigold yellows, auspicious reds, white sanctity, golden accents, festive pinks',
+      'Raksha Bandhan': 'sweet pinks, traditional reds, golden threads, white purity, celebratory yellows',
+      'Valentine\'s Day': 'romantic reds, soft pinks, white purity, golden hearts, blush roses',
+      'Mother\'s Day': 'gentle pinks, soft lavenders, white lilies, golden warmth, spring greens',
+      'Father\'s Day': 'deep blues, metallic silvers, warm browns, classic whites, golden accents',
+      'Independence Day': 'saffron oranges, white purity, forest greens, patriotic blues, golden rays',
+      'Republic Day': 'patriotic blues, white dignity, forest greens, golden honors, saffron pride',
+      'Makar Sankranti': 'sky blues, kite colors, golden sunshine, white clouds, vibrant rainbow hues',
+      'Maha Shivaratri': 'deep blues, white ash, golden accents, spiritual purples, sacred oranges',
+      'Ram Navami': 'auspicious yellows, divine blues, golden crowns, white purity, festive pinks',
+      'Janmashtami': 'divine blues, golden yellows, white purity, festive decorations, sacred colors',
+      'Navratri': 'traditional whites, auspicious reds, golden accents, festival colors, devotional purples',
+      'Onam': 'golden yellows, fresh greens, white purity, floral pinks, harvest oranges',
+      'Vijayadashami': 'victorious yellows, auspicious reds, white purity, golden celebrations, traditional greens',
+      'Karva Chauth': 'romantic pinks, traditional reds, golden jewelry, white purity, festive yellows',
+      'Tej': 'celebratory yellows, traditional reds, white sanctity, golden accents, festive colors',
+      'Guru Nanak Jayanti': 'spiritual blues, golden yellows, white purity, devotional colors, sacred oranges',
+      'Mahavir Jayanti': 'peaceful whites, spiritual yellows, serene blues, golden enlightenment, pure colors',
+      'Buddha Purnima': 'serene whites, spiritual yellows, peaceful blues, golden enlightenment, pure lotus colors',
+      'Good Friday': 'solemn purples, golden crosses, white purity, spiritual blues, reverent colors',
+      'Boxing Day': 'festive reds, holiday greens, metallic golds, snowy whites, celebratory colors',
+      'St. Patrick\'s Day': 'lucky greens, golden shamrocks, white purity, festive colors, Irish hues',
+      'Cinco de Mayo': 'vibrant greens, red celebrations, white accents, golden fiesta colors, festive yellows',
+      'Bastille Day': 'patriotic blues, white dignity, red celebration, golden honors, French flag colors',
+      'Oktoberfest': 'beer browns, festive yellows, blue accents, traditional whites, Bavarian colors',
+      'Hanukkah': 'deep blues, golden menorahs, white purity, silver accents, festival colors',
+      'Kwanzaa': 'earthy browns, vibrant reds, deep greens, golden yellows, African heritage colors',
+      'Tet Nguyen Dan': 'lucky reds, golden prosperity, white purity, festival colors, Vietnamese traditions',
+      'Diwali (Overseas)': 'golden yellows, deep oranges, warm reds, rich maroons, bright whites',
+      'Holi (Overseas)': 'vibrant pinks, electric blues, sunny yellows, bright greens, purple hues'
+    };
+
+    // Industry-specific creative inspiration
+    const industryInspirations: { [key: string]: string } = {
+      'Technology': 'modern digital aesthetics, circuit patterns, geometric shapes, futuristic elements',
+      'Healthcare': 'healing symbols, gentle curves, medical motifs, wellness imagery',
+      'Finance': 'geometric patterns, stability symbols, growth charts, professional elegance',
+      'Retail': 'shopping motifs, product displays, consumer elements, vibrant displays',
+      'Manufacturing': 'industrial motifs, machinery elements, precision patterns, engineering aesthetics',
+      'Education': 'knowledge symbols, learning elements, inspirational motifs, academic themes',
+      'Food & Beverage': 'culinary elements, ingredient motifs, dining aesthetics, flavor representations',
+      'Automotive': 'vehicle silhouettes, motion lines, engineering precision, speed elements',
+      'Real Estate': 'architectural elements, home motifs, stability symbols, community themes',
+      'Entertainment': 'performance elements, creative motifs, artistic expressions, media symbols',
+      'Agriculture': 'natural motifs, growth elements, harvest symbols, earth tones',
+      'Construction': 'building elements, structural motifs, architectural patterns, strength symbols',
+      'Energy': 'power symbols, flow elements, natural force motifs, dynamic patterns',
+      'Telecommunications': 'connection motifs, network patterns, communication symbols, digital waves',
+      'Transportation': 'movement elements, journey motifs, connectivity symbols, travel themes',
+      'Media': 'communication elements, storytelling motifs, creative expressions, media symbols',
+      'Pharmaceuticals': 'scientific motifs, research elements, health symbols, innovation patterns',
+      'Consulting': 'strategy elements, insight motifs, professional patterns, guidance symbols',
+      'Legal Services': 'justice motifs, balance elements, professional symbols, trust patterns',
+      'Hospitality': 'welcome elements, comfort motifs, service symbols, experience themes',
+      'Other': 'versatile elements, adaptable motifs, creative patterns, unique expressions'
+    };
+
+    const industryInspiration = industryInspirations[industry] || industryInspirations['Other'];
+    const festivalColorScheme = festivalColors[festival] || 'warm and vibrant colors';
+
+    const promptTemplate = `Create a creative, highly aesthetic image generation prompt for a ${industry} company called "${brand}" celebrating ${festival}. 
+
+Requirements:
+- Create a visually stunning, festival-appropriate design that captures the essence and beauty of ${festival}
+- Include essential ${industry} industry elements and subtle branding elements that represent "${brand}" (do not include any logos, text, or company names)
+- Incorporate prominent, culturally authentic ${festival} cultural elements and decorations that are visually striking and festival-specific
+- Use rich, vibrant ${festival} colors: ${festivalColorScheme} throughout the design
+- CRITICAL LAYOUT: Place ALL foreground elements, decorations, and content ONLY in the lower 60% of the image - the bottom portion should be filled with beautiful, festival-relevant elements
+- CRITICAL LAYOUT: Leave the top 40% of the image COMPLETELY EMPTY and clear - no elements, decorations, or content whatsoever in the upper portion - this space is reserved exclusively for text overlays
+- Draw creative inspiration from ${industry} industry aesthetics: ${industryInspiration}
+- Ensure all elements are culturally appropriate, respectful, and highly aesthetic
+- Avoid including any humans or people in the image
+- Do not include any text overlays, greetings, or written elements
+- Make it elegant, brand-appropriate, and visually captivating for marketing campaigns
+- CRITICAL: Use a vibrant, colorful background with rich ${festivalColorScheme} - incorporate beautiful, prominent ${festival} decorative elements as background patterns (like elaborate diyas, rangoli, flowers, or traditional symbols) in vibrant, saturated tones that create a festive atmosphere - the background should be rich and celebratory, not minimal or light
+
+Generate a concise prompt that an AI image generator can use to create a highly aesthetic, festival-celebratory image that represents this ${industry} brand during ${festival}. Focus on visual beauty, cultural authenticity, and proper spatial distribution with foreground elements in the lower 60% and top 40% completely clear for text placement. The background should be vibrant and festival-rich.`;
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: promptTemplate
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.3,
+          maxOutputTokens: 500,
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate prompt from Gemini');
+    }
+
+    const data = await response.json();
+    const generatedPrompt = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+    if (!generatedPrompt) {
+      throw new Error('No prompt generated from Gemini');
+    }
+
+    return generatedPrompt;
+  } catch (error) {
+    console.error('Error generating festive prompt:', error);
+    // Return a fallback prompt
+    return `Create a highly aesthetic, festival-celebratory image for ${brand} in the ${industry} industry celebrating ${festival}. Place all foreground elements and decorations only in the lower 60% of the image, leave the top 40% completely empty for text. Use vibrant festival colors with rich, prominent festival decorative elements as background patterns. Make it visually stunning and culturally authentic.`;
   }
 }

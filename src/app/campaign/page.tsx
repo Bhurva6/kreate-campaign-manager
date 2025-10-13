@@ -7,9 +7,12 @@ import AuthModal from '../../components/AuthModal';
 import UserDropdown from '../../components/UserDropdown';
 import { useState } from 'react';
 import { useCampaignStore } from '../../store/campaignStore';
+import { useCredits } from '@/lib/credits';
 
 export default function CampaignPage() {
   const router = useRouter();
+  
+    const { imageGenerationsUsed, imageGenerationsLimit, imageEditsUsed, imageEditsLimit, isUnlimitedUser } = useCredits();
   const { user, loading: authLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const setCampaignData = useCampaignStore(state => state.setCampaignData);
@@ -199,7 +202,58 @@ export default function CampaignPage() {
     'TikTok Video (9:16)',
     'YouTube Thumbnail (16:9)'
   ];
-
+function AccountDropdown({ user }: { user: { name: string; email: string; image: string } | null }) {
+  const [open, setOpen] = useState(false);
+  if (!user) return null;
+  return (
+    <div style={{ position: 'relative', zIndex: 20 }}>
+      <div
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          cursor: 'pointer',
+          background: 'rgba(255,255,255,0.08)',
+          borderRadius: '100px',
+          padding: '0.5rem 2rem',
+          fontSize: '1.2rem',
+          fontWeight: 'bold',
+          letterSpacing: '1px',
+          border: '2px solid transparent',
+          height: 'auto',
+          minHeight: 'unset',
+        }}
+      >
+        {/* My Account Icon */}
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style={{ marginRight: 8 }}>
+          <circle cx="12" cy="8" r="4" stroke="#fff" strokeWidth="2" />
+          <path d="M4 20c0-3.333 2.667-6 8-6s8 2.667 8 6" stroke="#fff" strokeWidth="2" />
+        </svg>
+        <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.2rem', letterSpacing: '1px' }}>{user.name}</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </div>
+      {open && (
+        <div style={{ position: 'absolute', top: '110%', right: 0, background: '#23272F', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.15)', minWidth: 220, padding: '1rem', color: 'white' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <img src={user.image || '/google.svg'} alt="Google" style={{ width: 32, height: 32, borderRadius: '50%' }} />
+            <div>
+              <div style={{ fontWeight: 'bold', fontSize: '1rem' }}>{user.name}</div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.7 }}>{user.email}</div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => { /* Add your logout logic here */ }}
+            style={{ width: '100%', background: '#F53057', color: 'white', border: 'none', borderRadius: '8px', padding: '0.6rem', fontWeight: 'bold', cursor: 'pointer', fontSize: '1rem' }}
+          >
+            Log out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
   const getAspectRatio = (media: string) => {
     if (media.includes('1:1')) return '1:1';
     if (media.includes('9:16')) return '9:16';
@@ -216,17 +270,94 @@ export default function CampaignPage() {
       reader.readAsDataURL(file);
     });
   };
+    const dropdownUser = user ? {
+    name: user.displayName || user.email || '',
+    email: user.email || '',
+    image: user.photoURL || '/google.svg',
+  } : null;
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
       {/* Navbar */}
-      <div className="flex flex-row justify-between items-center w-full p-3 sm:p-4 md:p-6 bg-black z-[999999]">
-        <Link href="/">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white cursor-pointer">
-            GoLoco
-          </div>
-        </Link>
+      <div
+        style={{
+          position: 'absolute',
+          top: 32,
+          right: 32,
+          zIndex: 40,
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: '24px',
+          width: 'auto',
+        }}
+        className="top-controls"
+      >
+        {/* Credit usage display */}
+        <div style={{
+          background: '#23272F',
+          color: 'white',
+          borderRadius: '16px',
+          padding: '0.6rem 1.5rem',
+          fontWeight: 'bold',
+          fontSize: '1.1rem',
+          letterSpacing: '1px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+          minWidth: '180px',
+          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        className="credit-usage"
+        >
+          {isUnlimitedUser
+            ? 'Generations: Unlimited | Edits: Unlimited'
+            : `Generations: ${imageGenerationsUsed}/${imageGenerationsLimit} | Edits: ${imageEditsUsed}/${imageEditsLimit}`}
+        </div>
+        {/* My Creations Button */}
+        <a
+          href="/my-creations"
+          style={{
+            border: '2px solid white',
+            borderRadius: '100px',
+            color: 'white',
+            background: 'transparent',
+            fontSize: '1.2rem',
+            fontWeight: 'bold',
+            textDecoration: 'none',
+            letterSpacing: '1px',
+            cursor: 'pointer',
+            padding: '0.5rem 2rem',
+            minWidth: '120px',
+            textAlign: 'center',
+            boxSizing: 'border-box',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          className="my-creations-btn"
+        >
+          My Creations
+        </a>
+        {/* Account Dropdown */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="account-dropdown">
+          <AccountDropdown user={dropdownUser} />
+        </div>
       </div>
+      <Link href="/" style={{
+        position: 'absolute',
+        top: 32,
+        left: 32,
+        color: 'white',
+        textDecoration: 'none',
+        fontSize: '2rem',
+        fontWeight: 'bold',
+        letterSpacing: '2px',
+        zIndex: 10,
+      }}>
+        GoLoco
+      </Link>
 
       {/* Company Name Input */}
       <div className="flex-1 flex flex-col items-center justify-center p-4 pt-20">

@@ -18,6 +18,7 @@ export default function PricingPage() {
   // Form states
   const [brandName, setBrandName] = useState('');
   const [industry, setIndustry] = useState('');
+  const [customIndustry, setCustomIndustry] = useState('');
   const [logo, setLogo] = useState<File | null>(null);
   const [logoUrl, setLogoUrl] = useState<string>('');
   const [references, setReferences] = useState<File[]>([]);
@@ -54,6 +55,10 @@ export default function PricingPage() {
       setErrorMessage('Please select an industry');
       return;
     }
+    if (industry === 'Other' && !customIndustry.trim()) {
+      setErrorMessage('Please enter your industry');
+      return;
+    }
     if (festivals.length === 0) {
       setErrorMessage('Please select at least one festival');
       return;
@@ -70,11 +75,8 @@ export default function PricingPage() {
     try {
       const results = [];
       for (const festival of festivals) {
-        // Generate prompt using Perplexity
-        const prompt = await generateFestivePrompt(brandName, industry, festival);
-        
         // Generate image using your API
-        const imageUrl = await generateFestiveImage(prompt, logo, references, festival, customTexts[festival]?.title, customTexts[festival]?.subtitle);
+        const imageUrl = await generateFestiveImage(brandName, industry === 'Other' ? customIndustry : industry, logo, references, festival, customTexts[festival]?.title, customTexts[festival]?.subtitle);
         
         results.push({ festival, imageUrl });
       }
@@ -87,40 +89,10 @@ export default function PricingPage() {
     }
   };
 
-  const generateFestivePrompt = async (brand: string, industry: string, festival: string): Promise<string> => {
-    // Use Perplexity API to generate creative prompt
-    const response = await fetch('/api/generate-prompt', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        brand,
-        industry,
-        festival,
-      }),
-    });
-
-    if (!response.ok) {
-      let errorMessage = `Failed to generate prompt: ${response.status} ${response.statusText}`;
-      try {
-        const errorData = await response.json();
-        if (errorData.message) {
-          errorMessage += ` - ${errorData.message}`;
-        }
-      } catch (e) {
-        // Ignore if can't parse error
-      }
-      throw new Error(errorMessage);
-    }
-
-    const data = await response.json();
-    return data.prompt;
-  };
-
-  const generateFestiveImage = async (prompt: string, logo: File, references: File[], festival: string, customTitle?: string, customSubtitle?: string): Promise<string> => {
+  const generateFestiveImage = async (brandName: string, industry: string, logo: File, references: File[], festival: string, customTitle?: string, customSubtitle?: string): Promise<string> => {
     const formData = new FormData();
-    formData.append('prompt', prompt);
+    formData.append('brandName', brandName);
+    formData.append('industry', industry);
     formData.append('logo', logo);
     formData.append('festival', festival);
     if (customTitle) formData.append('customTitle', customTitle);
@@ -336,8 +308,20 @@ export default function PricingPage() {
                       </label>
                     ))}
                 </div>
+                {industry === 'Other' && (
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      placeholder="Enter your industry..."
+                      value={customIndustry}
+                      onChange={(e) => setCustomIndustry(e.target.value)}
+                      className="w-full p-3 border border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-800 text-white placeholder-gray-400"
+                      required
+                    />
+                  </div>
+                )}
                 {industry && (
-                  <p className="text-xs text-gray-400 mt-2">Selected: {industry}</p>
+                  <p className="text-xs text-gray-400 mt-2">Selected: {industry === 'Other' ? customIndustry || 'Other' : industry}</p>
                 )}
               </div>
 

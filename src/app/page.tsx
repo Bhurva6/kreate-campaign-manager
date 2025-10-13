@@ -11,27 +11,9 @@ import AuthModal from "../components/AuthModal";
 import UserDropdown from "../components/UserDropdown";
 import RazorpayHandler from "../components/RazorpayHandler";
 import { useTheme, ThemeProvider } from "@/context/ThemeContext";
+import Link from "next/link";
 
 type GeneratedImage = { url: string; prompt?: string };
-
-// Typewriter animation for live demo
-function useTypewriter(text: string, start: boolean) {
-  const [typed, setTyped] = useState("");
-  useEffect(() => {
-    if (!start) return;
-    setTyped("");
-    let i = 0;
-    const type = () => {
-      if (i <= text.length) {
-        setTyped(text.slice(0, i));
-        i++;
-        setTimeout(type, 35);
-      }
-    };
-    type();
-  }, [start, text]);
-  return typed;
-}
 
 // Helper for API calls
 async function callGenerateImage(prompt: string) {
@@ -111,11 +93,7 @@ const homePlans: Plan[] = [
     imageGenerations: 10,
     imageEdits: 10,
     description: "Quick start",
-    features: [
-      "10 images per month",
-      "Basic tools",
-      "Download & share",
-    ],
+    features: ["10 images per month", "Basic tools", "Download & share"],
   },
   {
     id: "mini",
@@ -216,28 +194,28 @@ function LandingPageContent() {
   // Auto rotate points every 3 seconds
   useEffect(() => {
     let rotationTimer: NodeJS.Timeout;
-    
+
     if (autoRotate) {
       rotationTimer = setInterval(() => {
-        setActivePoint(prev => (prev + 1) % 5); // Cycle through 0-4
+        setActivePoint((prev) => (prev + 1) % 5); // Cycle through 0-4
       }, 3000);
     }
-    
+
     return () => {
       if (rotationTimer) clearInterval(rotationTimer);
     };
   }, [autoRotate]);
-  
+
   // Handle window resize for responsive content
   useEffect(() => {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
     };
-    
-    window.addEventListener('resize', handleResize);
-        
+
+    window.addEventListener("resize", handleResize);
+
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 
@@ -525,8 +503,6 @@ function LandingPageContent() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-
-
   return (
     <div className="min-h-screen flex flex-col relative overflow-x-hidden bg-[var(--background)] font-sans">
       {/* First Viewport - Completely Black */}
@@ -541,13 +517,71 @@ function LandingPageContent() {
           <source src="/download.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
+        <div className="absolute inset-0 flex justify-center items-center z-10">
+          <div className="text-center">
+            <h1
+              className="text-white font-bold drop-shadow-lg"
+              style={{ fontFamily: "Helvetica", fontSize: "116px" }}
+            >
+              GOLOCO
+            </h1>
+            <h2
+              className="text-white text-lg md:text-xl mt-1 drop-shadow-lg"
+              style={{ fontFamily: "Helvetica" }}
+            >
+              Brand storytelling, made simple.
+            </h2>
+            <button
+              className="mt-6 px-8 py-3 bg-white/20 backdrop-blur-md rounded-lg text-white font-semibold hover:bg-white/30 transition-all duration-300 shadow-lg shadow-inner"
+              onClick={() => {
+                if (user) {
+                  router.push("/demo");
+                } else {
+                  setShowAuthModal(true);
+                }
+              }}
+            >
+              Try Now
+            </button>
+          </div>
+        </div>
 
         {/* Logo Top Left and Auth Buttons Top Right */}
-        <div className="flex flex-row justify-between items-center w-full p-3 sm:p-4 md:p-6 bg-black z-[999999]">
-          <div className="text-xl sm:text-2xl md:text-3xl font-bold text-white">
-            GoLoco
-          </div>
+        <div className="flex justify-between items-center w-full p-3 sm:p-4 md:p-6 bg-black z-[999999] relative">
+          <Link href="/">
+            <img
+              src="/logo.png"
+              alt="GoLoco Logo"
+              className="h-8 sm:h-10 md:h-12 w-auto cursor-pointer"
+            />
+          </Link>
+          <div className="flex justify-center items-center absolute left-1/2 transform -translate-x-1/2 gap-30">
+            <Link
+              href="/"
+              className="text-white hover:text-[#3C38A4] transition-colors"
+            >
+              Home
+            </Link>
+            <Link
+              href="/campaign"
+              className="text-white hover:text-[#3C38A4] transition-colors"
+            >
+              Campaigner
+            </Link>
+            <Link
+              href="/festive"
+              className="text-white hover:text-[#3C38A4] transition-colors"
+            >
+              Festive
+            </Link>
 
+            <Link
+              href="/pricing"
+              className="text-white hover:text-[#3C38A4] transition-colors"
+            >
+              Pricing
+            </Link>
+          </div>
           <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4">
             {/* Authentication Section */}
             {loading ? (
@@ -579,1191 +613,141 @@ function LandingPageContent() {
         <div className="flex-1 flex flex-col justify-center items-center pt-0 md:pt-0 lg:pt-0 pb-16 lg:pb-24 px-4 md:px-8 lg:px-12 relative bg-black">
           {/* Subtle gradient overlay for depth */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-gray-900/30 z-5"></div>
-
-          {/* Content - Centered */}
-          <div className="relative z-10 text-center max-w-4xl px-1 sm:px-6">
-            <h1 className="text-lg sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-1.5 sm:mb-6 text-white leading-tight px-0 sm:px-0">
-              <span className="text-[#FF5E32]">
-                Consistent
-              </span>
-              <span className="block sm:inline"> creativity </span> 
-              <span className="block sm:inline">with every image,</span> 
-              <span className="block sm:inline">every time.</span>
-            </h1>
-            <p className="text-[10px] sm:text-base md:text-xl lg:text-2xl text-white/90 max-w-3xl mx-auto mb-2 sm:mb-6 md:mb-8 leading-relaxed px-1 sm:px-0">
-              GoLoco changes exactly what you want
-              <em className="font-medium text-white block sm:inline ml-0 sm:ml-1">no distortions, no chaos.</em>
-            </p>
-
-            
-
-            {/* CTA Button */}
-            <div className="flex flex-col md:flex-row gap-2 md:gap-6 justify-center px-1 sm:px-0 max-w-[85%] sm:max-w-[90%] md:max-w-full mx-auto relative z-10">
-  <button
-    className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-3 sm:px-8 md:px-10 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#B6CF4F] text-white hover:shadow-[#1A018D]/30 w-full md:w-auto whitespace-nowrap"
-    onClick={() => {
-      if (user) {
-        router.push("/demo");
-      } else {
-        setShowAuthModal(true);
-      }
-    }}
-  >
-    <span className="hidden sm:inline">✨</span>
-    <span>Start</span>
-    <span className="text-[10px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
-  </button>
-  <button
-    className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-3 sm:px-8 md:px-10 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#FF5E32] text-white hover:shadow-[#1A018D]/30 w-full md:w-auto whitespace-nowrap"
-    onClick={() => {
-      if (user) {
-        router.push("/enterprise");
-      } else {
-        setShowAuthModal(true);
-      }
-    }}
-  >
-    <span className="hidden sm:inline">✨</span>
-    <span>Enterprise</span>
-    <span className="text-[10px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
-  </button>
-  <button
-    className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-3 sm:px-8 md:px-10 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#0171B9] text-white hover:shadow-[#1A018D]/30 w-full md:w-auto whitespace-nowrap"
-    onClick={() => {
-      if (user) {
-        router.push("/campaign");
-      } else {
-        setShowAuthModal(true);
-      }
-    }}
-  >
-    <span className="hidden sm:inline">✨</span>
-    <span>Create Campaign</span>
-    <span className="text-[10px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
-  </button>
-</div>
-     
-            <div className="flex justify-center px-1 sm:px-0 mt-4">
-              <button
-                className="inline-flex items-center justify-center gap-0 sm:gap-3 font-medium sm:font-semibold px-3 sm:px-8 md:px-10 py-2 sm:py-2.5 md:py-3 rounded-full text-xs sm:text-base md:text-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:scale-105 bg-[#FF4500] text-white hover:shadow-[#1A018D]/30 w-full md:w-auto whitespace-nowrap"
-                onClick={() => {
-                  if (user) {
-                    router.push("/festive");
-                  } else {
-                    setShowAuthModal(true);
-                  }
-                }}
-              >
-                <span className="hidden sm:inline">✨</span>
-                <span>Festive Freedom</span>
-                <span className="text-[10px] sm:text-sm opacity-80 ml-0.5 sm:ml-0">→</span>
-              </button>
-            </div>
-     
-            {/* Brands Carousel */}
-            <div className="w-full max-w-5xl mx-auto mt-6 sm:mt-10">
-              <p className="text-white/70 text-xs sm:text-sm mb-4 sm:mb-6 text-center">Trusted by innovative brands</p>
-              
-              <div className="relative overflow-hidden rounded-xl bg-black/90">
-                {/* Darker strip background */}
-                <div className="absolute inset-0 bg-black rounded-xl"></div>
-                
-                {/* Carousel container with automatic horizontal scroll animation */}
-                <div className="py-4 sm:py-6 md:py-8 overflow-hidden w-full">
-                  <div className="flex whitespace-nowrap logo-slide" style={{ 
-                    animationDuration: isMounted && windowWidth < 640 ? '15s' : '20s'
-                  }}>
-                    {/* First set of logos - smaller on mobile */}
-                    <div className="flex gap-4 sm:gap-6 md:gap-8 items-center mx-3 sm:mx-4 md:mx-6">
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/zuvelogo.png" alt="Zuve" className="h-8 sm:h-10 md:h-14 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/cbbunny.png" alt="CB Bunny" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/unlabellogo.png" alt="Unlabel" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/sslogo.png" alt="SS" className="h-8 sm:h-10 md:h-14 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/panachelogo.png" alt="Panache" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/ollsafelogo.png" alt="Ollsafe" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/gcgclogo.png" alt="GCGC" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/evolvlogo.png" alt="Evolv" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/bloomlogo.png" alt="Bloom" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                    </div>
-                    
-                    {/* Duplicate set for continuous scroll effect - smaller on mobile */}
-                    <div className="flex gap-4 sm:gap-6 md:gap-8 items-center mx-3 sm:mx-4 md:mx-6">
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/zuvelogo.png" alt="Zuve" className="h-8 sm:h-10 md:h-14 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/cbbunny.png" alt="CB Bunny" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/unlabellogo.png" alt="Unlabel" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/sslogo.png" alt="SS" className="h-8 sm:h-10 md:h-14 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/panachelogo.png" alt="Panache" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/ollsafelogo.png" alt="Ollsafe" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/gcgclogo.png" alt="GCGC" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/evolvlogo.png" alt="Evolv" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div className="w-20 sm:w-28 md:w-36 h-14 sm:h-16 md:h-20 flex items-center justify-center">
-                        <img src="/bloomlogo.png" alt="Bloom" className="h-8 sm:h-12 md:h-16 hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>            
-            {/* Spacer div to ensure proper spacing */}
-            <div className="h-12 md:h-22 lg:h-10"></div>
-            
-            {/* Custom Animation for Progress Bar */}
-            <style jsx global>{`
-              @keyframes progress-bar {
-                0% { width: 0%; }
-                100% { width: 100%; }
-              }
-              
-              @keyframes logo-slide {
-                0% { transform: translateX(0); }
-                100% { transform: translateX(-50%); }
-              }
-              
-              .logo-slide {
-                animation: logo-slide 20s linear infinite;
-              }
-              
-              @media (max-width: 640px) {
-                .logo-slide {
-                  animation-duration: 15s;
-                }
-              }
-            `}</style>
-            
-            {/* Interactive Feature Section */}
-            <div className="w-full flex flex-col md:flex-row justify-between items-center gap-4 sm:gap-6 md:gap-8 my-6 sm:my-8 md:my-10">
-              {/* Right Side - Images (Moved to top on mobile) */}
-              <div className="w-full md:w-2/3 order-1 md:order-2 h-64 sm:h-80 md:h-96 relative rounded-xl overflow-hidden shadow-2xl border-2 border-white/20 bg-gray-800">
-                {/* Mobile Step Indicators - Very visible on small screens */}
-                <div className="md:hidden absolute top-4 left-4 z-20 flex items-center gap-2 bg-black/60 px-2 py-1 rounded-lg">
-                  <span className="text-white text-xs font-bold">Step {activePoint + 1}/5</span>
-                </div>
-                
-                {/* Mobile Indicator Dots - Only visible on small screens */}
-                <div className="md:hidden absolute bottom-3 left-0 right-0 z-20 flex justify-center gap-2">
-                  {[0, 1, 2, 3, 4].map((dotIndex) => (
-                    <button 
-                      key={dotIndex}
-                      onClick={() => {
-                        setActivePoint(dotIndex);
-                        setAutoRotate(false);
-                        setTimeout(() => setAutoRotate(true), 5000);
-                      }}
-                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                        activePoint === dotIndex ? 'bg-white scale-110' : 'bg-white/40'
-                      }`}
-                      aria-label={`View step ${dotIndex + 1}`}
-                    />
-                  ))}
-                </div>
-                
-                {/* Progress Indicator Bar */}
-                {autoRotate && (
-                  <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20 z-10">
-                    <div 
-                      className="h-full bg-gradient-to-r from-[#0171B9] via-[#004684] to-[#E72C19] transition-all duration-100 ease-linear"
-                      style={{ 
-                        width: '100%', 
-                        animation: 'progress-bar 3s linear infinite',
-                      }}
-                    ></div>
-                  </div>
-                )}
-                
-                {/* Auto-rotation Indicator */}
-                <div 
-                  className={`absolute top-4 right-4 z-10 flex items-center gap-2 px-2 py-1 rounded bg-black/50 text-white text-xs ${autoRotate ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
-                >
-                  <span className="w-2 h-2 bg-[#0171B9] rounded-full animate-ping"></span>
-                  <span>Auto</span>
-                </div>
-                
-                {/* Images - Improved for touch */}
-                {[
-                  "/einstein1.jpeg", 
-                  "/einstein2.jpeg", 
-                  "/einstein3.jpeg", 
-                  "/einstein4.jpeg",
-                  "/einstein5.jpeg"
-                ].map((src, index) => (
-                  <div 
-                    key={index}
-                    className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-500 ${activePoint === index ? 'opacity-100' : 'opacity-0'}`}
-                    onClick={() => {
-                      // Allow tapping on image to advance on mobile
-                      if (windowWidth < 768) {
-                        setActivePoint((prev) => (prev + 1) % 5);
-                        setAutoRotate(false);
-                        setTimeout(() => setAutoRotate(true), 5000);
-                      }
-                    }}
-                  >
-                    <img 
-                      src={src} 
-                      alt={`Feature ${index + 1}`} 
-                      className="w-full h-full object-contain"
-                    />
-                  </div>
-                ))}
-              </div>
-              
-              {/* Left Side - Numerical Bullet Points */}
-              <div className="w-full md:w-1/3 order-2 md:order-1 mt-4 md:mt-0">
-                <h3 className="text-white text-lg font-semibold mb-2 md:hidden text-center">Steps:</h3>
-                
-                {/* Mobile step indicators */}
-                <div className="flex justify-center items-center gap-2 mb-3 md:hidden">
-                  {[0, 1, 2, 3, 4].map((index) => (
-                    <div 
-                      key={index} 
-                      className={`w-3 h-3 rounded-full cursor-pointer transition-all duration-300 ${
-                        activePoint === index 
-                          ? 'bg-[#0171B9] scale-125' 
-                          : 'bg-white/30'
-                      }`}
-                      onClick={() => {
-                        setActivePoint(index);
-                        setAutoRotate(false);
-                        setTimeout(() => setAutoRotate(true), 5000);
-                      }}
-                    ></div>
-                  ))}
-                </div>
-                
-                <ul className="space-y-2 sm:space-y-3 md:space-y-5 max-h-[300px] overflow-y-auto md:overflow-visible px-2 md:px-0">
-                  {[1, 2, 3, 4, 5].map((num, index) => (
-                    <li 
-                      key={num} 
-                      className={`flex items-center cursor-pointer transition-all duration-300 group hover:translate-x-1 p-2 ${
-                        activePoint === index ? 'bg-black/30 rounded-lg' : ''
-                      }`} 
-                      onClick={() => {
-                        setActivePoint(index);
-                        setAutoRotate(false); // Pause auto-rotation when user manually clicks
-                        // Resume auto-rotation after 5 seconds of inactivity
-                        setTimeout(() => setAutoRotate(true), 5000);
-                      }}
-                    >
-                      <div 
-                        className={`w-1 h-full rounded-full transition-all duration-300 mr-2 ${
-                          activePoint === index 
-                            ? 'bg-[#0171B9]' 
-                            : 'bg-white/30'
-                        } ${activePoint === index && autoRotate ? 'animate-pulse' : ''}`}
-                      ></div>
-                      <div className={`transition-all duration-300 text-left flex-grow ${activePoint === index ? 'opacity-100' : 'opacity-60'}`}>
-                        <h3 className="text-base sm:text-lg md:text-xl font-semibold text-white flex flex-col sm:flex-row sm:items-center">
-                          <span className="flex-shrink-0 border-2 border-[#0171B9] rounded-full flex items-center justify-center mb-1 sm:mb-0 sm:mr-3 text-white font-bold text-xs sm:text-sm px-2 sm:px-4 py-0.5 sm:py-1.5 w-fit">
-                            Step {index + 1}
-                          </span>
-                          <span className="text-xs sm:text-sm md:text-base">
-                            {index === 0 && "Upload the Einstein"}
-                            {index === 1 && (!isMounted ? "Drop the bombshell: \"Shit Happens.\"" : 
-                              windowWidth < 640 ? "\"Shit Happens\"" : "Drop the bombshell: \"Shit Happens.\"")
-                            }
-                            {index === 2 && (!isMounted ? "Flip the script—now it's \"Edit Happens.\"" :
-                              windowWidth < 640 ? "\"Edit Happens\"" : "Flip the script—now it's \"Edit Happens.\"")
-                            }
-                            {index === 3 && (!isMounted ? "Light up the genius—full color mode on." :
-                              windowWidth < 640 ? "Add color" : "Light up the genius—full color mode on.")
-                            }
-                            {index === 4 && (!isMounted ? "Cartoon chaos: let creativity rip through his eyes" :
-                              windowWidth < 640 ? "Cartoon style" : "Cartoon chaos: let creativity rip through his eyes")
-                            }
-                          </span>
-                        </h3>
-                       
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Scroll indicator */}
-          <div className="absolute bottom-6 sm:bottom-8 left-1/2 transform -translate-x-1/2 text-white/60 animate-bounce">
-            <div className="flex flex-col items-center gap-1 sm:gap-2">
-              <span className="text-xs sm:text-sm">Scroll to explore</span>
-              <div className="w-5 h-8 sm:w-6 sm:h-10 border-2 border-white/30 rounded-full flex justify-center">
-                <div className="w-1 h-2 sm:h-3 bg-white/60 rounded-full mt-2 animate-pulse"></div>
-              </div>
-            </div>
-          </div>
+          <video autoPlay muted loop>
+            <source src="/download.mp4" type="video/mp4" />
+          </video>
         </div>
       </div>
 
       {/* Content sections with theme-aware background */}
-      <div
-        className="transition-colors duration-300 bg-[var(--background)]"
-      >
-        {/* Unify Your Creations Section - Jeton Inspired */}
-        <div
-          ref={unifyRef}
-          className="w-full py-32 md:py-48 px-4 relative overflow-hidden"
-        >
-          {/* Overlapping Images Container with Centered Text - Deck of Cards Effect */}
-          <div className="relative max-w-4xl mx-auto h-[400px] md:h-[500px] transition-all duration-1000 ease-out">
-            {/* Centered Title - Behind Images */}
-            <div
-              className="absolute inset-0 flex items-center justify-center text-center transition-all duration-1500 ease-out z-5 pointer-events-none"
-              style={{
-                transform: `scale(${Math.max(0.3, 2 - scrollProgress * 1.7)})`,
-                opacity: 1,
-              }}
-            >
-              <h2
-                className="text-6xl md:text-8xl lg:text-9xl font-bold leading-tight transition-colors duration-300 text-[var(--foreground)]"
-              >
-                Unify your
-                <br />
-                <span className="bg-gradient-to-r from-[#1A018D] via-[#B6CF4F] to-[#FF5E32] bg-clip-text text-transparent">
-                  creations
-                </span>
-              </h2>
-            </div>
-            {/* Image 1 - First card (bottom of stack when stacked) */}
-            <div
-              className="absolute transition-all duration-1500 ease-out"
-              style={{
-                left: "50%",
-                top: "50%",
-                transform: `
-                translate(-50%, -50%) 
-                translateX(${
-                  scrollProgress < 0.6
-                    ? -800 + scrollProgress * 1333
-                    : scrollProgress > 0.9
-                    ? 0
-                    : (scrollProgress - 0.6) * -133
-                }px)
-                translateY(${
-                  scrollProgress < 0.6
-                    ? -400 + scrollProgress * 667
-                    : scrollProgress > 0.9
-                    ? (scrollProgress - 0.9) * 600
-                    : 0
-                }px)
-                rotate(${
-                  scrollProgress < 0.6
-                    ? -45 + scrollProgress * 75
-                    : scrollProgress > 0.9
-                    ? (scrollProgress - 0.9) * -200
-                    : 0
-                }deg)
-                scale(${Math.max(0.6, 0.3 + scrollProgress * 0.7)})
-              `,
-                opacity: Math.min(
-                  1,
-                  Math.max(0, (scrollProgress - 0.3) * 3.33)
-                ),
-                zIndex: scrollProgress > 0.9 ? 1 : 5,
-              }}
-            >
-              <div className="w-48 h-60 md:w-56 md:h-72 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
-                <img
-                  src="/stone.jpg"
-                  alt="Creative process"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
-            {/* Image 2 - Second card */}
-            <div
-              className="absolute transition-all duration-1500 ease-out"
-              style={{
-                left: "50%",
-                top: "50%",
-                transform: `
-                translate(-50%, -50%) 
-                translateX(${
-                  scrollProgress < 0.65
-                    ? 600 - scrollProgress * 923
-                    : scrollProgress > 0.9
-                    ? 10
-                    : (scrollProgress - 0.65) * -40
-                }px)
-                translateY(${
-                  scrollProgress < 0.65
-                    ? 300 - scrollProgress * 462
-                    : scrollProgress > 0.9
-                    ? (scrollProgress - 0.9) * 400
-                    : 0
-                }px)
-                rotate(${
-                  scrollProgress < 0.65
-                    ? 30 - scrollProgress * 46
-                    : scrollProgress > 0.9
-                    ? (scrollProgress - 0.9) * -100
-                    : 0
-                }deg)
-                scale(${Math.max(0.65, 0.4 + scrollProgress * 0.6)})
-              `,
-                opacity: Math.min(1, Math.max(0, (scrollProgress - 0.4) * 4)),
-                zIndex: scrollProgress > 0.9 ? 2 : 4,
-              }}
-            >
-              <div className="w-50 h-62 md:w-58 md:h-74 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
-                <img
-                  src="/stair.jpg"
-                  alt="AI editing"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
-            {/* Image 3 - Center card (top of stack when stacked) */}
-            <div
-              className="absolute transition-all duration-1500 ease-out"
-              style={{
-                left: "50%",
-                top: "50%",
-                transform: `
-                translate(-50%, -50%) 
-                translateX(${
-                  scrollProgress < 0.7 ? 0 : scrollProgress > 0.9 ? 0 : 0
-                }px)
-                translateY(${
-                  scrollProgress < 0.7
-                    ? 200 - scrollProgress * 286
-                    : scrollProgress > 0.9
-                    ? (scrollProgress - 0.9) * 200
-                    : 0
-                }px)
-                rotate(${scrollProgress > 0.9 ? 0 : 0}deg)
-                scale(${Math.max(0.7, 0.5 + scrollProgress * 0.5)})
-              `,
-                opacity: Math.min(1, Math.max(0, (scrollProgress - 0.5) * 5)),
-                zIndex: scrollProgress > 0.9 ? 5 : 3,
-              }}
-            >
-              <div className="w-56 h-68 md:w-64 md:h-80 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/30 hover:scale-105 transition-transform duration-300">
-                <img
-                  src="/room.jpg"
-                  alt="Perfect creation"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
-            {/* Image 4 - Fourth card */}
-            <div
-              className="absolute transition-all duration-1500 ease-out"
-              style={{
-                left: "50%",
-                top: "50%",
-                transform: `
-                translate(-50%, -50%) 
-                translateX(${
-                  scrollProgress < 0.75
-                    ? -600 + scrollProgress * 800
-                    : scrollProgress > 0.9
-                    ? -10
-                    : (0.75 - scrollProgress) * -40
-                }px)
-                translateY(${
-                  scrollProgress < 0.75
-                    ? -300 + scrollProgress * 400
-                    : scrollProgress > 0.9
-                    ? (scrollProgress - 0.9) * 400
-                    : 0
-                }px)
-                rotate(${
-                  scrollProgress < 0.75
-                    ? -30 + scrollProgress * 40
-                    : scrollProgress > 0.9
-                    ? (scrollProgress - 0.9) * 100
-                    : 0
-                }deg)
-                scale(${Math.max(0.65, 0.4 + scrollProgress * 0.6)})
-              `,
-                opacity: Math.min(
-                  1,
-                  Math.max(0, (scrollProgress - 0.6) * 6.67)
-                ),
-                zIndex: scrollProgress > 0.9 ? 2 : 2,
-              }}
-            >
-              <div className="w-50 h-62 md:w-58 md:h-74 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
-                <img
-                  src="/purple.jpg"
-                  alt="Share creation"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
-            {/* Image 5 - Fifth card (bottom when stacked) */}
-            <div
-              className="absolute transition-all duration-1500 ease-out"
-              style={{
-                left: "50%",
-                top: "50%",
-                transform: `
-                translate(-50%, -50%) 
-                translateX(${
-                  scrollProgress < 0.8
-                    ? 800 - scrollProgress * 1000
-                    : scrollProgress > 0.9
-                    ? -20
-                    : (0.8 - scrollProgress) * -200
-                }px)
-                translateY(${
-                  scrollProgress < 0.8
-                    ? -400 + scrollProgress * 500
-                    : scrollProgress > 0.9
-                    ? (scrollProgress - 0.9) * 600
-                    : 0
-                }px)
-                rotate(${
-                  scrollProgress < 0.8
-                    ? 45 - scrollProgress * 56.25
-                    : scrollProgress > 0.9
-                    ? (scrollProgress - 0.9) * 200
-                    : 0
-                }deg)
-                scale(${Math.max(0.6, 0.3 + scrollProgress * 0.7)})
-              `,
-                opacity: Math.min(1, Math.max(0, (scrollProgress - 0.7) * 10)),
-                zIndex: scrollProgress > 0.9 ? 1 : 1,
-              }}
-            >
-              <div className="w-46 h-58 md:w-54 md:h-70 rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20 hover:scale-105 transition-transform duration-300">
-                <img
-                  src="/person.jpg"
-                  alt="Endless possibilities"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-
-            {/* Floating particles that appear during stacking */}
-            <div
-              className="absolute w-3 h-3 bg-[#1A018D] rounded-full animate-pulse"
-              style={{
-                left: `${50 + Math.sin(scrollProgress * 10) * 20}%`,
-                top: `${30 + Math.cos(scrollProgress * 8) * 15}%`,
-                opacity:
-                  scrollProgress > 0.85 ? (scrollProgress - 0.85) * 6.67 : 0,
-                transform: `scale(${0.5 + scrollProgress * 0.5})`,
-              }}
-            ></div>
-            <div
-              className="absolute w-2 h-2 bg-[#B6CF4F] rounded-full animate-pulse"
-              style={{
-                right: `${40 + Math.sin(scrollProgress * 12) * 25}%`,
-                bottom: `${25 + Math.cos(scrollProgress * 9) * 20}%`,
-                opacity: scrollProgress > 0.9 ? (scrollProgress - 0.9) * 10 : 0,
-                animationDelay: "0.5s",
-                transform: `scale(${0.3 + scrollProgress * 0.7})`,
-              }}
-            ></div>
-            <div
-              className="absolute w-1.5 h-1.5 bg-[#FF5E32] rounded-full animate-pulse"
-              style={{
-                left: `${70 + Math.sin(scrollProgress * 15) * 15}%`,
-                top: `${60 + Math.cos(scrollProgress * 11) * 10}%`,
-                opacity:
-                  scrollProgress > 0.95 ? (scrollProgress - 0.95) * 20 : 0,
-                animationDelay: "1s",
-                transform: `scale(${0.2 + scrollProgress * 0.8})`,
-              }}
-            ></div>
-          </div>
-        </div>
-
+      <div className="transition-colors duration-300 bg-[var(--background)]">
         {/* Features Section */}
         <div className="w-full flex flex-col items-center mt-12 sm:mt-16 md:mt-24 lg:mt-32 mb-12 sm:mb-16 md:mb-24 lg:mb-32 px-4 sm:px-6">
-          <h2
-            className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 sm:mb-8 md:mb-12 lg:mb-16 transition-colors duration-300 text-[var(--foreground)]"
-          >
-            Features
-          </h2>
+          <style jsx>{`
+            @keyframes slideUp {
+              0% { transform: translateY(0); }
+              50% { transform: translateY(-100px); }
+              100% { transform: translateY(0); }
+            }
+            @keyframes slideDown {
+              0% { transform: translateY(0); }
+              50% { transform: translateY(100px); }
+              100% { transform: translateY(0); }
+            }
+            .animate-slide-up {
+              animation: slideUp 4s ease-in-out infinite;
+            }
+            .animate-slide-down {
+              animation: slideDown 4s ease-in-out infinite;
+            }
+          `}</style>
 
-          <div className="w-full max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 md:gap-10 lg:gap-12">
-            {/* Feature 1 - Precise Editing */}
-            <div className="flex flex-col items-center text-center group">
-              <div
-                className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105 w-full max-w-lg select-none"
-                onMouseDown={(e) => {
-                  const slider = e.currentTarget;
-                  const rect = slider.getBoundingClientRect();
-                  const startX = e.clientX - rect.left;
-                  let isDragging = false;
-
-                  const handleMouseMove = (moveEvent: MouseEvent) => {
-                    isDragging = true;
-                    const currentX = moveEvent.clientX - rect.left;
-                    const percentage = Math.max(
-                      0,
-                      Math.min(100, (currentX / rect.width) * 100)
-                    );
-
-                    const afterImage = slider.querySelector(
-                      ".after-image"
-                    ) as HTMLElement;
-                    const sliderHandle = slider.querySelector(
-                      ".slider-handle"
-                    ) as HTMLElement;
-                    const sliderLine = slider.querySelector(
-                      ".slider-line"
-                    ) as HTMLElement;
-
-                    if (afterImage)
-                      afterImage.style.clipPath = `inset(0 ${
-                        100 - percentage
-                      }% 0 0)`;
-                    if (sliderHandle)
-                      sliderHandle.style.left = `${percentage}%`;
-                    if (sliderLine) sliderLine.style.left = `${percentage}%`;
-                  };
-
-                  const handleMouseUp = () => {
-                    document.removeEventListener("mousemove", handleMouseMove);
-                    document.removeEventListener("mouseup", handleMouseUp);
-                    if (!isDragging) {
-                      // Handle click to move slider
-                      const percentage = Math.max(
-                        0,
-                        Math.min(100, (startX / rect.width) * 100)
-                      );
-                      const afterImage = slider.querySelector(
-                        ".after-image"
-                      ) as HTMLElement;
-                      const sliderHandle = slider.querySelector(
-                        ".slider-handle"
-                      ) as HTMLElement;
-                      const sliderLine = slider.querySelector(
-                        ".slider-line"
-                      ) as HTMLElement;
-
-                      if (afterImage)
-                        afterImage.style.clipPath = `inset(0 ${
-                          100 - percentage
-                        }% 0 0)`;
-                      if (sliderHandle)
-                        sliderHandle.style.left = `${percentage}%`;
-                      if (sliderLine) sliderLine.style.left = `${percentage}%`;
-                    }
-                  };
-
-                  document.addEventListener("mousemove", handleMouseMove);
-                  document.addEventListener("mouseup", handleMouseUp);
-                }}
-                onTouchStart={(e) => {
-                  const slider = e.currentTarget;
-                  const rect = slider.getBoundingClientRect();
-                  
-                  const handleTouchMove = (touchEvent: TouchEvent) => {
-                    touchEvent.preventDefault(); // Prevent scrolling while dragging
-                    const touch = touchEvent.touches[0];
-                    const currentX = touch.clientX - rect.left;
-                    const percentage = Math.max(
-                      0,
-                      Math.min(100, (currentX / rect.width) * 100)
-                    );
-
-                    const afterImage = slider.querySelector(
-                      ".after-image"
-                    ) as HTMLElement;
-                    const sliderHandle = slider.querySelector(
-                      ".slider-handle"
-                    ) as HTMLElement;
-                    const sliderLine = slider.querySelector(
-                      ".slider-line"
-                    ) as HTMLElement;
-
-                    if (afterImage)
-                      afterImage.style.clipPath = `inset(0 ${
-                        100 - percentage
-                      }% 0 0)`;
-                    if (sliderHandle)
-                      sliderHandle.style.left = `${percentage}%`;
-                    if (sliderLine) sliderLine.style.left = `${percentage}%`;
-                  };
-
-                  const handleTouchEnd = () => {
-                    document.removeEventListener("touchmove", handleTouchMove);
-                    document.removeEventListener("touchend", handleTouchEnd);
-                  };
-
-                  document.addEventListener("touchmove", handleTouchMove, { passive: false });
-                  document.addEventListener("touchend", handleTouchEnd);
-                }}
-                style={{ cursor: "ew-resize" }}
-              >
-                {/* Before Image (Background) */}
+          <div className="w-full max-w-6xl mx-auto grid grid-cols-3 gap-6 sm:gap-8 md:gap-10 lg:gap-12">
+            {/* Column 1 */}
+            <div className="flex flex-col space-y-6">
+              <div className="flex flex-col items-center">
                 <img
                   src="/jaynitedit.jpeg"
-                  alt="Before editing"
-                  className="w-full h-80 md:h-96 object-contain bg-gray-100"
-                  draggable={false}
+                  alt="Edit Like It&apos;s Magic"
+                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
                 />
-
-                {/* After Image (Overlay with clip-path) */}
-                <img
-                  src="/jaynitog.jpeg"
-                  alt="After editing"
-                  className="after-image absolute inset-0 w-full h-80 md:h-96 object-contain bg-gray-100"
-                  style={{ clipPath: "inset(0 50% 0 0)" }}
-                  draggable={false}
-                />
-
-                {/* Slider Line */}
-                <div
-                  className="slider-line absolute top-0 bottom-0 w-0.5 bg-white shadow-lg pointer-events-none z-10"
-                  style={{ left: "50%", transform: "translateX(-50%)" }}
-                ></div>
-
-                {/* Slider Handle */}
-                <div
-                  className="slider-handle absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#1A018D] pointer-events-none flex items-center justify-center z-20"
-                  style={{ left: "50%", transform: "translate(-50%, -50%)" }}
-                >
-                  <div className="w-1 h-4 bg-[#1A018D] rounded-full"></div>
-                  <div className="w-1 h-4 bg-[#1A018D] rounded-full ml-1"></div>
-                </div>
-
-                {/* Labels */}
-                <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-semibold z-10">
-                  Before
-                </div>
-                <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-semibold z-10">
-                  After
-                </div>
-
-                {/* Instruction Text */}
-                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-10">
-                  Drag to compare
-                </div>
+                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                  Edit Like It&apos;s Magic
+                </h3>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-[#0171B9] mb-4">
-                Edit Like It&apos;s Magic
-              </h3>
-              <p
-                className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
-                  isDarkMode
-                    ? "text-white opacity-80"
-                    : "text-[#1E1E1E] opacity-80"
-                }`}
-              >
-                Change exactly what you want — no distortions, no chaos.
-              </p>
-            </div>
-
-            {/* Feature 2 - Non-Destructive Workflow */}
-            <div className="flex flex-col items-center text-center group">
-              <div
-                className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105 w-full max-w-lg select-none"
-                onMouseDown={(e) => {
-                  const slider = e.currentTarget;
-                  const rect = slider.getBoundingClientRect();
-                  const startX = e.clientX - rect.left;
-                  let isDragging = false;
-
-                  const handleMouseMove = (moveEvent: MouseEvent) => {
-                    isDragging = true;
-                    const currentX = moveEvent.clientX - rect.left;
-                    const percentage = Math.max(
-                      0,
-                      Math.min(100, (currentX / rect.width) * 100)
-                    );
-
-                    const afterImage = slider.querySelector(
-                      ".after-image-2"
-                    ) as HTMLElement;
-                    const sliderHandle = slider.querySelector(
-                      ".slider-handle-2"
-                    ) as HTMLElement;
-                    const sliderLine = slider.querySelector(
-                      ".slider-line-2"
-                    ) as HTMLElement;
-
-                    if (afterImage)
-                      afterImage.style.clipPath = `inset(0 ${
-                        100 - percentage
-                      }% 0 0)`;
-                    if (sliderHandle)
-                      sliderHandle.style.left = `${percentage}%`;
-                    if (sliderLine) sliderLine.style.left = `${percentage}%`;
-                  };
-
-                  const handleMouseUp = () => {
-                    document.removeEventListener("mousemove", handleMouseMove);
-                    document.removeEventListener("mouseup", handleMouseUp);
-                    if (!isDragging) {
-                      // Handle click to move slider
-                      const percentage = Math.max(
-                        0,
-                        Math.min(100, (startX / rect.width) * 100)
-                      );
-                      const afterImage = slider.querySelector(
-                        ".after-image-2"
-                      ) as HTMLElement;
-                      const sliderHandle = slider.querySelector(
-                        ".slider-handle-2"
-                      ) as HTMLElement;
-                      const sliderLine = slider.querySelector(
-                        ".slider-line-2"
-                      ) as HTMLElement;
-
-                      if (afterImage)
-                        afterImage.style.clipPath = `inset(0 ${
-                          100 - percentage
-                        }% 0 0)`;
-                      if (sliderHandle)
-                        sliderHandle.style.left = `${percentage}%`;
-                      if (sliderLine) sliderLine.style.left = `${percentage}%`;
-                    }
-                  };
-
-                  document.addEventListener("mousemove", handleMouseMove);
-                  document.addEventListener("mouseup", handleMouseUp);
-                }}
-                style={{ cursor: "ew-resize" }}
-              >
-                {/* Before Image (Background) */}
+              <div className="flex flex-col items-center">
                 <img
                   src="/finalclear.png"
-                  alt="Before enhancement"
-                  className="w-full h-80 md:h-96 object-contain bg-gray-100"
-                  draggable={false}
+                  alt="Enhance Instantly"
+                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
                 />
-
-                {/* After Image (Overlay with clip-path) */}
-                <img
-                  src="/blurry.jpg"
-                  alt="After enhancement"
-                  className="after-image-2 absolute inset-0 w-full h-80 md:h-96 object-contain bg-gray-100"
-                  style={{ clipPath: "inset(0 50% 0 0)" }}
-                  draggable={false}
-                />
-
-                {/* Slider Line */}
-                <div
-                  className="slider-line-2 absolute top-0 bottom-0 w-0.5 bg-white shadow-lg pointer-events-none z-10"
-                  style={{ left: "50%", transform: "translateX(-50%)" }}
-                ></div>
-
-                {/* Slider Handle */}
-                <div
-                  className="slider-handle-2 absolute top-1/2 w-8 h-8 bg-white rounded-full shadow-lg border-2 border-[#B6CF4F] pointer-events-none flex items-center justify-center z-20"
-                  style={{ left: "50%", transform: "translate(-50%, -50%)" }}
-                >
-                  <div className="w-1 h-4 bg-[#B6CF4F] rounded-full"></div>
-                  <div className="w-1 h-4 bg-[#B6CF4F] rounded-full ml-1"></div>
-                </div>
-
-                {/* Labels */}
-                <div className="absolute top-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-semibold z-10">
-                  Before
-                </div>
-                <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs font-semibold z-10">
-                  After
-                </div>
-
-                {/* Instruction Text */}
-                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-3 py-1 rounded-full text-xs font-semibold animate-pulse z-10">
-                  Drag to compare
-                </div>
+                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                  Enhance Instantly
+                </h3>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-[#B6CF4F] mb-4">
-                Enhance Instantly
-              </h3>
-              <p
-                className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
-                  isDarkMode
-                    ? "text-white opacity-80"
-                    : "text-[#1E1E1E] opacity-80"
-                }`}
-              >
-                Upscale, restore, colorize — your images, sharper and stronger
-                in seconds.
-              </p>
-            </div>
-
-            {/* Feature 3 - AI-Powered Intelligence */}
-            <div className="flex flex-col items-center text-center group">
-              <div className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105">
+              <div className="flex flex-col items-center">
                 <img
                   src="/variations.jpeg"
-                  alt="AI-powered intelligent editing"
-                  className="w-full h-64 md:h-72 object-cover"
+                  alt="Always On-Brand"
+                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                  Always On-Brand
+                </h3>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-[#FF5E32] mb-4">
-                Always On-Brand
-              </h3>
-              <p
-                className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
-                  isDarkMode
-                    ? "text-white opacity-80"
-                    : "text-[#1E1E1E] opacity-80"
-                }`}
-              >
-                Your fonts. Your colors. Your logos. Locked in by default.
-              </p>
             </div>
 
-            {/* Feature 4 - One-Click Magic */}
-            <div className="flex flex-col items-center text-center group">
-              <div className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105">
+            {/* Column 2 */}
+            <div className="flex flex-col space-y-6">
+              <div className="flex flex-col items-center">
                 <img
                   src="/posts.jpeg"
-                  alt="One-click editing magic"
-                  className="w-full h-64 md:h-72 object-cover"
+                  alt="Automate the Boring Stuff"
+                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-down"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                  Automate the Boring Stuff
+                </h3>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-[#0171B9] mb-4">
-                Automate the Boring Stuff
-              </h3>
-              <p
-                className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
-                  isDarkMode
-                    ? "text-white opacity-80"
-                    : "text-[#1E1E1E] opacity-80"
-                }`}
-              >
-                Generate. Schedule. Publish. Your campaigns, on autopilot.
-              </p>
-            </div>
-
-            {/* Feature 5 - Style Preservation */}
-            <div className="flex flex-col items-center text-center group">
-              <div className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105">
+              <div className="flex flex-col items-center">
                 <img
                   src="/cherryblossoms.jpeg"
-                  alt="Style preservation technology"
-                  className="w-full h-64 md:h-72 object-cover"
+                  alt="Find Inspiration Backwards"
+                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-down"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                  Find Inspiration Backwards
+                </h3>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-[#B6CF4F] mb-4">
-                Find Inspiration Backwards
-              </h3>
-              <p
-                className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
-                  isDarkMode
-                    ? "text-white opacity-80"
-                    : "text-[#1E1E1E] opacity-80"
-                }`}
-              >
-                Upload one image → get infinite reimaginings. Inspiration in
-                reverse.
-              </p>
-            </div>
-
-            {/* Feature 6 - Lightning Fast */}
-            <div className="flex flex-col items-center text-center group">
-              <div className="relative mb-6 overflow-hidden rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-105">
+              <div className="flex flex-col items-center">
                 <img
                   src="/collab.jpeg"
-                  alt="Lightning fast processing"
-                  className="w-full h-64 md:h-72 object-cover"
+                  alt="Create Together"
+                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-down"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                  Create Together
+                </h3>
               </div>
-              <h3 className="text-xl md:text-2xl font-bold text-[#FF5E32] mb-4">
-                Create Together
-              </h3>
-              <p
-                className={`text-base md:text-lg leading-relaxed max-w-sm transition-colors duration-300 ${
-                  isDarkMode
-                    ? "text-white opacity-80"
-                    : "text-[#1E1E1E] opacity-80"
-                }`}
-              >
-                Moodboards, shared galleries, teamwork — creativity works better
-                when it&apos;s social.
-              </p>
+            </div>
+
+            {/* Column 3 */}
+            <div className="flex flex-col space-y-6">
+              <div className="flex flex-col items-center">
+                <img
+                  src="/stone.jpg"
+                  alt="Unify Your Creations"
+                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
+                />
+                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                  Unify Your Creations
+                </h3>
+              </div>
+              <div className="flex flex-col items-center">
+                <img
+                  src="/stair.jpg"
+                  alt="Lightning Fast"
+                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
+                />
+                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                  Lightning Fast
+                </h3>
+              </div>
+              <div className="flex flex-col items-center">
+                <img
+                  src="/room.jpg"
+                  alt="Professional Quality"
+                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
+                />
+                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                  Professional Quality
+                </h3>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Fun Testimonials Section */}
-        <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
-          <h2
-            className={`text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 ${
-              isDarkMode ? "text-white" : "text-[#1E1E1E]"
-            }`}
-          >
-            Fun Testimonials
-          </h2>
-
-          <div className="w-full max-w-4xl mx-auto space-y-6 md:space-y-8">
-            {/* Testimonial 1 */}
-            <div className="flex items-start gap-3 md:gap-4 animate-slide-in-left">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#0171B9] to-[#004684] flex items-center justify-center text-white text-lg md:text-xl font-bold">
-                  😊
-                </div>
-              </div>
-              <div
-                className={`rounded-3xl rounded-tl-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
-                  isDarkMode
-                    ? "bg-[#333] border-[#0171B9]/20"
-                    : "bg-white border-[#0171B9]/20"
-                }`}
-              >
-                <div
-                  className={`absolute -left-2 top-4 w-4 h-4 border-l-2 border-b-2 border-[#0171B9]/20 transform rotate-45 transition-colors duration-300 ${
-                    isDarkMode ? "bg-[#333]" : "bg-white"
-                  }`}
-                ></div>
-                <p
-                  className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
-                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  &quot;I changed my background 5 times — my face never changed
-                  once. Love it!&quot;
-                </p>
-                <div className="text-[#0171B9] font-semibold mt-3 text-xs md:text-sm">
-                  - Ananya K.
-                </div>
-                           </div>
-            </div>
-
-            {/* Testimonial 2 - Right aligned */}
-            <div className="flex items-start gap-3 md:gap-4 justify-end animate-slide-in-right">
-              <div
-                className={`rounded-3xl rounded-tr-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
-                  isDarkMode
-                    ? "bg-gradient-to-br from-[#004684]/20 to-[#E72C19]/20 border-[#004684]/20"
-                    : "bg-gradient-to-br from-[#004684]/10 to-[#E72C19]/10 border-[#004684]/20"
-                }`}
-              >
-                <div
-                  className={`absolute -right-2 top-4 w-4 h-4 border-r-2 border-b-2 border-[#004684]/20 transform rotate-45 transition-colors duration-300 ${
-                    isDarkMode
-                      ? "bg-gradient-to-br from-[#004684]/20 to-[#E72C19]/20"
-                      : "bg-gradient-to-br from-[#004684]/10 to-[#E72C19]/10"
-                  }`}
-                ></div>
-                <p
-                  className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
-                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  &quot;Finally an editor that listens to me!&quot;
-                </p>
-                <div className="text-[#004684] font-semibold mt-3 text-xs md:text-sm">
-                  - Mahesh R.
-                </div>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#004684] to-[#E72C19] flex items-center justify-center text-white text-lg md:text-xl font-bold">
-                  🤩
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 3 */}
-            <div className="flex items-start gap-3 md:gap-4 animate-slide-in-left">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#E72C19] to-[#0171B9] flex items-center justify-center text-white text-lg md:text-xl font-bold">
-                  🎨
-                </div>
-              </div>
-              <div
-                className={`rounded-3xl rounded-tl-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
-                  isDarkMode
-                    ? "bg-[#333] border-[#E72C19]/20"
-                    : "bg-white border-[#E72C19]/20"
-                }`}
-              >
-                <div
-                  className={`absolute -left-2 top-4 w-4 h-4 border-l-2 border-b-2 border-[#E72C19]/20 transform rotate-45 transition-colors duration-300 ${
-                    isDarkMode ? "bg-[#333]" : "bg-white"
-                  }`}
-                ></div>
-                <p
-                  className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
-                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  &quot;Magic! Only the sky changed, my perfect selfie stayed
-                  untouched ✨&quot;
-                </p>
-                <div className="text-[#E72C19] font-semibold mt-3 text-xs md:text-sm">
-                  - Arya T.
-                </div>
-              </div>
-            </div>
-
-            {/* Testimonial 4 - Right aligned */}
-            <div className="flex items-start gap-3 md:gap-4 justify-end animate-slide-in-right">
-              <div
-                className={`rounded-3xl rounded-tr-sm p-4 md:p-6 shadow-lg border-2 max-w-full md:max-w-md relative transition-colors duration-300 ${
-                  isDarkMode
-                    ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20"
-                    : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"
-                }`}
-              >
-                <div
-                  className={`absolute -right-2 top-4 w-4 h-4 border-r-2 border-b-2 border-[#0171B9]/20 transform rotate-45 transition-colors duration-300 ${
-                    isDarkMode
-                      ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20"
-                      : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10"
-                  }`}
-                ></div>
-                <p
-                  className={`text-base md:text-lg leading-relaxed transition-colors duration-300 ${
-                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
-                  }`}
-                >
-                  &quot;No more &apos;oops I ruined my photo&apos; moments.
-                  GoLoco gets it right!&quot;
-                </p>
-                <div className="text-[#0171B9] font-semibold mt-3 text-xs md:text-sm">
-                  - Eshaan L.
-                </div>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-br from-[#0171B9] to-[#004684] flex items-center justify-center text-white text-lg md:text-xl font-bold">
-                  💯
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+       
 
         {/* Success Message for Payment */}
         {paymentSuccess && (
@@ -1785,134 +769,474 @@ function LandingPageContent() {
             Pricing
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6 justify-center items-stretch w-full max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 justify-center items-stretch w-full max-w-7xl mx-auto">
             {/* Free Plan */}
-            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${
-  isDarkMode
-    ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20"
-    : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"
-}`}>
+            <div
+              className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#6C2F83]/40 hover:shadow-xl hover:shadow-[#6C2F83]/20 ${
+                isDarkMode
+                  ? "bg-gradient-to-br from-[#6C2F83]/20 to-[#6C2F83]/20 border-[#6C2F83]/20"
+                  : "bg-gradient-to-br from-[#6C2F83]/10 to-[#6C2F83]/10 border-[#6C2F83]/20"
+              }`}
+            >
               <div className="text-center">
                 <div className="text-4xl mb-4">🎮</div>
-                <h3 className="text-xl font-bold text-[#0171B9] mb-2">Free</h3>
-                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹0</div>
-                <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>7 credits free</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">💳</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>No credit card required</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins and APIs</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process up to 7 hifi assets</span></div>
+                <h3 className="text-xl font-bold text-[#6C2F83] mb-2">Free</h3>
+                <div
+                  className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
+                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
+                  }`}
+                >
+                  ₹0
                 </div>
-                <button className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm" onClick={() => { if (user) { router.push("/demo"); } else { setShowAuthModal(true); } }}>Sign Up</button>
+                <div className="space-y-2 text-left mb-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#6C2F83] text-sm">✨</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      7 credits free
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#6C2F83] text-sm">💳</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      No credit card required
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#6C2F83] text-sm">🔌</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Access to plugins and APIs
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#6C2F83] text-sm">🖼️</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Process up to 7 hifi assets
+                    </span>
+                  </div>
+                </div>
+                <button
+                  className="w-full px-4 py-2 rounded-lg bg-[#6C2F83] text-white font-semibold hover:bg-[#502D81] transition text-sm"
+                  onClick={() => {
+                    if (user) {
+                      router.push("/demo");
+                    } else {
+                      setShowAuthModal(true);
+                    }
+                  }}
+                >
+                  Sign Up
+                </button>
               </div>
             </div>
 
             {/* Pay-As-You-Go Plan */}
-            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${isDarkMode ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20" : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"}`}>
+            <div
+              className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#181E53]/40 hover:shadow-xl hover:shadow-[#181E53]/20 ${
+                isDarkMode
+                  ? "bg-gradient-to-br from-[#181E53]/20 to-[#181E53]/20 border-[#181E53]/20"
+                  : "bg-gradient-to-br from-[#181E53]/10 to-[#181E53]/10 border-[#181E53]/20"
+              }`}
+            >
               <div className="text-center">
                 <div className="text-4xl mb-4">💸</div>
-                <h3 className="text-xl font-bold text-[#0171B9] mb-2">Pay-As-You-Go</h3>
-                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹0*</div>
-                <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? "text-white opacity-60" : "text-[#1E1E1E] opacity-60"}`}>/month</div>
-                <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2"><span className="text-[#004684] text-sm">💳</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>No monthly charges</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#004684] text-sm">🔋</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Top-up credits as you go</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#004684] text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#004684] text-sm">🛠️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Build Your Own (Localization) Model</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#004684] text-sm">👥</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Great for teams with variable localization needs</span></div>
+                <h3 className="text-xl font-bold text-[#181E53] mb-2">
+                  Pay-As-You-Go
+                </h3>
+                <div
+                  className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
+                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
+                  }`}
+                >
+                  ₹0*
                 </div>
-                <button className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm" onClick={() => { if (user) { router.push("/demo"); } else { setShowAuthModal(true); } }}>Sign Up</button>
-              </div>
-            </div>
-
-            {/* Basic Plan */}
-            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#004684]/40 hover:shadow-xl hover:shadow-[#0171B9]/20 ${isDarkMode ? "bg-gradient-to-br from-[#0171B9]/20 to-[#004684]/20 border-[#0171B9]/20" : "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"}`}>
-              <div className="text-center">
-                <div className="text-4xl mb-4">🌱</div>
-                <h3 className="text-xl font-bold text-[#0171B9] mb-2">Basic</h3>
-                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹1,600</div>
-                <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? "text-white opacity-60" : "text-[#1E1E1E] opacity-60"}`}>/month</div>
-                <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>20,000 credits / month</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process up to 25 hifi or 100 lofi assets</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🔋</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Top-up credits as you go</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#0171B9] text-sm">🚀</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Perfect for early / start-up teams</span></div>
+                <div
+                  className={`text-xs mb-2 transition-colors duration-300 ${
+                    isDarkMode
+                      ? "text-white opacity-60"
+                      : "text-[#1E1E1E] opacity-60"
+                  }`}
+                >
+                  /month
                 </div>
-                <button className="w-full px-4 py-2 rounded-lg bg-[#0171B9] text-white font-semibold hover:bg-[#004684] transition text-sm" onClick={() => { if (user) { router.push("/demo"); } else { setShowAuthModal(true); } }}>Sign Up</button>
+                <div className="space-y-2 text-left mb-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#181E53] text-sm">💳</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      No monthly charges
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#181E53] text-sm">🔋</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Top-up credits as you go
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#181E53] text-sm">🔌</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Access to plugins, APIs, and Dashboard
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#181E53] text-sm">🛠️</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Build Your Own (Localization) Model
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#181E53] text-sm">👥</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Great for teams with variable localization needs
+                    </span>
+                  </div>
+                </div>
+                <button
+                  className="w-full px-4 py-2 rounded-lg bg-[#181E53] text-white font-semibold hover:bg-[#3C38A4] transition text-sm"
+                  onClick={() => {
+                    if (user) {
+                      router.push("/demo");
+                    } else {
+                      setShowAuthModal(true);
+                    }
+                  }}
+                >
+                  Sign Up
+                </button>
               </div>
             </div>
 
             {/* Plus Plan - Most Popular */}
-            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#FF5E32]/40 hover:shadow-xl hover:shadow-[#FF5E32]/20 relative ${isDarkMode ? "bg-gradient-to-br from-[#FF5E32]/20 to-[#0171B9]/20 border-[#FF5E32]/20" : "bg-gradient-to-br from-[#FF5E32]/10 to-[#0171B9]/10 border-[#FF5E32]/20"}`}>
+            <div
+              className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#502D81]/40 hover:shadow-xl hover:shadow-[#502D81]/20 relative ${
+                isDarkMode
+                  ? "bg-gradient-to-br from-[#502D81]/20 to-[#502D81]/20 border-[#502D81]/20"
+                  : "bg-gradient-to-br from-[#502D81]/10 to-[#502D81]/10 border-[#502D81]/20"
+              }`}
+            >
               {/* Most Popular Badge */}
-              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#FF5E32] text-white px-3 py-1 rounded-full text-xs font-semibold">MOST POPULAR</div>
+              <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-[#502D81] text-white px-3 py-1 rounded-full text-xs font-semibold">
+                MOST POPULAR
+              </div>
               <div className="text-center">
                 <div className="text-4xl mb-4">💎</div>
-                <h3 className="text-xl font-bold text-[#FF5E32] mb-2">Plus</h3>
-                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹6,700</div>
-                <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? "text-white opacity-60" : "text-[#1E1E1E] opacity-60"}`}>/month</div>
-                <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>100,000 credits / month</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process up to 125 hifi or 500 lofi assets</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🛠️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Build Your Own (Localization) Model</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🧑‍💻</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated technical support</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">🔋</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Top-up credits as you go</span></div>
-                  <div className="flex items-center gap-2"><span className="text-[#FF5E32] text-sm">💡</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Ideal for mid-tier marketing, creative, and localization teams. Best value</span></div>
+                <h3 className="text-xl font-bold text-[#502D81] mb-2">Plus</h3>
+                <div
+                  className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
+                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
+                  }`}
+                >
+                  ₹6,700
                 </div>
-                <button className="w-full px-4 py-2 rounded-lg bg-[#FF5E32] text-white font-semibold hover:bg-[#1A018D] transition text-sm" onClick={() => { if (user) { router.push("/demo"); } else { setShowAuthModal(true); } }}>Sign Up</button>
-              </div>
-            </div>
-
-            {/* Premium Plan */}
-            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-gray-400/40 hover:shadow-xl hover:shadow-gray-400/20 ${isDarkMode ? "bg-gradient-to-br from-gray-700/20 to-gray-600/20 border-gray-600/20" : "bg-gradient-to-br from-gray-100/50 to-gray-200/50 border-gray-300/20"}`}>
-              <div className="text-center">
-                <div className="text-4xl mb-4">🚀</div>
-                <h3 className="text-xl font-bold text-gray-600 mb-2">Premium</h3>
-                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>₹25,000</div>
-                <div className={`text-xs mb-2 transition-colors duration-300 ${isDarkMode ? "text-white opacity-60" : "text-[#1E1E1E] opacity-60"}`}>/month</div>
-                <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>500,000 credits per month</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process upto 500 hifi or 2K lofi assets</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🛠️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Build Your Own (Localization) Model</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">⚡</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Priority technical support</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🎯</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated onboarding</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🔋</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Top-up credits as you go</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">💡</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Ideal for scale-ups and large cross-functional teams.</span></div>
+                <div
+                  className={`text-xs mb-2 transition-colors duration-300 ${
+                    isDarkMode
+                      ? "text-white opacity-60"
+                      : "text-[#1E1E1E] opacity-60"
+                  }`}
+                >
+                  /month
                 </div>
-                <button className="w-full px-4 py-2 rounded-lg bg-gray-600 text-white font-semibold hover:bg-gray-700 transition text-sm" onClick={() => {
-                  const subject = encodeURIComponent("Premium Plan Inquiry - GoLoco");
-                  const body = encodeURIComponent(`Hello GoLoco Team,\n\nI am interested in learning more about your Premium plan and would like to discuss custom pricing and features for my organization.\n\nPlease contact me to schedule a call or provide more information.\n\nBest regards`);
-                  const mailtoLink = `mailto:golocostudios@gmail.com?subject=${subject}&body=${body}`;
-                  window.open(mailtoLink, "_self");
-                }}>Talk to Us</button>
+                <div className="space-y-2 text-left mb-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#502D81] text-sm">✨</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      100,000 credits / month
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#502D81] text-sm">🔌</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Access to plugins, APIs, and Dashboard
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#502D81] text-sm">🖼️</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Process up to 125 hifi or 500 lofi assets
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#502D81] text-sm">🛠️</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Build Your Own (Localization) Model
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#502D81] text-sm">🧑‍💻</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Dedicated technical support
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#502D81] text-sm">🔋</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Top-up credits as you go
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#502D81] text-sm">💡</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Ideal for mid-tier marketing, creative, and localization
+                      teams. Best value
+                    </span>
+                  </div>
+                </div>
+                <button
+                  className="w-full px-4 py-2 rounded-lg bg-[#502D81] text-white font-semibold hover:bg-[#6C2F83] transition text-sm"
+                  onClick={() => {
+                    if (user) {
+                      router.push("/demo");
+                    } else {
+                      setShowAuthModal(true);
+                    }
+                  }}
+                >
+                  Sign Up
+                </button>
               </div>
             </div>
 
             {/* Enterprise Plan */}
-            <div className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-gray-400/40 hover:shadow-xl hover:shadow-gray-400/20 ${isDarkMode ? "bg-gradient-to-br from-gray-700/20 to-gray-600/20 border-gray-600/20" : "bg-gradient-to-br from-gray-100/50 to-gray-200/50 border-gray-300/20"}`}>
+            <div
+              className={`rounded-3xl p-6 border-2 transition-all duration-300 hover:scale-105 hover:border-[#3C38A4]/40 hover:shadow-xl hover:shadow-[#3C38A4]/20 ${
+                isDarkMode
+                  ? "bg-gradient-to-br from-[#3C38A4]/20 to-[#3C38A4]/20 border-[#3C38A4]/20"
+                  : "bg-gradient-to-br from-[#3C38A4]/10 to-[#3C38A4]/10 border-[#3C38A4]/20"
+              }`}
+            >
               <div className="text-center">
                 <div className="text-4xl mb-4">🏢</div>
-                <h3 className="text-xl font-bold text-gray-600 mb-2">Enterprise</h3>
-                <div className={`text-3xl font-bold mb-2 transition-colors duration-300 ${isDarkMode ? "text-white" : "text-[#1E1E1E]"}`}>Talk to us</div>
-                <div className="space-y-2 text-left mb-6">
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">✨</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Unlimited credits per month</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🔌</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Access to plugins, APIs, and Dashboard</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🖼️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Process unlimited hifi or lofi assets</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🛠️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Build Your Own (Localization) Model</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🎯</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated priority onboarding</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🧑‍💻</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Dedicated 24x7 technical support</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🔗</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>Support for TMS integrations</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🗂️</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>DAM integrations & custom workflows</span></div>
-                  <div className="flex items-center gap-2"><span className="text-gray-500 text-sm">🌍</span><span className={`text-xs transition-colors duration-300 ${isDarkMode ? "text-white opacity-80" : "text-[#1E1E1E] opacity-80"}`}>For global teams localizing at scale</span></div>
+                <h3 className="text-xl font-bold text-[#3C38A4] mb-2">
+                  Enterprise
+                </h3>
+                <div
+                  className={`text-3xl font-bold mb-2 transition-colors duration-300 ${
+                    isDarkMode ? "text-white" : "text-[#1E1E1E]"
+                  }`}
+                >
+                  Talk to us
                 </div>
-                <button className="w-full px-4 py-2 rounded-lg bg-gray-600 text-white font-semibold hover:bg-gray-700 transition text-sm" onClick={() => {
-                  const subject = encodeURIComponent("Enterprise Plan Inquiry - GoLoco");
-                  const body = encodeURIComponent(`Hello GoLoco Team,\n\nI am interested in learning more about your Enterprise plan and would like to discuss custom pricing and features for my organization.\n\nPlease contact me to schedule a call or provide more information.\n\nBest regards`);
-                  const mailtoLink = `mailto:golocostudios@gmail.com?subject=${subject}&body=${body}`;
-                  window.open(mailtoLink, "_self");
-                }}>Talk to Us</button>
+                <div className="space-y-2 text-left mb-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#3C38A4] text-sm">✨</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Unlimited credits per month
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#3C38A4] text-sm">🔌</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Access to plugins, APIs, and Dashboard
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#3C38A4] text-sm">🖼️</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Process unlimited hifi or lofi assets
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#3C38A4] text-sm">🛠️</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Build Your Own (Localization) Model
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#3C38A4] text-sm">🎯</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Dedicated priority onboarding
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#3C38A4] text-sm">🧑‍💻</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Dedicated 24x7 technical support
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#3C38A4] text-sm">🔗</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      Support for TMS integrations
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#3C38A4] text-sm">🗂️</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      DAM integrations & custom workflows
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#3C38A4] text-sm">🌍</span>
+                    <span
+                      className={`text-xs transition-colors duration-300 ${
+                        isDarkMode
+                          ? "text-white opacity-80"
+                          : "text-[#1E1E1E] opacity-80"
+                      }`}
+                    >
+                      For global teams localizing at scale
+                    </span>
+                  </div>
+                </div>
+                <button
+                  className="w-full px-4 py-2 rounded-lg bg-[#3C38A4] text-white font-semibold hover:bg-[#181E53] transition text-sm"
+                  onClick={() => {
+                    const subject = encodeURIComponent(
+                      "Enterprise Plan Inquiry - GoLoco"
+                    );
+                    const body = encodeURIComponent(
+                      `Hello GoLoco Team,\n\nI am interested in learning more about your Enterprise plan and would like to discuss custom pricing and features for my organization.\n\nPlease contact me to schedule a call or provide more information.\n\nBest regards`
+                    );
+                    const mailtoLink = `mailto:golocostudios@gmail.com?subject=${subject}&body=${body}`;
+                    window.open(mailtoLink, "_self");
+                  }}
+                >
+                  Talk to Us
+                </button>
               </div>
             </div>
           </div>
@@ -1981,8 +1305,14 @@ function LandingPageContent() {
                       ₹6,700
                     </div>
                     <div
+                    >
+                      ₹6,700
+                    </div>
+                    <div
                       className={`text-sm transition-colors duration-300 ${
-                        isDarkMode ? "text-white opacity-70" : "text-[#1E1E1E] opacity-70"
+                        isDarkMode
+                          ? "text-white opacity-70"
+                          : "text-[#1E1E1E] opacity-70"
                       }`}
                     >
                       100,000 credits • Unlimited generations & edits
@@ -2025,8 +1355,8 @@ function LandingPageContent() {
         <footer
           className={`w-full border-t px-8 py-12 transition-colors duration-300 ${
             isDarkMode
-              ? "bg-gradient-to-br from-[#0171B9]/10 to-[#004684]/10 border-[#0171B9]/20"
-              : "bg-gradient-to-br from-[#0171B9]/5 to-[#004684]/5 border-[#0171B9]/20"
+              ? "bg-gradient-to-br from-[#3C38A4]/10 to-[#181E53]/10 border-[#3C38A4]/20"
+              : "bg-gradient-to-br from-[#3C38A4]/5 to-[#181E53]/5 border-[#3C38A4]/20"
           }`}
         >
           <div className="max-w-6xl mx-auto">
@@ -2036,7 +1366,7 @@ function LandingPageContent() {
               <div className="flex flex-col items-start">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="text-4xl">🎨</div>
-                  <div className="text-3xl font-bold text-[#0171B9]">
+                  <div className="text-3xl font-bold text-[#3C38A4]">
                     GoLoco
                   </div>
                 </div>
@@ -2056,7 +1386,7 @@ function LandingPageContent() {
               <div className="flex flex-col md:flex-row gap-8">
                 {/* Product Links */}
                 <div className="space-y-3">
-                  <h4 className="text-lg font-bold text-[#004684] mb-3">
+                  <h4 className="text-lg font-bold text-[#181E53] mb-3">
                     Product
                   </h4>
                   <div className="space-y-2">
@@ -2064,8 +1394,8 @@ function LandingPageContent() {
                       href="/about"
                       className={`block text-sm transition ${
                         isDarkMode
-                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]"
-                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]"
+                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
+                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
                       }`}
                     >
                       About GoLoco
@@ -2074,8 +1404,8 @@ function LandingPageContent() {
                       href="/features"
                       className={`block text-sm transition ${
                         isDarkMode
-                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]"
-                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]"
+                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
+                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
                       }`}
                     >
                       Feature
@@ -2084,8 +1414,8 @@ function LandingPageContent() {
                       href="/pricing"
                       className={`block text-sm transition ${
                         isDarkMode
-                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]"
-                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]"
+                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
+                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
                       }`}
                     >
                       Pricing
@@ -2095,7 +1425,7 @@ function LandingPageContent() {
 
                 {/* Support Links */}
                 <div className="space-y-3">
-                  <h4 className="text-lg font-bold text-[#E72C19] mb-3">
+                  <h4 className="text-lg font-bold text-[#502D81] mb-3">
                     Support
                   </h4>
                   <div className="space-y-2">
@@ -2103,8 +1433,8 @@ function LandingPageContent() {
                       href="/faq"
                       className={`block text-sm transition ${
                         isDarkMode
-                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]"
-                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]"
+                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
+                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
                       }`}
                     >
                       FAQ
@@ -2113,8 +1443,8 @@ function LandingPageContent() {
                       href="/contact"
                       className={`block text-sm transition ${
                         isDarkMode
-                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]"
-                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]"
+                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
+                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
                       }`}
                     >
                       Contact Us
@@ -2123,8 +1453,8 @@ function LandingPageContent() {
                       href="/help"
                       className={`block text-sm transition ${
                         isDarkMode
-                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#0171B9]"
-                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#0171B9]"
+                          ? "text-white opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
+                          : "text-[#1E1E1E] opacity-80 hover:opacity-100 hover:text-[#3C38A4]"
                       }`}
                     >
                       Help Center
@@ -2134,7 +1464,7 @@ function LandingPageContent() {
 
                 {/* Social Links */}
                 <div className="space-y-3">
-                  <h4 className="text-lg font-bold text-[#0171B9] mb-3">
+                  <h4 className="text-lg font-bold text-[#6C2F83] mb-3">
                     Connect
                   </h4>
                   <div className="flex gap-4">
@@ -2172,7 +1502,7 @@ function LandingPageContent() {
             </div>
 
             {/* Bottom Section */}
-            <div className="border-t border-[#0171B9]/20 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="border-t border-[#3C38A4]/20 pt-6 flex flex-col md:flex-row justify-between items-center gap-4">
               <div
                 className={`flex items-center gap-6 text-sm transition-colors duration-300 ${
                   isDarkMode
@@ -2193,8 +1523,8 @@ function LandingPageContent() {
                   href="/privacy"
                   className={`transition ${
                     isDarkMode
-                      ? "text-white opacity-70 hover:opacity-100 hover:text-[#0171B9]"
-                      : "text-[#1E1E1E] opacity-70 hover:opacity-100 hover:text-[#0171B9]"
+                      ? "text-white opacity-70 hover:opacity-100 hover:text-[#3C38A4]"
+                      : "text-[#1E1E1E] opacity-70 hover:opacity-100 hover:text-[#3C38A4]"
                   }`}
                 >
                   Privacy Policy
@@ -2212,8 +1542,8 @@ function LandingPageContent() {
                   href="/terms"
                   className={`transition ${
                     isDarkMode
-                      ? "text-white opacity-70 hover:opacity-100 hover:text-[#0171B9]"
-                      : "text-[#1E1E1E] opacity-70 hover:opacity-100 hover:text-[#0171B9]"
+                      ? "text-white opacity-70 hover:opacity-100 hover:text-[#3C38A4]"
+                      : "text-[#1E1E1E] opacity-70 hover:opacity-100 hover:text-[#3C38A4]"
                   }`}
                 >
                   Terms of Service
@@ -2353,7 +1683,7 @@ function LiveDemoWithApi() {
   );
 }
 
-// Even though ThemeProvider is in ClientWrapper, we need it here as well 
+// Even though ThemeProvider is in ClientWrapper, we need it here as well
 // to ensure components can access the theme context immediately
 export default function LandingPage() {
   return (
