@@ -40,7 +40,7 @@ export const useCreditManagement = () => {
   } = useCreditStore();
 
   // Special unlimited user email
-  const UNLIMITED_EMAIL = ['golocostudios@gmail.com','paridhi.jain0007@gmail.com','lixxca8@gmail.com','jaynitparmaruniversal@gmail.com', 'noumanias@gmail.com'];
+  const UNLIMITED_EMAIL = ['golocostudios@gmail.com','paridhi.jain0007@gmail.com','lixxca8@gmail.com','jaynitparmaruniversal@gmail.com', 'livianakendy@gmail.com'];
 
   // Initialize the store with user data from context
   useEffect(() => {

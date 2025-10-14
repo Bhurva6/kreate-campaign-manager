@@ -5,7 +5,7 @@ import { useUI } from './ui';
 // Constants for free limits
 const FREE_IMAGE_GENERATIONS = 3;
 const FREE_IMAGE_EDITS = 7;
-const UNLIMITED_EMAIL = ['golocostudios@gmail.com','paridhi.jain0007@gmail.com','lixxca8@gmail.com','jaynitparmaruniversal@gmail.com','noumanias@gmail.com'];
+const UNLIMITED_EMAIL = ['golocostudios@gmail.com','paridhi.jain0007@gmail.com','lixxca8@gmail.com','jaynitparmaruniversal@gmail.com','noumanias@gmail.com', 'livianakendy@gmail.com'];
 
 // Define plans
 export interface Plan {
