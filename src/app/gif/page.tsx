@@ -18,13 +18,13 @@ export default function GifPage() {
   const [generatedVideos, setGeneratedVideos] = useState<any[]>([]);
   const [videoLoadingStates, setVideoLoadingStates] = useState<{[key: number]: boolean}>({});
 
-  const handleStartingFrameUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setStartingFrame(file);
+  // Helper function to convert base64 to blob URL
+  const base64ToBlobUrl = (base64Data: string, mimeType: string) => {
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
-  };
-
   const handleFinishingFrameUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -61,6 +61,11 @@ export default function GifPage() {
 
       if (data.success && data.videos) {
         setGeneratedVideos(data.videos);
+        const initialLoadingStates: {[key: number]: boolean} = {};
+        data.videos.forEach((_: any, index: string | number) => {
+          initialLoadingStates[Number(index)] = true;
+        });
+        setVideoLoadingStates(initialLoadingStates);
       }
     } catch (error) {
       console.error('Error generating video:', error);
@@ -249,7 +254,7 @@ export default function GifPage() {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleStartingFrameUpload}
+                      onChange={handleFinishingFrameUpload}
                       className="hidden"
                     />
                   </label>
@@ -293,7 +298,7 @@ export default function GifPage() {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleStartingFrameUpload}
+                      onChange={handleFinishingFrameUpload}
                       className="hidden"
                     />
                   </label>
@@ -309,8 +314,14 @@ export default function GifPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {generatedVideos.map((video, index) => (
                     <div key={index} className="flex flex-col items-center space-y-2">
-                      <video onLoadStart={() => setVideoLoadingStates(prev => ({ ...prev, [index]: true }))} onCanPlay={() => setVideoLoadingStates(prev => ({ ...prev, [index]: false }))} onError={() => setVideoLoadingStates(prev => ({ ...prev, [index]: false }))} className={`w-full max-w-md rounded-lg ${videoLoadingStates[index] === false ? 'block' : 'hidden'}`} 
-                      {...videoLoadingStates[index] !== false && (
+                      {videoLoadingStates[index] === false ? (
+                        <video onLoadStart={() => setVideoLoadingStates(prev => ({ ...prev, [index]: true }))} onCanPlay={() => setVideoLoadingStates(prev => ({ ...prev, [index]: false }))} onError={() => setVideoLoadingStates(prev => ({ ...prev, [index]: false }))} 
+                          src={`data:video/mp4;base64,${video.base64Data}`} 
+                          controls 
+                          poster={startingFrame ? URL.createObjectURL(startingFrame) : undefined} 
+                          className="w-full max-w-md rounded-lg" 
+                        />
+                      ) : (
                         <div className="w-full max-w-md h-48 bg-gray-800 rounded-lg flex items-center justify-center">
                           <div className="flex flex-col items-center space-y-2">
                             <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
@@ -318,18 +329,13 @@ export default function GifPage() {
                           </div>
                         </div>
                       )}
-                        src={video.publicUrl}
-                        controls
-                        poster={startingFrame ? URL.createObjectURL(startingFrame) : undefined}
-                      />
                       <a
-                        href={video.publicUrl}
+                        href={`data:video/mp4;base64,${video.base64Data}`}
                         download={`generated-video-${index + 1}.mp4`}
                         className="px-4 py-2 bg-[#3C38A4] text-white rounded-lg hover:bg-[#2a2780] transition-colors"
                       >
                         Download Video
-                      </a>
-                    </div>
+                      </a>                    </div>
                   ))}
                 </div>
               </div>
@@ -399,4 +405,4 @@ function UserDropdown() {
       )}
     </div>
   );
-}
+}}
