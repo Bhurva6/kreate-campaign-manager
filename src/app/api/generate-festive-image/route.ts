@@ -99,6 +99,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Validate required fields
+    if (!brandName || !industry || !logo || !festival) {
+      return NextResponse.json({
+        error: 'Missing required fields',
+        details: 'Brand name, industry, logo, and festival are all required.',
+        suggestion: 'Please fill in all required fields and try again.'
+      }, { status: 400 });
+    }
+
+    // Validate logo file
+    if (!logo.type.startsWith('image/')) {
+      return NextResponse.json({
+        error: 'Invalid logo format',
+        details: 'Logo must be an image file.',
+        suggestion: 'Please upload a valid image file for the logo.'
+      }, { status: 400 });
+    }
+
     // Convert logo file to base64
     const logoBuffer = await logo.arrayBuffer();
     const logoBase64 = `data:${logo.type};base64,${Buffer.from(logoBuffer).toString('base64')}`;
@@ -118,33 +136,53 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ imageUrl: finalImageUrl });
   } catch (error) {
     console.error('Error generating festive image:', error);
-    return NextResponse.json({ error: 'Failed to generate image' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return NextResponse.json({
+      error: 'Failed to generate festive image',
+      details: errorMessage,
+      suggestion: 'Please try again with different settings or contact support if the issue persists.'
+    }, { status: 500 });
   }
 }
 
 async function generateBaseImage(prompt: string, baseUrl: string): Promise<string> {
-  const generateResponse = await fetch(`${baseUrl}/api/generate-image`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      prompt,
-      sampleCount: 1,
-      aspectRatio: '1:1',
-      campaignId: `festive-${Date.now()}`,
-      index: 0,
-    }),
-  });
+  try {
+    const generateResponse = await fetch(`${baseUrl}/api/generate-image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt,
+        sampleCount: 1,
+        aspectRatio: '1:1',
+        campaignId: `festive-${Date.now()}`,
+        index: 0,
+      }),
+    });
 
-  if (!generateResponse.ok) {
-    const errorText = await generateResponse.text();
-    throw new Error(`Failed to generate base image: ${errorText}`);
+    if (!generateResponse.ok) {
+      const errorText = await generateResponse.text();
+      let errorDetails = 'Unknown error from image generation service';
+      try {
+        const errorData = JSON.parse(errorText);
+        errorDetails = errorData.error || errorData.message || errorText;
+      } catch (e) {
+        errorDetails = errorText;
+      }
+      throw new Error(`Failed to generate base image: ${errorDetails}`);
+    }
+
+    const generateData = await generateResponse.json();
+    if (!generateData.key) {
+      throw new Error('No image key returned from generation service');
+    }
+    const imageKey = generateData.key;
+    return `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${imageKey}`;
+  } catch (error) {
+    console.error('Error in generateBaseImage:', error);
+    throw new Error(`Base image generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
-
-  const generateData = await generateResponse.json();
-  const imageKey = generateData.key;
-  return `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${imageKey}`;
 }
 
 async function overlayLogoUsingEditAPI(imageUrl: string, logoBase64: string, baseUrl: string): Promise<string> {
@@ -156,7 +194,7 @@ async function overlayLogoUsingEditAPI(imageUrl: string, logoBase64: string, bas
       // Fetch the image with text overlay
       const imageResponse = await fetch(imageUrl);
       if (!imageResponse.ok) {
-        throw new Error('Failed to fetch image for logo overlay');
+        throw new Error(`Failed to fetch image for logo overlay: ${imageResponse.status} ${imageResponse.statusText}`);
       }
       const imageBuffer = await imageResponse.arrayBuffer();
       base64Image = Buffer.from(imageBuffer).toString('base64');
@@ -179,13 +217,21 @@ async function overlayLogoUsingEditAPI(imageUrl: string, logoBase64: string, bas
     });
 
     if (!editResponse.ok) {
-      throw new Error('Failed to overlay logo using edit API');
+      const errorText = await editResponse.text();
+      let errorDetails = 'Unknown error from logo overlay service';
+      try {
+        const errorData = JSON.parse(errorText);
+        errorDetails = errorData.error || errorData.details || errorData.message || errorText;
+      } catch (e) {
+        errorDetails = errorText;
+      }
+      throw new Error(`Failed to overlay logo: ${errorDetails}`);
     }
 
     const editData = await editResponse.json();
     
     if (editData.error) {
-      throw new Error(`Edit API error: ${editData.error}`);
+      throw new Error(`Logo overlay API error: ${editData.error}`);
     }
 
     // The edit API returns a data URL, extract the base64 and upload to R2
@@ -211,7 +257,8 @@ async function overlayLogoUsingEditAPI(imageUrl: string, logoBase64: string, bas
     return `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${finalImageKey}`;
   } catch (error) {
     console.error('Error overlaying logo with edit API:', error);
-    // Return the image with text if logo overlay fails
+    // Return the image with text if logo overlay fails - don't fail the entire process
+    console.warn('Logo overlay failed, returning image without logo overlay');
     return imageUrl;
   }
 }
@@ -225,7 +272,7 @@ async function addTextOverlay(imageUrl: string, festival: string, customTitle: s
       // Fetch the image
       const imageResponse = await fetch(imageUrl);
       if (!imageResponse.ok) {
-        throw new Error('Failed to fetch image for text overlay');
+        throw new Error(`Failed to fetch image for text overlay: ${imageResponse.status} ${imageResponse.statusText}`);
       }
       const imageBuffer = await imageResponse.arrayBuffer();
       base64Image = Buffer.from(imageBuffer).toString('base64');
@@ -267,6 +314,8 @@ async function addTextOverlay(imageUrl: string, festival: string, customTitle: s
               subtitle = finalSubtitle;
             }
           }
+        } else {
+          console.warn('Failed to generate custom subtitle, using default');
         }
       } catch (error) {
         console.error('Error generating subtitle:', error);
@@ -341,7 +390,8 @@ Make sure both lines of text are clearly visible and readable against the backgr
     
   } catch (error) {
     console.error('Error adding text overlay:', error);
-    // Return the original image if text overlay fails
+    // Return the original image if text overlay fails - don't fail the entire process
+    console.warn('Text overlay failed, returning image without text overlay');
     return imageUrl;
   }
 }

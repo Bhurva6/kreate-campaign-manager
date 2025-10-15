@@ -13,37 +13,66 @@ export async function POST(req: NextRequest) {
       prompt,
       sampleCount = 1,
       aspectRatio = "1:1",
-      campaignId,
-      index,
+      campaignId: originalCampaignId,
+      index: originalIndex,
     } = await req.json();
+
+    // Handle campaignId and index for non-festive campaigns
+    let campaignId = originalCampaignId;
+    let index = originalIndex;
 
     // Validate input
     if (!prompt || typeof prompt !== "string") {
       return NextResponse.json(
-        { error: "Prompt is required." },
+        {
+          error: "Prompt is required",
+          details: "A text prompt is required to generate an image.",
+          suggestion: "Please provide a descriptive prompt for the image you want to generate.",
+        },
         { status: 400 }
       );
     }
     if (sampleCount < 1 || sampleCount > 4) {
       return NextResponse.json(
-        { error: "sampleCount must be 1-4." },
-        { status: 400 }
-      );
-    }
-    if (!campaignId || typeof campaignId !== "string") {
-      return NextResponse.json(
-        { error: "campaignId is required." },
-        { status: 400 }
-      );
-    }
-    if (typeof index !== "number") {
-      return NextResponse.json(
-        { error: "index is required and must be a number." },
+        {
+          error: "Invalid sample count",
+          details: "Sample count must be between 1 and 4.",
+          suggestion: "Please specify a sample count between 1 and 4.",
+        },
         { status: 400 }
       );
     }
 
-    // Enhanced prompt with expert AI prompt engineering instruction for both background and foreground generation
+    const isFestive = campaignId && campaignId.startsWith('festive-');
+
+    if (isFestive) {
+      if (!campaignId || typeof campaignId !== "string") {
+        return NextResponse.json(
+          { 
+            error: "Campaign ID required for festive images",
+            details: "A campaign ID is required for festive image generation.",
+            suggestion: "Please ensure you're generating festive images through the proper interface."
+          },
+          { status: 400 }
+        );
+      }
+      if (typeof index !== "number") {
+        return NextResponse.json(
+          { 
+            error: "Index required for festive images",
+            details: "An index number is required for festive image generation.",
+            suggestion: "Please ensure you're generating festive images through the proper interface."
+          },
+          { status: 400 }
+        );
+      }
+    } else {
+      // For non-festive, set defaults if not provided
+      if (!campaignId) campaignId = `non-festive-${Date.now()}`;
+      if (typeof index !== "number") index = 0;
+    }
+
+    // Enhanced prompt with expert AI prompt engineering instruction ONLY for festive campaigns
     const expertInstruction = `You are an expert AI prompt engineer specializing in generating
 minimalist and visually appealing backgrounds for marketing banners using
 Imagen, with a particular focus on the Indian market. Your goal is to
@@ -104,7 +133,7 @@ Generate Imagen prompts for a photorealistic marketing banner foreground featuri
 **Text Prohibition: Absolutely no text, words, or written content should appear on the generated foreground images. Only visual elements should be present.
 Based on the above guidelines, generate an optimized Imagen prompt that creates colorful, vibrant backgrounds with rich saturated colors suitable for text overlays. Ensure NO text appears on the generated images: `;
 
-    const enhancedPrompt = expertInstruction + prompt;
+    const enhancedPrompt = isFestive ? expertInstruction + prompt : prompt;
 
     // Get fresh access token from token manager
     let accessToken: string;

@@ -4,6 +4,15 @@ export async function POST(request: NextRequest) {
   try {
     const { brand, industry, festival, customPrompt } = await request.json();
 
+    // Validate required fields
+    if (!brand || !industry || !festival) {
+      return NextResponse.json({
+        error: 'Missing required fields',
+        details: 'Brand, industry, and festival are required.',
+        suggestion: 'Please provide all required fields.'
+      }, { status: 400 });
+    }
+
     // Use custom prompt if provided, otherwise use the default image generation prompt
     const prompt = customPrompt || `Create a minimalistic image generation prompt for a ${industry} company called "${brand}" celebrating ${festival}. 
 
@@ -24,7 +33,11 @@ Generate a concise prompt that an AI image generator can use to create a minimal
     // Call Gemini API directly using API key
     const geminiApiKey = process.env.GEMINI_API_KEY;
     if (!geminiApiKey) {
-      throw new Error('GEMINI_API_KEY not found in environment variables');
+      return NextResponse.json({
+        error: 'API configuration error',
+        details: 'Gemini API key not configured.',
+        suggestion: 'Please contact support to resolve the API configuration issue.'
+      }, { status: 500 });
     }
 
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`, {
@@ -48,19 +61,39 @@ Generate a concise prompt that an AI image generator can use to create a minimal
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Gemini API Error:', errorText);
-      throw new Error('Failed to generate prompt from Gemini');
+      let errorDetails = 'Unknown error from Gemini API';
+      try {
+        const errorData = JSON.parse(errorText);
+        errorDetails = errorData.error?.message || errorData.message || errorText;
+      } catch (e) {
+        errorDetails = errorText;
+      }
+      return NextResponse.json({
+        error: 'Failed to generate prompt',
+        details: errorDetails,
+        suggestion: 'Please try again or contact support if the issue persists.'
+      }, { status: 500 });
     }
 
     const data = await response.json();
     const generatedPrompt = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!generatedPrompt) {
-      throw new Error('No prompt generated from Gemini');
+      return NextResponse.json({
+        error: 'No prompt generated',
+        details: 'The AI service did not return a valid prompt.',
+        suggestion: 'Please try again with different parameters.'
+      }, { status: 500 });
     }
 
     return NextResponse.json({ prompt: generatedPrompt });
   } catch (error) {
     console.error('Error generating prompt:', error);
-    return NextResponse.json({ error: 'Failed to generate prompt' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    return NextResponse.json({
+      error: 'Failed to generate prompt',
+      details: errorMessage,
+      suggestion: 'Please try again or contact support if the issue persists.'
+    }, { status: 500 });
   }
 }

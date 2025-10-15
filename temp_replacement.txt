@@ -1,0 +1,26 @@
+                    <div key={index} className="flex flex-col items-center space-y-2">
+                      {videoLoadingStates[index] !== false && (
+                        <div className="w-full max-w-md h-48 bg-gray-800 rounded-lg flex items-center justify-center">
+                          <div className="flex flex-col items-center space-y-2">
+                            <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                            <p className="text-white text-sm">Loading video...</p>
+                          </div>
+                        </div>
+                      )}
+                      <video
+                        src={video.publicUrl}
+                        controls
+                        className={`w-full max-w-md rounded-lg ${videoLoadingStates[index] === false ? 'block' : 'hidden'}`}
+                        poster={startingFrame ? URL.createObjectURL(startingFrame) : undefined}
+                        onLoadStart={() => setVideoLoadingStates(prev => ({ ...prev, [index]: true }))}
+                        onCanPlay={() => setVideoLoadingStates(prev => ({ ...prev, [index]: false }))}
+                        onError={() => setVideoLoadingStates(prev => ({ ...prev, [index]: false }))}
+                      />
+                      <a
+                        href={video.publicUrl}
+                        download={`generated-video-${index + 1}.mp4`}
+                        className="px-4 py-2 bg-[#3C38A4] text-white rounded-lg hover:bg-[#2a2780] transition-colors"
+                      >
+                        Download Video
+                      </a>
+                    </div>

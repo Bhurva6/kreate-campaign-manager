@@ -503,6 +503,29 @@ function LandingPageContent() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '0px'
+      }
+    );
+
+    const featureCards = document.querySelectorAll('.feature-card');
+    featureCards.forEach((card) => observer.observe(card));
+
+    return () => {
+      featureCards.forEach((card) => observer.unobserve(card));
+    };
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col relative overflow-x-hidden bg-[var(--background)] font-sans">
       {/* First Viewport - Completely Black */}
@@ -574,6 +597,12 @@ function LandingPageContent() {
             >
               Festive
             </Link>
+             <Link
+              href="/gif"
+              className="text-white hover:text-[#3C38A4] transition-colors"
+            >
+              GIF
+            </Link>
 
             <Link
               href="/pricing"
@@ -624,129 +653,194 @@ function LandingPageContent() {
         {/* Features Section */}
         <div className="w-full flex flex-col items-center mt-12 sm:mt-16 md:mt-24 lg:mt-32 mb-12 sm:mb-16 md:mb-24 lg:mb-32 px-4 sm:px-6">
           <style jsx>{`
-            @keyframes slideUp {
-              0% { transform: translateY(0); }
-              50% { transform: translateY(-100px); }
-              100% { transform: translateY(0); }
+            @keyframes fadeInScale {
+              0% { 
+                opacity: 0;
+                transform: scale(0.8);
+              }
+              100% { 
+                opacity: 1;
+                transform: scale(1);
+              }
             }
-            @keyframes slideDown {
-              0% { transform: translateY(0); }
-              50% { transform: translateY(100px); }
-              100% { transform: translateY(0); }
+            
+            @keyframes float {
+              0% { transform: translateY(0) rotate(0deg); }
+              25% { transform: translateY(-10px) rotate(1deg); }
+              75% { transform: translateY(10px) rotate(-1deg); }
+              100% { transform: translateY(0) rotate(0deg); }
             }
-            .animate-slide-up {
-              animation: slideUp 4s ease-in-out infinite;
+
+            .feature-card {
+              opacity: 0;
+              transform: scale(0.8);
             }
-            .animate-slide-down {
-              animation: slideDown 4s ease-in-out infinite;
+
+            .feature-card.visible {
+              animation: fadeInScale 0.8s ease-out forwards;
+            }
+
+            .feature-card:hover {
+              animation: float 3s ease-in-out infinite;
+              box-shadow: 0 0 30px rgba(255,255,255,0.3);
+            }
+            
+            @keyframes flow {
+              0% { stroke-dashoffset: 0; }
+              100% { stroke-dashoffset: -30; }
+            }
+            
+            @keyframes pulse {
+              0%, 100% { opacity: 0.3; transform: scale(1); }
+              50% { opacity: 0.8; transform: scale(1.1); }
+            }
+            
+            .animate-flow {
+              animation: flow 4s linear infinite;
+            }
+            
+            .animate-pulse {
+              animation: pulse 3s ease-in-out infinite;
             }
           `}</style>
 
-          <div className="w-full max-w-6xl mx-auto grid grid-cols-3 gap-6 sm:gap-8 md:gap-10 lg:gap-12">
-            {/* Column 1 */}
-            <div className="flex flex-col space-y-6">
-              <div className="flex flex-col items-center">
-                <img
-                  src="/jaynitedit.jpeg"
-                  alt="Edit Like It&apos;s Magic"
-                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
-                />
-                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                  Edit Like It&apos;s Magic
-                </h3>
+          <div className="relative w-full max-w-6xl mx-auto">
+            <div className="grid grid-cols-3 gap-6 sm:gap-8 md:gap-10 lg:gap-12">
+              {/* Column 1 */}
+              <div className="flex flex-col space-y-6">
+                <div className="flex flex-col items-center feature-card">
+                  <img
+                    src="/jaynitedit.jpeg"
+                    alt="Edit Like It&apos;s Magic"
+                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
+                  />
+                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                    Edit Like It&apos;s Magic
+                  </h3>
+                </div>
+                <div className="flex flex-col items-center feature-card">
+                  <img
+                    src="/finalclear.png"
+                    alt="Enhance Instantly"
+                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
+                  />
+                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                    Enhance Instantly
+                  </h3>
+                </div>
+                <div className="flex flex-col items-center feature-card">
+                  <img
+                    src="/variations.jpeg"
+                    alt="Always On-Brand"
+                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
+                  />
+                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                    Always On-Brand
+                  </h3>
+                </div>
               </div>
-              <div className="flex flex-col items-center">
-                <img
-                  src="/finalclear.png"
-                  alt="Enhance Instantly"
-                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
-                />
-                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                  Enhance Instantly
-                </h3>
-              </div>
-              <div className="flex flex-col items-center">
-                <img
-                  src="/variations.jpeg"
-                  alt="Always On-Brand"
-                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
-                />
-                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                  Always On-Brand
-                </h3>
-              </div>
-            </div>
 
-            {/* Column 2 */}
-            <div className="flex flex-col space-y-6">
-              <div className="flex flex-col items-center">
-                <img
-                  src="/posts.jpeg"
-                  alt="Automate the Boring Stuff"
-                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-down"
-                />
-                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                  Automate the Boring Stuff
-                </h3>
+              {/* Column 2 */}
+              <div className="flex flex-col space-y-6">
+                <div className="flex flex-col items-center feature-card">
+                  <img
+                    src="/posts.jpeg"
+                    alt="Automate the Boring Stuff"
+                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
+                  />
+                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                    Automate the Boring Stuff
+                  </h3>
+                </div>
+                <div className="flex flex-col items-center feature-card">
+                  <img
+                    src="/cherryblossoms.jpeg"
+                    alt="Find Inspiration Backwards"
+                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
+                  />
+                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                    Find Inspiration Backwards
+                  </h3>
+                </div>
+                <div className="flex flex-col items-center feature-card">
+                  <img
+                    src="/collab.jpeg"
+                    alt="Create Together"
+                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
+                  />
+                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                    Create Together
+                  </h3>
+                </div>
               </div>
-              <div className="flex flex-col items-center">
-                <img
-                  src="/cherryblossoms.jpeg"
-                  alt="Find Inspiration Backwards"
-                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-down"
-                />
-                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                  Find Inspiration Backwards
-                </h3>
-              </div>
-              <div className="flex flex-col items-center">
-                <img
-                  src="/collab.jpeg"
-                  alt="Create Together"
-                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-down"
-                />
-                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                  Create Together
-                </h3>
-              </div>
-            </div>
 
-            {/* Column 3 */}
-            <div className="flex flex-col space-y-6">
-              <div className="flex flex-col items-center">
-                <img
-                  src="/stone.jpg"
-                  alt="Unify Your Creations"
-                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
-                />
-                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                  Unify Your Creations
-                </h3>
-              </div>
-              <div className="flex flex-col items-center">
-                <img
-                  src="/stair.jpg"
-                  alt="Lightning Fast"
-                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
-                />
-                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                  Lightning Fast
-                </h3>
-              </div>
-              <div className="flex flex-col items-center">
-                <img
-                  src="/room.jpg"
-                  alt="Professional Quality"
-                  className="w-full h-48 object-cover rounded-2xl shadow-xl animate-slide-up"
-                />
-                <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                  Professional Quality
-                </h3>
+              {/* Column 3 */}
+              <div className="flex flex-col space-y-6">
+                <div className="flex flex-col items-center feature-card">
+                  <img
+                    src="/stone.jpg"
+                    alt="Unify Your Creations"
+                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
+                  />
+                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                    Unify Your Creations
+                  </h3>
+                </div>
+                <div className="flex flex-col items-center feature-card">
+                  <img
+                    src="/stair.jpg"
+                    alt="Lightning Fast"
+                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
+                  />
+                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                    Lightning Fast
+                  </h3>
+                </div>
+                <div className="flex flex-col items-center feature-card">
+                  <img
+                    src="/room.jpg"
+                    alt="Professional Quality"
+                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
+                  />
+                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
+                    Professional Quality
+                  </h3>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
+          <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 1200 600">
+            <defs>
+              <linearGradient id="flowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="rgba(255,255,255,0.1)" />
+                <stop offset="50%" stop-color="rgba(255,255,255,0.5)" />
+                <stop offset="100%" stop-color="rgba(255,255,255,0.1)" />
+              </linearGradient>
+            </defs>
+            <g stroke="url(#flowGradient)" stroke-width="2" fill="none" stroke-dasharray="15 15">
+              <path d="M 184 96 L 600 96" className="animate-flow" style={{animationDelay: '0s'}} />
+              <path d="M 600 96 L 1016 96" className="animate-flow" style={{animationDelay: '0.5s'}} />
+              <path d="M 1016 96 L 1016 312" className="animate-flow" style={{animationDelay: '1s'}} />
+              <path d="M 1016 312 L 600 312" className="animate-flow" style={{animationDelay: '1.5s'}} />
+              <path d="M 600 312 L 184 312" className="animate-flow" style={{animationDelay: '2s'}} />
+              <path d="M 184 312 L 184 528" className="animate-flow" style={{animationDelay: '2.5s'}} />
+              <path d="M 184 528 L 600 528" className="animate-flow" style={{animationDelay: '3s'}} />
+              <path d="M 600 528 L 1016 528" className="animate-flow" style={{animationDelay: '3.5s'}} />
+            </g>
+            <g fill="rgba(255,255,255,0.6)">
+              <circle cx="184" cy="96" r="4" className="animate-pulse" />
+              <circle cx="600" cy="96" r="4" className="animate-pulse" style={{animationDelay: '0.5s'}} />
+              <circle cx="1016" cy="96" r="4" className="animate-pulse" style={{animationDelay: '1s'}} />
+              <circle cx="1016" cy="312" r="4" className="animate-pulse" style={{animationDelay: '1.5s'}} />
+              <circle cx="600" cy="312" r="4" className="animate-pulse" style={{animationDelay: '2s'}} />
+              <circle cx="184" cy="312" r="4" className="animate-pulse" style={{animationDelay: '2.5s'}} />
+              <circle cx="184" cy="528" r="4" className="animate-pulse" style={{animationDelay: '3s'}} />
+              <circle cx="600" cy="528" r="4" className="animate-pulse" style={{animationDelay: '3.5s'}} />
+              <circle cx="1016" cy="528" r="4" className="animate-pulse" style={{animationDelay: '4s'}} />
+            </g>
+          </svg>
+        </div>
        
 
         {/* Success Message for Payment */}

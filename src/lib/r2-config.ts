@@ -22,6 +22,7 @@ export const R2_FOLDERS = {
   INTERIOR: "interior-design",
   ADS: "advertisements",
   TEMPORARY: "temp",
+  GIFS: "gifs",
 } as const;
 
 // Image categories mapping
@@ -33,6 +34,7 @@ export const IMAGE_CATEGORIES = {
   "graphics": R2_FOLDERS.GRAPHICS,
   "interior-designing": R2_FOLDERS.INTERIOR,
   "copy-the-ad": R2_FOLDERS.ADS,
+  "generate-gif": R2_FOLDERS.GIFS,
 } as const;
 
 export type ImageCategory = keyof typeof IMAGE_CATEGORIES;
