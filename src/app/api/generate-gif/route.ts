@@ -162,11 +162,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!["1:1", "4:3", "16:9", "9:16"].includes(aspectRatio)) {
+    const validAspectRatios = ["1:1", "4:3", "16:9", "9:16"];
+    if (!validAspectRatios.includes(aspectRatio)) {
       return NextResponse.json(
         {
           error: "Invalid aspect ratio",
-          details: "Aspect ratio must be one of: 1:1, 4:3, 16:9, 9:16.",
+          details: `Aspect ratio must be one of: ${validAspectRatios.join(", ")}. Received: ${aspectRatio}`,
         },
         { status: 400 }
       );
@@ -325,10 +326,16 @@ async function startVideoGeneration(params: VideoGenerationParams, accessToken: 
       };
     }
 
+    // Convert aspect ratio from string format (e.g., "16:9") to numerical format (e.g., 1.777777778)
+    const convertAspectRatio = (ratio: string): number => {
+      const [width, height] = ratio.split(':').map(Number);
+      return width / height;
+    };
+
     const requestBody = {
       instances: [instance],
       parameters: {
-        aspectRatio: params.aspectRatio,
+        aspectRatio: convertAspectRatio(params.aspectRatio),
         sampleCount: params.sampleCount,
         durationSeconds: params.durationSeconds.toString(),
         personGeneration: params.personGeneration,
@@ -344,6 +351,8 @@ async function startVideoGeneration(params: VideoGenerationParams, accessToken: 
       prompt: instance.prompt,
       hasImage: !!instance.image,
       hasTargetImage: !!(instance as any).target_image,
+      originalAspectRatio: params.aspectRatio,
+      convertedAspectRatio: requestBody.parameters.aspectRatio,
       parameters: requestBody.parameters
     });  return fetch(
     `https://${API_ENDPOINT}/v1/projects/${PROJECT_ID}/locations/${LOCATION_ID}/publishers/google/models/${MODEL_ID}:predictLongRunning`,
