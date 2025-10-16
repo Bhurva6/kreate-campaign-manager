@@ -38,14 +38,62 @@ export default function GifPage() {
     }
   };
 
+  const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+          const base64String = reader.result.split(',')[1];
+          // Ensure the base64 string is properly formatted for Vertex AI
+          resolve(base64String.replace(/[\r\n]/g, '').trim());
+        } else {
+          reject(new Error('Failed to convert file to base64'));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSend = async () => {
     if (!prompt.trim()) {
       alert("Please enter a prompt");
       return;
     }
 
+    if (!startingFrame) {
+      alert("Please upload a starting frame");
+      return;
+    }
+
+    // Check file size (Vertex AI typically has a 10MB limit)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    if (startingFrame.size > MAX_FILE_SIZE || (finishingFrame && finishingFrame.size > MAX_FILE_SIZE)) {
+      alert("Image file size must be less than 10MB");
+      return;
+    }
+
+    // Check file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(startingFrame.type) || (finishingFrame && !validTypes.includes(finishingFrame.type))) {
+      alert("Please upload only JPEG, PNG, or WebP images");
+      return;
+    }
+
     setIsGenerating(true);
     try {
+      // Convert images to base64
+      const startingFrameBase64 = await convertFileToBase64(startingFrame);
+      const finishingFrameBase64 = finishingFrame ? await convertFileToBase64(finishingFrame) : null;
+
+      console.log('Sending to API:', {
+        hasStartingFrame: !!startingFrameBase64,
+        startingFrameLength: startingFrameBase64?.length,
+        hasFinishingFrame: !!finishingFrameBase64,
+        finishingFrameLength: finishingFrameBase64?.length,
+      });
+
       const response = await fetch("/api/generate-gif", {
         method: "POST",
         headers: {
@@ -56,6 +104,8 @@ export default function GifPage() {
           aspectRatio,
           sampleCount,
           durationSeconds,
+          startingFrame: startingFrameBase64,
+          finishingFrame: finishingFrameBase64,
         }),
       });
 
@@ -196,7 +246,7 @@ export default function GifPage() {
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={handleStartingFrameUpload} 
+                          onChange={handleFinishingFrameUpload}
                           className="hidden"
                         />
                       </label>
@@ -283,7 +333,7 @@ export default function GifPage() {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleFinishingFrameUpload}
+                      onChange={handleStartingFrameUpload}
                       className="hidden"
                     />
                   </label>
@@ -292,7 +342,7 @@ export default function GifPage() {
               )}
 
               {/* Prompt Input */}
-            
+
               <input
                 type="text"
                 placeholder="Enter prompt for video generation..."
@@ -338,7 +388,7 @@ export default function GifPage() {
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleFinishingFrameUpload}
+                      onChange={handleStartingFrameUpload}
                       className="hidden"
                     />
                   </label>

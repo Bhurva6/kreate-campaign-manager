@@ -1,10 +1,80 @@
 import { NextRequest, NextResponse } from "next/server";
-// import {
-//   uploadMultipleImagesToR2,
-//   base64ToBuffer,
-// } from "@/lib/r2-upload";
 import { tokenManager } from "@/lib/google-auth";
-// import { randomUUID } from "crypto";
+
+interface ParsedImage {
+  mimeType: string;
+  base64Data: string;
+}
+
+function parseBase64Image(str: string): ParsedImage | null {
+  try {
+    console.log('Parsing image data:', {
+      isString: typeof str === 'string',
+      length: str?.length,
+      startsWithData: str?.startsWith('data:'),
+      first100Chars: str?.substring(0, 100)
+    });
+
+    // Handle data URL format
+    if (str.startsWith('data:')) {
+      const matches = str.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const [, mimeType, base64Data] = matches;
+        // Verify it's an image mime type
+        if (!mimeType.startsWith('image/')) {
+          console.log('Invalid mime type:', mimeType);
+          return null;
+        }
+        // Verify base64 is valid
+        if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(base64Data)) {
+          console.log('Invalid base64 data in data URL');
+          return null;
+        }
+        return { mimeType, base64Data };
+      }
+    }
+    
+    // Handle raw base64 data
+    if (/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(str)) {
+      // If it's valid base64, assume it's a PNG if no mime type is provided
+      return {
+        mimeType: 'image/png',
+        base64Data: str
+      };
+    }
+
+    console.log('Failed to parse image data: Neither data URL nor valid base64');
+    return null;
+  } catch (error) {
+    console.error('Error parsing image data:', error);
+    return null;
+  }
+}
+
+function isBase64Image(str: string): boolean {
+  return parseBase64Image(str) !== null;
+}
+
+interface VideoGenerationParams {
+  prompt: string;
+  aspectRatio: string;
+  sampleCount: number;
+  durationSeconds: number;
+  personGeneration: string;
+  addWatermark: boolean;
+  includeRaiReason: boolean;
+  generateAudio: boolean;
+  resolution: string;
+  startingFrame: string;
+  finishingFrame?: string;
+}
+
+interface VideoResponse {
+  id: number;
+  base64Data: string;
+  mimeType: string;
+  prompt: string;
+}
 
 const PROJECT_ID = "cobalt-mind-422108";
 const LOCATION_ID = "us-central1";
@@ -13,6 +83,14 @@ const MODEL_ID = "veo-3.1-generate-preview";
 
 export async function POST(req: NextRequest) {
   try {
+    const requestData = await req.json();
+    console.log('Received request data:', {
+      hasStartingFrame: !!requestData.startingFrame,
+      startingFrameLength: requestData.startingFrame?.length,
+      hasFinishingFrame: !!requestData.finishingFrame,
+      finishingFrameLength: requestData.finishingFrame?.length,
+    });
+
     const {
       prompt,
       aspectRatio = "16:9",
@@ -23,7 +101,45 @@ export async function POST(req: NextRequest) {
       includeRaiReason = true,
       generateAudio = true,
       resolution = "720p",
-    } = await req.json();
+      startingFrame,
+      finishingFrame,
+    } = requestData;
+
+    // Validate image inputs
+    if (!startingFrame) {
+      return NextResponse.json(
+        {
+          error: "Starting frame is required",
+          details: "A starting frame image is required to generate the video.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate image format
+    const startFrameData = parseBase64Image(startingFrame);
+    if (!startFrameData) {
+      return NextResponse.json(
+        {
+          error: "Invalid starting frame format",
+          details: "Starting frame must be a valid base64 encoded image, either as a data URL (data:image/...;base64,...) or raw base64 data",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (finishingFrame) {
+      const finishFrameData = parseBase64Image(finishingFrame);
+      if (!finishFrameData) {
+        return NextResponse.json(
+          {
+            error: "Invalid finishing frame format",
+            details: "Finishing frame must be a valid base64 encoded image, either as a data URL (data:image/...;base64,...) or raw base64 data",
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // Validate input
     if (!prompt || typeof prompt !== "string") {
@@ -90,6 +206,8 @@ export async function POST(req: NextRequest) {
         includeRaiReason,
         generateAudio,
         resolution,
+        startingFrame,
+        finishingFrame
       },
       accessToken
     );
@@ -158,26 +276,76 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function startVideoGeneration(params: any, accessToken: string) {
-  const requestBody = {
-    instances: [
-      {
-        prompt: params.prompt,
-      },
-    ],
-    parameters: {
-      aspectRatio: params.aspectRatio,
-      sampleCount: params.sampleCount,
-      durationSeconds: params.durationSeconds.toString(),
-      personGeneration: params.personGeneration,
-      addWatermark: params.addWatermark,
-      includeRaiReason: params.includeRaiReason,
-      generateAudio: params.generateAudio,
-      resolution: params.resolution,
-    },
-  };
+async function startVideoGeneration(params: VideoGenerationParams, accessToken: string) {
+    // Parse and validate base64 encoded images
+    const startingFrameData = parseBase64Image(params.startingFrame);
+    if (!startingFrameData) {
+      throw new Error('Invalid starting frame: Must be a valid base64 encoded image with mime type');
+    }
 
-  return fetch(
+    let finishingFrameData: ParsedImage | null = null;
+    if (params.finishingFrame) {
+      finishingFrameData = parseBase64Image(params.finishingFrame);
+      if (!finishingFrameData) {
+        throw new Error('Invalid finishing frame: Must be a valid base64 encoded image with mime type');
+      }
+    }
+
+    console.log('Starting video generation with params:', {
+      hasStartingFrame: true,
+      startingFrameMimeType: startingFrameData.mimeType,
+      hasFinishingFrame: !!finishingFrameData,
+      finishingFrameMimeType: finishingFrameData?.mimeType,
+    });
+
+    interface VideoInstance {
+      prompt: string;
+      image: {
+        bytesBase64Encoded: string;
+        mimeType: string;
+      };
+      target_image?: {
+        bytesBase64Encoded: string;
+        mimeType: string;
+      };
+    }
+
+    const instance: VideoInstance = {
+      prompt: params.prompt,
+      image: {
+        bytesBase64Encoded: startingFrameData.base64Data,
+        mimeType: startingFrameData.mimeType
+      }
+    };
+
+    if (finishingFrameData) {
+      instance.target_image = {
+        bytesBase64Encoded: finishingFrameData.base64Data,
+        mimeType: finishingFrameData.mimeType
+      };
+    }
+
+    const requestBody = {
+      instances: [instance],
+      parameters: {
+        aspectRatio: params.aspectRatio,
+        sampleCount: params.sampleCount,
+        durationSeconds: params.durationSeconds.toString(),
+        personGeneration: params.personGeneration,
+        addWatermark: params.addWatermark,
+        includeRaiReason: params.includeRaiReason,
+        generateAudio: params.generateAudio,
+        resolution: params.resolution,
+        inputFormat: "base64",  // Specify that we're sending base64 encoded images
+      },
+    };
+
+    console.log('Sending request body:', {
+      prompt: instance.prompt,
+      hasImage: !!instance.image,
+      hasTargetImage: !!(instance as any).target_image,
+      parameters: requestBody.parameters
+    });  return fetch(
     `https://${API_ENDPOINT}/v1/projects/${PROJECT_ID}/locations/${LOCATION_ID}/publishers/google/models/${MODEL_ID}:predictLongRunning`,
     {
       method: "POST",
@@ -188,6 +356,14 @@ async function startVideoGeneration(params: any, accessToken: string) {
       body: JSON.stringify(requestBody),
     }
   );
+}
+
+interface OperationStatus {
+  done: boolean;
+  response?: any;
+  error?: {
+    message: string;
+  };
 }
 
 async function checkOperationStatus(operationName: string, accessToken: string) {
@@ -208,11 +384,17 @@ async function checkOperationStatus(operationName: string, accessToken: string) 
   );
 }
 
-async function processAndUploadVideos(response: any, prompt: string) {
+interface VeoResponse {
+  predictions?: any[];
+  videos?: any[];
+  results?: any[];
+}
+
+async function processAndUploadVideos(response: VeoResponse | any[], prompt: string) {
   try {
     console.log("Processing Veo response:", JSON.stringify(response, null, 2));
 
-    let predictions;
+    let predictions: any[];
     if (Array.isArray(response)) {
       predictions = response;
     } else if (response.predictions && Array.isArray(response.predictions)) {
