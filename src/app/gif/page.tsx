@@ -1,31 +1,37 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useState } from 'react';
-import { useAuth } from '@/lib/auth';
-import AuthModal from '@/components/AuthModal';
+import Link from "next/link";
+import { useState } from "react";
+import { useAuth } from "@/lib/auth";
+import AuthModal from "@/components/AuthModal";
 
 export default function GifPage() {
   const { user, loading: authLoading } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState("");
   const [startingFrame, setStartingFrame] = useState<File | null>(null);
   const [finishingFrame, setFinishingFrame] = useState<File | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [aspectRatio, setAspectRatio] = useState('16:9');
-  const [durationSeconds, setDurationSeconds] = useState('6');
+  const [aspectRatio, setAspectRatio] = useState("16:9");
+  const [durationSeconds, setDurationSeconds] = useState("6");
   const [sampleCount, setSampleCount] = useState(4);
   const [generatedVideos, setGeneratedVideos] = useState<any[]>([]);
-  const [videoLoadingStates, setVideoLoadingStates] = useState<{[key: number]: boolean}>({});
+  const [videoLoadingStates, setVideoLoadingStates] = useState<{
+    [key: number]: boolean;
+  }>({});
 
-  // Helper function to convert base64 to blob URL
-  const base64ToBlobUrl = (base64Data: string, mimeType: string) => {
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i);
+  const handleStartingFrameUpload = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setStartingFrame(file);
     }
-  const handleFinishingFrameUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  };
+
+  const handleFinishingFrameUpload = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       setFinishingFrame(file);
@@ -34,16 +40,16 @@ export default function GifPage() {
 
   const handleSend = async () => {
     if (!prompt.trim()) {
-      alert('Please enter a prompt');
+      alert("Please enter a prompt");
       return;
     }
 
     setIsGenerating(true);
     try {
-      const response = await fetch('/api/generate-gif', {
-        method: 'POST',
+      const response = await fetch("/api/generate-gif", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           prompt,
@@ -56,20 +62,15 @@ export default function GifPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate video');
+        throw new Error(data.error || "Failed to generate video");
       }
 
       if (data.success && data.videos) {
         setGeneratedVideos(data.videos);
-        const initialLoadingStates: {[key: number]: boolean} = {};
-        data.videos.forEach((_: any, index: string | number) => {
-          initialLoadingStates[Number(index)] = true;
-        });
-        setVideoLoadingStates(initialLoadingStates);
       }
     } catch (error) {
-      console.error('Error generating video:', error);
-      alert('Failed to generate video. Please try again.');
+      console.error("Error generating video:", error);
+      alert("Failed to generate video. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -143,7 +144,9 @@ export default function GifPage() {
       <div className="py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-16">
-            <h1 className="text-4xl md:text-5xl font-bold text-white">GIF Generator</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-white">
+              GIF Generator
+            </h1>
             <p className="mt-4 text-lg text-[#181E53] dark:text-white max-w-2xl mx-auto">
               Create animated videos for your campaigns and marketing needs.
             </p>
@@ -177,13 +180,23 @@ export default function GifPage() {
                       />
                     ) : (
                       <label className="cursor-pointer flex flex-col items-center justify-center w-full h-full text-gray-400 hover:text-white transition-colors">
-                        <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        <svg
+                          className="w-8 h-8 mb-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                          />
                         </svg>
                         <input
                           type="file"
                           accept="image/*"
-                          onChange={handleFinishingFrameUpload}
+                          onChange={handleStartingFrameUpload} 
                           className="hidden"
                         />
                       </label>
@@ -197,7 +210,9 @@ export default function GifPage() {
             {/* Video Parameters */}
             <div className="flex flex-wrap gap-4 items-center justify-center w-full max-w-2xl">
               <div className="flex flex-col space-y-1">
-                <label className="text-white text-sm font-medium">Aspect Ratio</label>
+                <label className="text-white text-sm font-medium">
+                  Aspect Ratio
+                </label>
                 <select
                   value={aspectRatio}
                   onChange={(e) => setAspectRatio(e.target.value)}
@@ -212,7 +227,9 @@ export default function GifPage() {
               </div>
 
               <div className="flex flex-col space-y-1">
-                <label className="text-white text-sm font-medium">Duration</label>
+                <label className="text-white text-sm font-medium">
+                  Duration
+                </label>
                 <select
                   value={durationSeconds}
                   onChange={(e) => setDurationSeconds(e.target.value)}
@@ -227,7 +244,9 @@ export default function GifPage() {
               </div>
 
               <div className="flex flex-col space-y-1">
-                <label className="text-white text-sm font-medium">Number of Videos</label>
+                <label className="text-white text-sm font-medium">
+                  Number of Videos
+                </label>
                 <select
                   value={sampleCount}
                   onChange={(e) => setSampleCount(parseInt(e.target.value))}
@@ -248,8 +267,18 @@ export default function GifPage() {
               {!startingFrame && (
                 <div className="flex flex-col items-center space-y-1">
                   <label className="cursor-pointer flex flex-col items-center justify-center w-12 h-12 border-2 border-dashed border-gray-400 rounded-lg bg-gray-800 hover:border-white transition-colors">
-                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    <svg
+                      className="w-6 h-6 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
                     </svg>
                     <input
                       type="file"
@@ -263,6 +292,7 @@ export default function GifPage() {
               )}
 
               {/* Prompt Input */}
+            
               <input
                 type="text"
                 placeholder="Enter prompt for video generation..."
@@ -292,8 +322,18 @@ export default function GifPage() {
               {startingFrame && (
                 <div className="flex flex-col items-center space-y-1">
                   <label className="cursor-pointer flex flex-col items-center justify-center w-12 h-12 border-2 border-dashed border-gray-400 rounded-lg bg-gray-800 hover:border-white transition-colors">
-                    <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    <svg
+                      className="w-6 h-6 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                      />
                     </svg>
                     <input
                       type="file"
@@ -310,22 +350,51 @@ export default function GifPage() {
             {/* Generated Videos Display */}
             {generatedVideos.length > 0 && (
               <div className="w-full max-w-4xl">
-                <h2 className="text-2xl font-bold text-white mb-6 text-center">Generated Videos</h2>
+                <h2 className="text-2xl font-bold text-white mb-6 text-center">
+                  Generated Videos
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {generatedVideos.map((video, index) => (
-                    <div key={index} className="flex flex-col items-center space-y-2">
+                    <div
+                      key={index}
+                      className="flex flex-col items-center space-y-2"
+                    >
                       {videoLoadingStates[index] === false ? (
-                        <video onLoadStart={() => setVideoLoadingStates(prev => ({ ...prev, [index]: true }))} onCanPlay={() => setVideoLoadingStates(prev => ({ ...prev, [index]: false }))} onError={() => setVideoLoadingStates(prev => ({ ...prev, [index]: false }))} 
-                          src={`data:video/mp4;base64,${video.base64Data}`} 
-                          controls 
-                          poster={startingFrame ? URL.createObjectURL(startingFrame) : undefined} 
-                          className="w-full max-w-md rounded-lg" 
+                        <video
+                          onLoadStart={() =>
+                            setVideoLoadingStates((prev) => ({
+                              ...prev,
+                              [index]: true,
+                            }))
+                          }
+                          onCanPlay={() =>
+                            setVideoLoadingStates((prev) => ({
+                              ...prev,
+                              [index]: false,
+                            }))
+                          }
+                          onError={() =>
+                            setVideoLoadingStates((prev) => ({
+                              ...prev,
+                              [index]: false,
+                            }))
+                          }
+                          src={`data:video/mp4;base64,${video.base64Data}`}
+                          controls
+                          poster={
+                            startingFrame
+                              ? URL.createObjectURL(startingFrame)
+                              : undefined
+                          }
+                          className="w-full max-w-md rounded-lg"
                         />
                       ) : (
                         <div className="w-full max-w-md h-48 bg-gray-800 rounded-lg flex items-center justify-center">
                           <div className="flex flex-col items-center space-y-2">
                             <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                            <p className="text-white text-sm">Loading video...</p>
+                            <p className="text-white text-sm">
+                              Loading video...
+                            </p>
                           </div>
                         </div>
                       )}
@@ -335,7 +404,8 @@ export default function GifPage() {
                         className="px-4 py-2 bg-[#3C38A4] text-white rounded-lg hover:bg-[#2a2780] transition-colors"
                       >
                         Download Video
-                      </a>                    </div>
+                      </a>{" "}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -367,7 +437,7 @@ function UserDropdown() {
         className="flex items-center gap-2 text-white hover:text-[#3C38A4] transition-colors"
       >
         <img
-          src={user.photoURL || '/google.svg'}
+          src={user.photoURL || "/google.svg"}
           alt="Profile"
           className="w-8 h-8 rounded-full"
         />
@@ -405,4 +475,4 @@ function UserDropdown() {
       )}
     </div>
   );
-}}
+}

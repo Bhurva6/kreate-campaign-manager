@@ -212,24 +212,33 @@ async function processAndUploadVideos(response: any, prompt: string) {
   try {
     console.log("Processing Veo response:", JSON.stringify(response, null, 2));
 
-    if (!response.predictions || !Array.isArray(response.predictions)) {
+    let predictions;
+    if (Array.isArray(response)) {
+      predictions = response;
+    } else if (response.predictions && Array.isArray(response.predictions)) {
+      predictions = response.predictions;
+    } else if (response.videos && Array.isArray(response.videos)) {
+      predictions = response.videos;
+    } else if (response.results && Array.isArray(response.results)) {
+      predictions = response.results;
+    } else {
       console.error("Invalid response format from Veo:", response);
-      throw new Error("Invalid response format from Veo");
+      throw new Error(`Invalid response format from Veo: ${JSON.stringify(response)}`);
     }
 
     // Validate each prediction has required video data
-    for (let i = 0; i < response.predictions.length; i++) {
-      const pred = response.predictions[i];
-      if (!pred.bytesBase64Encoded) {
+    for (let i = 0; i < predictions.length; i++) {
+      const pred = predictions[i];
+      if (!pred.bytesBase64Encoded && !pred.video && !pred.data) {
         console.error(`Prediction ${i} missing video data:`, pred);
         throw new Error(`Missing video data in prediction ${i}`);
       }
     }
 
     // Return videos as base64 data directly
-    const videos = response.predictions.map((pred: any, index: number) => ({
+    const videos = predictions.map((pred: any, index: number) => ({
       id: index + 1,
-      base64Data: pred.bytesBase64Encoded,
+      base64Data: pred.bytesBase64Encoded || pred.video || pred.data,
       mimeType: "video/mp4",
       prompt: pred.prompt || prompt,
     }));
@@ -238,11 +247,11 @@ async function processAndUploadVideos(response: any, prompt: string) {
       success: true,
       videos: videos,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to process videos:", error);
     return NextResponse.json({
       success: false,
-      error: "Failed to process videos",
+      error: `Failed to process videos: ${error.message}`,
     });
   }
 }
