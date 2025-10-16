@@ -161,21 +161,10 @@ async function generateBaseImage(prompt: string, baseUrl: string): Promise<strin
       }),
     });
 
-    if (!generateResponse.ok) {
-      const errorText = await generateResponse.text();
-      let errorDetails = 'Unknown error from image generation service';
-      try {
-        const errorData = JSON.parse(errorText);
-        errorDetails = errorData.error || errorData.message || errorText;
-      } catch (e) {
-        errorDetails = errorText;
-      }
-      throw new Error(`Failed to generate base image: ${errorDetails}`);
-    }
-
     const generateData = await generateResponse.json();
-    if (!generateData.key) {
-      throw new Error('No image key returned from generation service');
+    if (!generateResponse.ok || !generateData.success || !generateData.key) {
+      const errorMessage = generateData.error || 'Failed to generate base image';
+      throw new Error(`Base image generation failed: ${errorMessage}`);
     }
     const imageKey = generateData.key;
     return `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${imageKey}`;
