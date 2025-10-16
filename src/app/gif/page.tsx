@@ -12,6 +12,7 @@ export default function GifPage() {
   const [startingFrame, setStartingFrame] = useState<File | null>(null);
   const [finishingFrame, setFinishingFrame] = useState<File | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [durationSeconds, setDurationSeconds] = useState("6");
   const [sampleCount, setSampleCount] = useState(4);
@@ -20,39 +21,94 @@ export default function GifPage() {
     [key: number]: boolean;
   }>({});
 
-  const handleStartingFrameUpload = (
+  const handleStartingFrameUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      setStartingFrame(file);
+      try {
+        setIsCompressing(true);
+        // First set the file for preview
+        setStartingFrame(file);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        alert('Failed to process image. Please try a different image.');
+      } finally {
+        setIsCompressing(false);
+      }
     }
   };
 
-  const handleFinishingFrameUpload = (
+  const handleFinishingFrameUpload = async (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (file) {
-      setFinishingFrame(file);
+      try {
+        setIsCompressing(true);
+        // First set the file for preview
+        setFinishingFrame(file);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        alert('Failed to process image. Please try a different image.');
+      } finally {
+        setIsCompressing(false);
+      }
     }
   };
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
+  const compressAndConvertImage = async (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
-          const base64String = reader.result.split(',')[1];
-          // Ensure the base64 string is properly formatted for Vertex AI
-          resolve(base64String.replace(/[\r\n]/g, '').trim());
-        } else {
-          reject(new Error('Failed to convert file to base64'));
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+
+      img.onload = () => {
+        // Calculate new dimensions while maintaining aspect ratio
+        let { width, height } = img;
+        const MAX_DIMENSION = 1024; // Maximum dimension for either width or height
+        
+        if (width > height && width > MAX_DIMENSION) {
+          height = (height * MAX_DIMENSION) / width;
+          width = MAX_DIMENSION;
+        } else if (height > MAX_DIMENSION) {
+          width = (width * MAX_DIMENSION) / height;
+          height = MAX_DIMENSION;
         }
+
+        // Set canvas dimensions
+        canvas.width = width;
+        canvas.height = height;
+
+        // Draw image with white background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Convert to base64 with compression
+        let quality = 0.8; // Start with 80% quality
+        let base64Data = canvas.toDataURL('image/jpeg', quality);
+        
+        // Reduce quality until file size is under 3.5MB
+        while (base64Data.length > 3.5 * 1024 * 1024 && quality > 0.1) {
+          quality -= 0.1;
+          base64Data = canvas.toDataURL('image/jpeg', quality);
+        }
+
+        // Remove the data URL prefix and clean the string
+        const finalBase64 = base64Data.split(',')[1].replace(/[\r\n]/g, '').trim();
+        resolve(finalBase64);
       };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+
+      // Create object URL from file
+      img.src = URL.createObjectURL(file);
     });
   };
 
@@ -83,13 +139,14 @@ export default function GifPage() {
 
     setIsGenerating(true);
     try {
-      // Convert images to base64
-      const startingFrameBase64 = await convertFileToBase64(startingFrame);
-      const finishingFrameBase64 = finishingFrame ? await convertFileToBase64(finishingFrame) : null;
+      // Compress and convert images
+      const startingFrameBase64 = await compressAndConvertImage(startingFrame);
+      const finishingFrameBase64 = finishingFrame ? await compressAndConvertImage(finishingFrame) : null;
 
       console.log('Sending to API:', {
         hasStartingFrame: !!startingFrameBase64,
         startingFrameLength: startingFrameBase64?.length,
+        approxSizeMB: ((startingFrameBase64?.length || 0) * 0.75) / (1024 * 1024),
         hasFinishingFrame: !!finishingFrameBase64,
         finishingFrameLength: finishingFrameBase64?.length,
       });
@@ -355,13 +412,13 @@ export default function GifPage() {
               {/* Send Button */}
               <button
                 onClick={handleSend}
-                disabled={isGenerating || !prompt.trim()}
+                disabled={isGenerating || isCompressing || !prompt.trim()}
                 className="px-6 py-3 bg-[#6C2F83] text-white font-semibold rounded-lg hover:bg-[#502D81] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
               >
-                {isGenerating ? (
+                {isGenerating || isCompressing ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                    <span>Generating...</span>
+                    <span>{isCompressing ? 'Compressing...' : 'Generating...'}</span>
                   </>
                 ) : (
                   <span>Generate Video</span>

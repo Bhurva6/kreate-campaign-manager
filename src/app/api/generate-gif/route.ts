@@ -1,19 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
 import { tokenManager } from "@/lib/google-auth";
+export { config } from './route.config';
 
 interface ParsedImage {
   mimeType: string;
   base64Data: string;
 }
 
+const MAX_IMAGE_SIZE_MB = 4; // Maximum image size in MB
+
+function calculateBase64Size(base64String: string): number {
+  // Remove data URL prefix if present
+  const base64Data = base64String.split(',').pop() || base64String;
+  // Calculate size in MB
+  return (base64Data.length * 0.75) / (1024 * 1024);
+}
+
 function parseBase64Image(str: string): ParsedImage | null {
   try {
+    const sizeInMB = calculateBase64Size(str);
     console.log('Parsing image data:', {
       isString: typeof str === 'string',
       length: str?.length,
+      sizeInMB: sizeInMB.toFixed(2) + 'MB',
       startsWithData: str?.startsWith('data:'),
       first100Chars: str?.substring(0, 100)
     });
+
+    if (sizeInMB > MAX_IMAGE_SIZE_MB) {
+      console.log(`Image size ${sizeInMB.toFixed(2)}MB exceeds limit of ${MAX_IMAGE_SIZE_MB}MB`);
+      return null;
+    }
 
     // Handle data URL format
     if (str.startsWith('data:')) {
@@ -119,24 +136,30 @@ export async function POST(req: NextRequest) {
     // Validate image format
     const startFrameData = parseBase64Image(startingFrame);
     if (!startFrameData) {
+      const sizeInMB = calculateBase64Size(startingFrame);
       return NextResponse.json(
         {
           error: "Invalid starting frame format",
-          details: "Starting frame must be a valid base64 encoded image, either as a data URL (data:image/...;base64,...) or raw base64 data",
+          details: sizeInMB > MAX_IMAGE_SIZE_MB
+            ? `Image size (${sizeInMB.toFixed(2)}MB) exceeds maximum limit of ${MAX_IMAGE_SIZE_MB}MB. Please use a smaller image.`
+            : "Starting frame must be a valid base64 encoded image, either as a data URL (data:image/...;base64,...) or raw base64 data",
         },
-        { status: 400 }
+        { status: sizeInMB > MAX_IMAGE_SIZE_MB ? 413 : 400 }
       );
     }
 
     if (finishingFrame) {
       const finishFrameData = parseBase64Image(finishingFrame);
       if (!finishFrameData) {
+        const sizeInMB = calculateBase64Size(finishingFrame);
         return NextResponse.json(
           {
             error: "Invalid finishing frame format",
-            details: "Finishing frame must be a valid base64 encoded image, either as a data URL (data:image/...;base64,...) or raw base64 data",
+            details: sizeInMB > MAX_IMAGE_SIZE_MB
+              ? `Image size (${sizeInMB.toFixed(2)}MB) exceeds maximum limit of ${MAX_IMAGE_SIZE_MB}MB. Please use a smaller image.`
+              : "Finishing frame must be a valid base64 encoded image, either as a data URL (data:image/...;base64,...) or raw base64 data",
           },
-          { status: 400 }
+          { status: sizeInMB > MAX_IMAGE_SIZE_MB ? 413 : 400 }
         );
       }
     }
