@@ -6,6 +6,7 @@ import {
 } from "@/lib/r2-upload";
 import { tokenManager } from "@/lib/google-auth";
 import { randomUUID } from "crypto";
+import sharp from 'sharp';
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,6 +16,8 @@ export async function POST(req: NextRequest) {
       aspectRatio = "1:1",
       campaignId: originalCampaignId,
       index: originalIndex,
+      logo,
+      logoPosition,
     } = await req.json();
 
     // Handle campaignId and index for non-festive campaigns
@@ -211,7 +214,7 @@ Based on the above guidelines, generate an optimized Imagen prompt that creates 
         }
 
         const data = await retryRes.json();
-        return await processAndUploadImages(data, prompt, campaignId, index);
+        return await processAndUploadImages(data, prompt, campaignId, index, logo, logoPosition);
       } catch (retryError) {
         console.error("Token refresh retry failed:", retryError);
         return NextResponse.json(
@@ -227,7 +230,7 @@ Based on the above guidelines, generate an optimized Imagen prompt that creates 
     }
 
     const data = await vertexRes.json();
-    return await processAndUploadImages(data, prompt, campaignId, index);
+    return await processAndUploadImages(data, prompt, campaignId, index, logo, logoPosition);
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Unknown error" },
@@ -240,7 +243,9 @@ async function processAndUploadImages(
   data: any,
   prompt: string,
   campaignId: string,
-  index: number
+  index: number,
+  logo?: string,
+  logoPosition?: string
 ) {
   try {
     console.log(
@@ -263,7 +268,7 @@ async function processAndUploadImages(
     }
 
     // Upload images to R2 and get public URLs
-    const imagesToUpload = data.predictions.map((pred: any) => {
+    let imagesToUpload = data.predictions.map((pred: any) => {
       return {
         buffer: base64ToBuffer(pred.bytesBase64Encoded),
         prompt: pred.prompt || prompt,
@@ -272,6 +277,103 @@ async function processAndUploadImages(
     });
 
     console.log(`Uploading ${imagesToUpload.length} images to R2...`);
+
+    // If logo is provided, overlay it on the generated image
+    if (logo && logoPosition) {
+      try {
+        // Convert base64 logo to buffer and ensure it has transparency
+        const logoBuffer = base64ToBuffer(logo);
+        const processedLogo = await sharp(logoBuffer)
+          .ensureAlpha()  // Ensure the logo has an alpha channel
+          .toBuffer();
+        
+        // Process each generated image
+        const processedImages = await Promise.all(imagesToUpload.map(async (img: { buffer: Buffer; prompt: string; mimeType: string }) => {
+          try {
+            const imgBuffer = img.buffer;
+            const image = sharp(imgBuffer);
+            
+            // Get image dimensions
+            const metadata = await image.metadata();
+            const width = metadata.width;
+            const height = metadata.height;
+            
+            if (!width || !height) {
+              throw new Error('Failed to get image dimensions');
+            }
+            
+            // Calculate logo size (20% of the smaller dimension)
+            const logoSize = Math.min(width, height) * 0.2;
+            
+            // Resize logo while maintaining aspect ratio and ensuring transparency
+            const resizedLogo = await sharp(processedLogo)
+              .resize(Math.round(logoSize), Math.round(logoSize), {
+                fit: 'inside',
+                withoutEnlargement: true
+              })
+              .toFormat('png')  // Ensure PNG format for transparency
+              .toBuffer();
+              
+            // Calculate logo position
+            let top = 0;
+            let left = 0;
+            const padding = Math.round(Math.min(width, height) * 0.05); // 5% padding
+            
+            switch (logoPosition) {
+              case 'top-left':
+                top = left = padding;
+                break;
+              case 'top-right':
+                top = padding;
+                left = width - logoSize - padding;
+                break;
+              case 'bottom-left':
+                top = height - logoSize - padding;
+                left = padding;
+                break;
+              case 'bottom-right':
+                top = height - logoSize - padding;
+                left = width - logoSize - padding;
+                break;
+              case 'center':
+                top = (height - logoSize) / 2;
+                left = (width - logoSize) / 2;
+                break;
+              default:
+                throw new Error(`Invalid logo position: ${logoPosition}`);
+            }
+            
+            // Composite the logo onto the image
+            const composited = await image
+              .composite([
+                {
+                  input: resizedLogo,
+                  top: Math.round(top),
+                  left: Math.round(left),
+                  blend: 'over'  // Ensure proper alpha blending
+                },
+              ])
+              .toBuffer();
+            
+            // Convert to base64 properly
+            return composited.toString('base64');
+          } catch (error) {
+            console.error('Error processing individual image:', error);
+            throw error;
+          }
+        }));
+        
+        // Replace original images with processed ones
+        imagesToUpload = imagesToUpload.map((img: { buffer: Buffer; prompt: string; mimeType: string }, i: number) => ({
+          ...img,
+          buffer: base64ToBuffer(processedImages[i]),
+          mimeType: 'image/png' // Update mime type since we're converting to PNG
+        }));
+      } catch (error) {
+        console.error('Error overlaying logo:', error);
+        // Continue with original images if logo overlay fails
+      }
+    }
 
     const uploadResults = await uploadMultipleImagesToR2(
       imagesToUpload,

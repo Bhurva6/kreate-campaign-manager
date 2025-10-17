@@ -829,7 +829,15 @@ Ensure the JSON is valid and the imagePrompts array has exactly ${numPosts} item
                         const res = await fetch('/api/generate-image', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ prompt: imgPrompt, sampleCount: 1, aspectRatio, campaignId, index: i }),
+                          body: JSON.stringify({ 
+                            prompt: imgPrompt, 
+                            sampleCount: 1, 
+                            aspectRatio, 
+                            campaignId, 
+                            index: i,
+                            logo: wantLogo === 'yes' && logoFile ? logoBase64 : null,
+                            logoPosition: wantLogo === 'yes' && logoFile ? logoPosition : null
+                          }),
                         });
                         const imgData = await res.json();
                         if (res.ok && imgData.key) {

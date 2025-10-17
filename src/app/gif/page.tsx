@@ -467,41 +467,53 @@ export default function GifPage() {
                       className="flex flex-col items-center space-y-2"
                     >
                       {videoLoadingStates[index] === false ? (
-                        <video
-                          onLoadStart={() =>
-                            setVideoLoadingStates((prev) => ({
-                              ...prev,
-                              [index]: true,
-                            }))
-                          }
-                          onCanPlay={() =>
-                            setVideoLoadingStates((prev) => ({
-                              ...prev,
-                              [index]: false,
-                            }))
-                          }
-                          onError={() =>
-                            setVideoLoadingStates((prev) => ({
-                              ...prev,
-                              [index]: false,
-                            }))
-                          }
-                          src={`data:video/mp4;base64,${video.base64Data}`}
-                          controls
-                          poster={
-                            startingFrame
-                              ? URL.createObjectURL(startingFrame)
-                              : undefined
-                          }
-                          className="w-full max-w-md rounded-lg"
-                        />
+                        <div className={`w-full max-w-md overflow-hidden rounded-lg ${
+                          aspectRatio === "1:1" ? "aspect-square" :
+                          aspectRatio === "4:3" ? "aspect-[4/3]" :
+                          aspectRatio === "16:9" ? "aspect-video" :
+                          aspectRatio === "9:16" ? "aspect-[9/16]" : ""
+                        } bg-black`}>
+                          <video
+                            onLoadStart={() =>
+                              setVideoLoadingStates((prev) => ({
+                                ...prev,
+                                [index]: true,
+                              }))
+                            }
+                            onCanPlay={() =>
+                              setVideoLoadingStates((prev) => ({
+                                ...prev,
+                                [index]: false,
+                              }))
+                            }
+                            onError={() =>
+                              setVideoLoadingStates((prev) => ({
+                                ...prev,
+                                [index]: false,
+                              }))
+                            }
+                            src={`data:video/mp4;base64,${video.base64Data}`}
+                            controls
+                            poster={
+                              startingFrame
+                                ? URL.createObjectURL(startingFrame)
+                                : undefined
+                            }
+                            className="w-full h-full object-contain rounded-lg"
+                          />
+                        </div>
                       ) : (
-                        <div className="w-full max-w-md h-48 bg-gray-800 rounded-lg flex items-center justify-center">
-                          <div className="flex flex-col items-center space-y-2">
-                            <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                            <p className="text-white text-sm">
-                              Loading video...
-                            </p>
+                        <div className={`w-full max-w-md overflow-hidden rounded-lg ${
+                          aspectRatio === "1:1" ? "aspect-square" :
+                          aspectRatio === "4:3" ? "aspect-[4/3]" :
+                          aspectRatio === "16:9" ? "aspect-video" :
+                          aspectRatio === "9:16" ? "aspect-[9/16]" : ""
+                        } bg-gray-800`}>
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="flex flex-col items-center space-y-2">
+                              <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                              <p className="text-white text-sm">Loading video...</p>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -511,7 +523,7 @@ export default function GifPage() {
                         className="px-4 py-2 bg-[#3C38A4] text-white rounded-lg hover:bg-[#2a2780] transition-colors"
                       >
                         Download Video
-                      </a>{" "}
+                      </a>
                     </div>
                   ))}
                 </div>
