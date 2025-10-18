@@ -16,6 +16,7 @@ export default function GifPage() {
   const [aspectRatio, setAspectRatio] = useState("16:9");
   const [durationSeconds, setDurationSeconds] = useState("6");
   const [sampleCount, setSampleCount] = useState(4);
+  const [error, setError] = useState<string | null>(null);
   const [generatedVideos, setGeneratedVideos] = useState<any[]>([]);
   const [videoLoadingStates, setVideoLoadingStates] = useState<{
     [key: number]: boolean;
@@ -28,11 +29,12 @@ export default function GifPage() {
     if (file) {
       try {
         setIsCompressing(true);
+        setError(null);
         // First set the file for preview
         setStartingFrame(file);
       } catch (error) {
         console.error('Error processing image:', error);
-        alert('Failed to process image. Please try a different image.');
+        setError('Failed to process image. Please try a different image.');
       } finally {
         setIsCompressing(false);
       }
@@ -46,11 +48,12 @@ export default function GifPage() {
     if (file) {
       try {
         setIsCompressing(true);
+        setError(null);
         // First set the file for preview
         setFinishingFrame(file);
       } catch (error) {
         console.error('Error processing image:', error);
-        alert('Failed to process image. Please try a different image.');
+        setError('Failed to process image. Please try a different image.');
       } finally {
         setIsCompressing(false);
       }
@@ -114,26 +117,26 @@ export default function GifPage() {
 
   const handleSend = async () => {
     if (!prompt.trim()) {
-      alert("Please enter a prompt");
+      setError("Please enter a prompt");
       return;
     }
 
     if (!startingFrame) {
-      alert("Please upload a starting frame");
+      setError("Please upload a starting frame");
       return;
     }
 
     // Check file size (Vertex AI typically has a 10MB limit)
     const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     if (startingFrame.size > MAX_FILE_SIZE || (finishingFrame && finishingFrame.size > MAX_FILE_SIZE)) {
-      alert("Image file size must be less than 10MB");
+      setError("Image file size must be less than 10MB");
       return;
     }
 
     // Check file type
     const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
     if (!validTypes.includes(startingFrame.type) || (finishingFrame && !validTypes.includes(finishingFrame.type))) {
-      alert("Please upload only JPEG, PNG, or WebP images");
+      setError("Please upload only JPEG, PNG, or WebP images");
       return;
     }
 
@@ -142,14 +145,6 @@ export default function GifPage() {
       // Compress and convert images
       const startingFrameBase64 = await compressAndConvertImage(startingFrame);
       const finishingFrameBase64 = finishingFrame ? await compressAndConvertImage(finishingFrame) : null;
-
-      console.log('Sending to API:', {
-        hasStartingFrame: !!startingFrameBase64,
-        startingFrameLength: startingFrameBase64?.length,
-        approxSizeMB: ((startingFrameBase64?.length || 0) * 0.75) / (1024 * 1024),
-        hasFinishingFrame: !!finishingFrameBase64,
-        finishingFrameLength: finishingFrameBase64?.length,
-      });
 
       const response = await fetch("/api/generate-gif", {
         method: "POST",
@@ -174,10 +169,23 @@ export default function GifPage() {
 
       if (data.success && data.videos) {
         setGeneratedVideos(data.videos);
+        setError(null);
+      } else {
+        throw new Error("No videos were generated. Please try again.");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating video:", error);
-      alert("Failed to generate video. Please try again.");
+      if (!navigator.onLine) {
+        setError("Network error: Please check your internet connection and try again.");
+      } else if (error.message.includes("429")) {
+        setError("Too many requests. Please wait a moment and try again.");
+      } else if (error.message.includes("413")) {
+        setError("The image file is too large. Please use a smaller image.");
+      } else if (error.message.includes("503")) {
+        setError("Service temporarily unavailable. Please try again in a few minutes.");
+      } else {
+        setError(error.message || "Failed to generate video. Please try again.");
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -252,7 +260,7 @@ export default function GifPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-16">
             <h1 className="text-4xl md:text-5xl font-bold text-white">
-              GIF Generator
+              Animator
             </h1>
             <p className="mt-4 text-lg text-[#181E53] dark:text-white max-w-2xl mx-auto">
               Create animated videos for your campaigns and marketing needs.
@@ -398,8 +406,14 @@ export default function GifPage() {
                 </div>
               )}
 
-              {/* Prompt Input */}
+              {/* Error Message */}
+            {error && (
+              <div className="w-full max-w-2xl bg-red-500/10 border border-red-500/20 rounded-lg p-4 mb-4">
+                <p className="text-red-500 text-sm">{error}</p>
+              </div>
+            )}
 
+            {/* Prompt Input */}
               <input
                 type="text"
                 placeholder="Enter prompt for video generation..."

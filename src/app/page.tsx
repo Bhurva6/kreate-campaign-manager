@@ -601,7 +601,7 @@ function LandingPageContent() {
               href="/gif"
               className="text-white hover:text-[#3C38A4] transition-colors"
             >
-              GIF
+              Animator
             </Link>
 
             <Link
@@ -704,111 +704,7 @@ function LandingPageContent() {
             }
           `}</style>
 
-          <div className="relative w-full max-w-6xl mx-auto">
-            <div className="grid grid-cols-3 gap-6 sm:gap-8 md:gap-10 lg:gap-12">
-              {/* Column 1 */}
-              <div className="flex flex-col space-y-6">
-                <div className="flex flex-col items-center feature-card">
-                  <img
-                    src="/jaynitedit.jpeg"
-                    alt="Edit Like It&apos;s Magic"
-                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
-                  />
-                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                    Edit Like It&apos;s Magic
-                  </h3>
-                </div>
-                <div className="flex flex-col items-center feature-card">
-                  <img
-                    src="/finalclear.png"
-                    alt="Enhance Instantly"
-                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
-                  />
-                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                    Enhance Instantly
-                  </h3>
-                </div>
-                <div className="flex flex-col items-center feature-card">
-                  <img
-                    src="/variations.jpeg"
-                    alt="Always On-Brand"
-                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
-                  />
-                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                    Always On-Brand
-                  </h3>
-                </div>
-              </div>
-
-              {/* Column 2 */}
-              <div className="flex flex-col space-y-6">
-                <div className="flex flex-col items-center feature-card">
-                  <img
-                    src="/posts.jpeg"
-                    alt="Automate the Boring Stuff"
-                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
-                  />
-                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                    Automate the Boring Stuff
-                  </h3>
-                </div>
-                <div className="flex flex-col items-center feature-card">
-                  <img
-                    src="/cherryblossoms.jpeg"
-                    alt="Find Inspiration Backwards"
-                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
-                  />
-                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                    Find Inspiration Backwards
-                  </h3>
-                </div>
-                <div className="flex flex-col items-center feature-card">
-                  <img
-                    src="/collab.jpeg"
-                    alt="Create Together"
-                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
-                  />
-                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                    Create Together
-                  </h3>
-                </div>
-              </div>
-
-              {/* Column 3 */}
-              <div className="flex flex-col space-y-6">
-                <div className="flex flex-col items-center feature-card">
-                  <img
-                    src="/stone.jpg"
-                    alt="Unify Your Creations"
-                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
-                  />
-                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                    Unify Your Creations
-                  </h3>
-                </div>
-                <div className="flex flex-col items-center feature-card">
-                  <img
-                    src="/stair.jpg"
-                    alt="Lightning Fast"
-                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
-                  />
-                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                    Lightning Fast
-                  </h3>
-                </div>
-                <div className="flex flex-col items-center feature-card">
-                  <img
-                    src="/room.jpg"
-                    alt="Professional Quality"
-                    className="w-full h-48 object-cover rounded-2xl shadow-xl"
-                  />
-                  <h3 className="text-xl md:text-2xl font-bold text-white mt-4">
-                    Professional Quality
-                  </h3>
-                </div>
-              </div>
-            </div>
-          </div>
+          
 
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" viewBox="0 0 1200 600">
             <defs>

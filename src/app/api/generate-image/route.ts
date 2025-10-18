@@ -302,12 +302,25 @@ async function processAndUploadImages(
               throw new Error('Failed to get image dimensions');
             }
             
-            // Calculate logo size (20% of the smaller dimension)
-            const logoSize = Math.min(width, height) * 0.2;
+            // Calculate logo size (15% of the smaller dimension for better proportion)
+            const logoSize = Math.min(width, height) * 0.15;
+            
+            // Get the logo metadata to maintain aspect ratio
+            const logoMetadata = await sharp(processedLogo).metadata();
+            const logoAspectRatio = logoMetadata.width! / logoMetadata.height!;
+            
+            // Calculate logo dimensions maintaining aspect ratio
+            let logoWidth = logoSize;
+            let logoHeight = logoSize;
+            if (logoAspectRatio > 1) {
+              logoHeight = logoWidth / logoAspectRatio;
+            } else {
+              logoWidth = logoHeight * logoAspectRatio;
+            }
             
             // Resize logo while maintaining aspect ratio and ensuring transparency
             const resizedLogo = await sharp(processedLogo)
-              .resize(Math.round(logoSize), Math.round(logoSize), {
+              .resize(Math.round(logoWidth), Math.round(logoHeight), {
                 fit: 'inside',
                 withoutEnlargement: true
               })
@@ -317,7 +330,7 @@ async function processAndUploadImages(
             // Calculate logo position
             let top = 0;
             let left = 0;
-            const padding = Math.round(Math.min(width, height) * 0.05); // 5% padding
+            const padding = Math.round(Math.min(width, height) * 0.03); // 3% padding
             
             switch (logoPosition) {
               case 'top-left':
@@ -325,19 +338,19 @@ async function processAndUploadImages(
                 break;
               case 'top-right':
                 top = padding;
-                left = width - logoSize - padding;
+                left = width - logoWidth - padding;
                 break;
               case 'bottom-left':
-                top = height - logoSize - padding;
+                top = height - logoHeight - padding;
                 left = padding;
                 break;
               case 'bottom-right':
-                top = height - logoSize - padding;
-                left = width - logoSize - padding;
+                top = height - logoHeight - padding;
+                left = width - logoWidth - padding;
                 break;
               case 'center':
-                top = (height - logoSize) / 2;
-                left = (width - logoSize) / 2;
+                top = (height - logoHeight) / 2;
+                left = (width - logoWidth) / 2;
                 break;
               default:
                 throw new Error(`Invalid logo position: ${logoPosition}`);
