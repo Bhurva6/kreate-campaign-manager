@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadImageToR2 } from "@/lib/r2-upload";
 
 // Cache to avoid redundant storage uploads
 const processedUrls = new Map<string, any>();
@@ -54,7 +53,7 @@ export async function POST(req: NextRequest) {
         }, { status: 500 });
       }
     
-      // If image is ready and we have the result, upload to R2
+      // If image is ready and we have the result, return as base64 data URL
       if (data.status === "Ready" && data.result?.sample) {
         try {
           console.log("Edit is ready, fetching result image");
@@ -69,24 +68,16 @@ export async function POST(req: NextRequest) {
           }
           
           const imageBuffer = Buffer.from(await imageRes.arrayBuffer());
+          const mimeType = imageRes.headers.get('content-type') || 'image/png';
+          const base64 = imageBuffer.toString('base64');
+          const dataUrl = `data:${mimeType};base64,${base64}`;
           
-          console.log("Uploading edited image to R2 storage");
-          // Upload to R2
-          const uploadResult = await uploadImageToR2({
-            imageBuffer,
-            category: "edit-image",
-            prompt: prompt || "edited-image",
-            mimeType: "image/png",
-            userId,
-          });
-          
-          // Enhance response with progress information
+          // Return the data URL directly
           const enhancedResponse = {
             ...data,
-            r2: {
-              publicUrl: uploadResult.publicUrl,
-              signedUrl: uploadResult.url,
-              key: uploadResult.key,
+            result: {
+              ...data.result,
+              sample: dataUrl
             }
           };
           
@@ -98,15 +89,15 @@ export async function POST(req: NextRequest) {
             processedUrls.delete(polling_url);
           }, 10 * 60 * 1000);
           
-          console.log("Successfully processed and stored edited image");
+          console.log("Successfully processed edited image as data URL");
           return NextResponse.json(enhancedResponse);
-        } catch (uploadError: any) {
-          console.error("Failed to upload edited image to R2:", uploadError.message, uploadError.stack);
-          // Return original response even if upload fails
+        } catch (fetchError: any) {
+          console.error("Failed to process edited image:", fetchError.message, fetchError.stack);
+          // Return original response even if processing fails
           return NextResponse.json({
             ...data,
-            uploadError: "Failed to store edited image",
-            details: uploadError.message
+            processError: "Failed to process edited image",
+            details: fetchError.message
           });
         }
       }

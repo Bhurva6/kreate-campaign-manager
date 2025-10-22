@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { tokenManager } from "@/lib/google-auth";
-import { uploadMultipleImagesToR2, base64ToBuffer } from "@/lib/r2-upload";
 
 // This API endpoint will generate an image based on a text prompt
 export async function POST(req: NextRequest) {
@@ -142,69 +141,21 @@ async function processAndUploadImages(data: any, prompt: string, userId?: string
       }
     }
 
-    // Upload images to R2 and get public URLs
-    const imagesToUpload = data.predictions.map((pred: any) => {
-      return {
-        buffer: base64ToBuffer(pred.bytesBase64Encoded),
-        prompt: pred.prompt || prompt,
-        mimeType: pred.mimeType || 'image/png',
-      };
-    });
-
-    console.log(`Uploading ${imagesToUpload.length} images to R2...`);
-    
-    const uploadResults = await uploadMultipleImagesToR2(
-      imagesToUpload,
-      "generate-image",
-      userId
-    );
-
-    console.log("R2 upload results:", uploadResults);
-
-    // Return both R2 URLs and base64 data URLs for immediate display
-    const images = uploadResults.map((result, index) => {
-      const pred = data.predictions[index];
+    // Return base64 data URLs directly instead of uploading to R2
+    const images = data.predictions.map((pred: any) => {
       const dataUrl = `data:${pred.mimeType || 'image/png'};base64,${pred.bytesBase64Encoded}`;
       
-      // Use public URL as primary since we're setting ACL to public-read
-      const displayUrl = result.url; // This is now the public URL
-      
-      console.log(`Image ${index}: Public URL = ${displayUrl}, Data URL length = ${dataUrl.length}`);
-      
       return {
-        url: displayUrl, // Use public URL as primary display URL
-        dataUrl: dataUrl, // For immediate display fallback
-        publicUrl: result.publicUrl, // Same as url now
-        prompt: pred.prompt || prompt,
-        r2Key: result.key,
-      };
-    });
-
-    console.log(`Successfully processed and uploaded ${images.length} images`);
-    return NextResponse.json({ images, success: true });
-  } catch (uploadError) {
-    console.error("Failed to upload images to R2:", uploadError);
-    
-    // Ensure we have valid data before falling back
-    if (!data.predictions || !Array.isArray(data.predictions)) {
-      console.error("Cannot create fallback images due to invalid data:", data);
-      throw uploadError; // Re-throw if we can't even create fallback
-    }
-    
-    // Return images with base64 URLs even if upload fails
-    const images = data.predictions.map((pred: any, index: number) => {
-      const dataUrl = `data:${pred.mimeType || 'image/png'};base64,${pred.bytesBase64Encoded}`;
-      console.log(`Fallback image ${index}: Data URL length = ${dataUrl.length}`);
-      
-      return {
-        url: dataUrl, // Use data URL as main URL when R2 fails
+        url: dataUrl,
         dataUrl: dataUrl,
         prompt: pred.prompt || prompt,
-        error: "R2 upload failed, using base64 data",
       };
     });
-    
-    console.log(`Returning ${images.length} fallback images (R2 upload failed)`);
-    return NextResponse.json({ images, success: false, error: "R2 upload failed" });
+
+    console.log(`Successfully processed ${images.length} images`);
+    return NextResponse.json({ images, success: true });
+  } catch (error) {
+    console.error("Failed to process images:", error);
+    return NextResponse.json({ error: "Failed to process images" }, { status: 500 });
   }
 }

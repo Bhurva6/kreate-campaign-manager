@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadImageToR2 } from "@/lib/r2-upload";
 import { isHeicImage, convertHeicImage } from "@/lib/image-utils";
 
 // Maximum file size: 10MB
@@ -54,20 +53,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Upload to R2
-    const uploadResult = await uploadImageToR2({
-      imageBuffer,
-      category: "edit-image", // Using "edit-image" category for uploaded images
-      prompt,
-      mimeType,
-      userId,
-    });
+    // Return as base64 data URL directly instead of uploading to R2
+    const base64 = imageBuffer.toString('base64');
+    const dataUrl = `data:${mimeType};base64,${base64}`;
 
     return NextResponse.json({
       success: true,
-      publicUrl: uploadResult.publicUrl,
-      signedUrl: uploadResult.url,
-      key: uploadResult.key
+      publicUrl: dataUrl,
+      signedUrl: dataUrl,
+      dataUrl: dataUrl
     });
   } catch (err: any) {
     console.error("Error uploading image:", err);

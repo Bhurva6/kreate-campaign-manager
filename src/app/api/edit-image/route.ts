@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadImageToR2, base64ToBuffer, getMimeTypeFromDataUrl } from "@/lib/r2-upload";
+import { base64ToBuffer, getMimeTypeFromDataUrl } from "@/lib/r2-upload";
 import { tokenManager } from '@/lib/google-auth';
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from '@google/genai';
 
@@ -367,23 +367,11 @@ export async function POST(req: NextRequest) {
       if (generatedImages.length > 0) {
         console.log("Nano Banana API succeeded");
         
-        // Upload the first image to R2 for consistency with other APIs
+        // Return the first image data URL directly without uploading to R2
         const firstImageDataUrl = generatedImages[0];
-        const base64Data = firstImageDataUrl.split(',')[1];
-        const imageBuffer = Buffer.from(base64Data, 'base64');
-        
-        const uploadResult = await uploadImageToR2({
-          imageBuffer,
-          category: "edit-image",
-          prompt: prompt.trim(),
-          mimeType: "image/png",
-          userId,
-        });
         
         return NextResponse.json({ 
-          result: {
-            sample: uploadResult.publicUrl
-          },
+          image: firstImageDataUrl,
           status: "Ready",
           images: generatedImages, // Keep all images for frontend display
           _meta: {
@@ -618,7 +606,7 @@ export async function POST(req: NextRequest) {
               if (imagePart && imagePart.inline_data && imagePart.inline_data.data) {
                 // Reformat the response to match our expected format
                 data = {
-                  images: [imagePart.inline_data.data],
+                  images: [`data:${imagePart.inline_data.mime_type};base64,${imagePart.inline_data.data}`],
                   result: "success"
                 };
                 console.log(`Successfully extracted image from ${currentEndpoint.apiType === "gemini-direct" ? "Gemini API" : "Vertex AI Gemini"} response`);
@@ -748,6 +736,11 @@ export async function POST(req: NextRequest) {
         const processingTime = Math.round((endTime - startTime) / 100) / 10; // To seconds with 1 decimal
         
         console.log(`✓ API request successful (${processingTime}s) using ${currentEndpoint.apiType === "vertex-gemini" ? "Vertex AI Gemini" : new URL(currentEndpoint.url).hostname}`);
+        
+        // Ensure data.image is set for frontend compatibility
+        if (data.images && data.images.length > 0 && !data.image) {
+          data.image = data.images[0];
+        }
         
         // Include performance metrics and api used in response
         return NextResponse.json({ 

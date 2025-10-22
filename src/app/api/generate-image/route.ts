@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  uploadMultipleImagesToR2,
   base64ToBuffer,
-  getMimeTypeFromDataUrl,
 } from "@/lib/r2-upload";
 import { tokenManager } from "@/lib/google-auth";
 import { randomUUID } from "crypto";
@@ -388,19 +386,16 @@ async function processAndUploadImages(
       }
     }
 
-    const uploadResults = await uploadMultipleImagesToR2(
-      imagesToUpload,
-      "generate-image",
-      `campaigns/${campaignId}/image-${index}.png`
-    );
+    // Instead of uploading to R2, return base64 data URLs directly
+    const imageDataUrls = imagesToUpload.map((img: { buffer: Buffer; mimeType: string }) => `data:${img.mimeType};base64,${img.buffer.toString('base64')}`);
 
-    console.log("R2 upload results:", uploadResults);
+    console.log(`Successfully processed ${imageDataUrls.length} images`);
 
-    // Return the R2 key for the uploaded image
-    const imageKey = uploadResults[0].key;
-
-    console.log(`Successfully uploaded image with key: ${imageKey}`);
-    return NextResponse.json({ key: imageKey, success: true });
+    // Return images array with url property for frontend compatibility
+    return NextResponse.json({ 
+      images: imageDataUrls.map((url: string) => ({ url })),
+      success: true 
+    });
   } catch (uploadError) {
     console.error("Failed to upload images to R2:", uploadError);
     return NextResponse.json({
