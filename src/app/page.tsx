@@ -745,6 +745,82 @@ function LandingPageContent() {
             Payment successful! Your plan has been activated.
           </div>
         )}
+        {/* New Grid Section */}
+        <div className="w-full flex flex-col items-center mt-16 md:mt-32 mb-16 md:mb-32 px-4">
+          <h2
+            className={`text-3xl md:text-4xl font-bold text-center mb-8 md:mb-16 transition-colors duration-300 ${
+              isDarkMode ? "text-white" : "text-[#1E1E1E]"
+            }`}
+          >
+            Check these out
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 justify-center items-stretch w-full max-w-7xl mx-auto">
+            <Link
+              href="/product"
+              className="group relative overflow-hidden rounded-3xl bg-cover bg-center h-32 md:h-40 flex items-center justify-center text-white font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#6C2F83]/50"
+              style={{ backgroundImage: "url'/bg1.jpeg')" }}
+            >
+              <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-20 transition-all duration-300"></div>
+              <span className="relative z-10">Product Photography</span>
+            </Link>
+            <Link
+              href="/graphics"
+              className="group relative overflow-hidden rounded-3xl bg-cover bg-center h-32 md:h-40 flex items-center justify-center text-white font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#6C2F83]/50"
+              style={{ backgroundImage: "url('/cherryblossoms.jpeg')" }}
+            >
+              <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-20 transition-all duration-300"></div>
+              <span className="relative z-10">Mockups</span>
+            </Link>
+            <Link
+              href="/edit"
+              className="group relative overflow-hidden rounded-3xl bg-cover bg-center h-32 md:h-40 flex items-center justify-center text-white font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#6C2F83]/50"
+              style={{ backgroundImage: "url('/coke.jpeg')" }}
+            >
+              <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-20 transition-all duration-300"></div>
+              <span className="relative z-10">Coming Soon</span>
+            </Link>
+            <Link
+              href="/demo"
+              className="group relative overflow-hidden rounded-3xl bg-cover bg-center h-32 md:h-40 flex items-center justify-center text-white font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#6C2F83]/50"
+              style={{ backgroundImage: "url('/collab.jpeg')" }}
+            >
+              <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-20 transition-all duration-300"></div>
+              <span className="relative z-10">Coming Soon</span>
+            </Link>
+            <Link
+              href="/gif"
+              className="group relative overflow-hidden rounded-3xl bg-cover bg-center h-32 md:h-40 flex items-center justify-center text-white font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#6C2F83]/50"
+              style={{ backgroundImage: "url('/einstein1.jpeg')" }}
+            >
+              <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-20 transition-all duration-300"></div>
+              <span className="relative z-10">Coming Soon</span>
+            </Link>
+            <Link
+              href="/festive"
+              className="group relative overflow-hidden rounded-3xl bg-cover bg-center h-32 md:h-40 flex items-center justify-center text-white font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#6C2F83]/50"
+              style={{ backgroundImage: "url('/jaynitedit.jpeg')" }}
+            >
+              <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-20 transition-all duration-300"></div>
+              <span className="relative z-10">Coming Soon</span>
+            </Link>
+            <Link
+              href="/enterprise"
+              className="group relative overflow-hidden rounded-3xl bg-cover bg-center h-32 md:h-40 flex items-center justify-center text-white font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#6C2F83]/50"
+              style={{ backgroundImage: "url('/purple.jpg')" }}
+            >
+              <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-20 transition-all duration-300"></div>
+              <span className="relative z-10">Coming Soon</span>
+            </Link>
+            <Link
+              href="/brand-kit"
+              className="group relative overflow-hidden rounded-3xl bg-cover bg-center h-32 md:h-40 flex items-center justify-center text-white font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#6C2F83]/50"
+              style={{ backgroundImage: "url('/stone.jpg')" }}
+            >
+              <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-20 transition-all duration-300"></div>
+              <span className="relative z-10">Coming Soon</span>
+            </Link>
+          </div>
+        </div>
 
         {/* Pricing Section */}
         <div
@@ -1231,6 +1307,7 @@ function LandingPageContent() {
             </div>
           </div>
         </div>
+        
 
         {/* Pricing Popup */}
         {showPricingModal && (
