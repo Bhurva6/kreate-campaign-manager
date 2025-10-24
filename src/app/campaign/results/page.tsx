@@ -5,9 +5,13 @@ import { useCampaignStore } from '../../../store/campaignStore';
 import { useEffect, useState } from 'react';
 
 export default function ResultsPage() {
+  type ImageKey = string | { url: string };
   const { description, imageKeys, campaignId, errors, captions, clearCampaignData, region, state } = useCampaignStore();
   const [isLoading, setIsLoading] = useState(true);
   const [localDescription, setLocalDescription] = useState('');
+  interface ImageData {
+    url: string;
+  }
   const [localImages, setLocalImages] = useState<string[]>([]);
   const [localErrors, setLocalErrors] = useState<string[]>([]);
   const [localCaptions, setLocalCaptions] = useState<string[]>([]);
@@ -19,35 +23,56 @@ export default function ResultsPage() {
   const [isImageEditingLoading, setIsImageEditingLoading] = useState(false);
 
   useEffect(() => {
-    const fetchImages = async () => {
-      if (campaignId && imageKeys.length > 0) {
-        try {
-          const response = await fetch('/api/get-campaign-images', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              campaignId, 
-              keys: imageKeys,
-            }),
-          });
-          const data = await response.json();
-          if (response.ok && data.images) {
-            setLocalImages(data.images);
-          } else {
-            console.error('Failed to fetch images:', data);
-          }
-        } catch (error) {
-          console.error('Error fetching images:', error);
+    console.log('Raw imageKeys:', imageKeys); // Debug log for raw data
+    console.log('Description:', description);
+    
+    if (!imageKeys || imageKeys.length === 0) {
+      console.log('No image keys found');
+      setIsLoading(false);
+      return;
+    }
+
+    // Process and format base64 images for display
+    const processedImages = imageKeys.map((imgData: ImageKey) => {
+      console.log('Processing image data:', imgData); // Debug log for each image
+
+      // If imgData is an object with url property (from API response)
+      if (typeof imgData === 'object' && imgData !== null) {
+        console.log('Image data is an object:', imgData);
+        if ('url' in imgData && imgData.url) {
+          return imgData.url;
+        }
+        // If the object has different structure, try to handle it
+        if ('images' in imgData && Array.isArray((imgData as any).images)) {
+          const firstImage = (imgData as any).images[0];
+          return firstImage?.url || null;
         }
       }
+      
+      // If the data is already a complete data URL
+      if (typeof imgData === 'string') {
+        console.log('Image data is a string');
+        if (imgData.startsWith('data:image')) {
+          return imgData;
+        }
+        // If it's just base64 data, add the proper prefix
+        return `data:image/png;base64,${imgData}`;
+      }
+      return null;
+    }).filter((img): img is string => Boolean(img)); // Remove any null values and type assertion
+    
+    console.log('Processed Images:', processedImages); // Debug log for final results
+    
+    if (processedImages.length > 0) {
+      setLocalImages(processedImages);
       setLocalDescription(description);
       setLocalErrors(errors);
       setLocalCaptions(captions);
-      setIsLoading(false);
-    };
-
-    fetchImages();
-  }, [description, imageKeys, campaignId, errors, captions]);
+    } else {
+      console.log('No valid images after processing');
+    }
+    setIsLoading(false);
+  }, [description, imageKeys, errors, captions]);
 
   // Clear data when component unmounts or on page leave
   useEffect(() => {
@@ -100,31 +125,35 @@ export default function ResultsPage() {
     
     setIsImageEditingLoading(true);
     try {
-      // Fetch the image and convert to base64
-      const response = await fetch(selectedImage);
-      const blob = await response.blob();
-      const base64 = await blobToBase64(blob);
-      
-      // Call the edit-image API
+      // Extract base64 data if it's a complete data URL
+      const base64Data = selectedImage.includes('base64,') 
+        ? selectedImage.split('base64,')[1] 
+        : selectedImage;
+
       const editResponse = await fetch('/api/edit-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt: editImagePrompt.trim(), 
-          input_image: base64, 
-          userId: 'anonymous' // Since we don't have user context here
+          input_image: base64Data,
+          userId: 'anonymous'
         }),
       });
       
       const data = await editResponse.json();
       
       if (editResponse.ok && data.result?.sample) {
+        // Format the response data as a complete data URL if needed
+        const processedImage = data.result.sample.startsWith('data:image') 
+          ? data.result.sample 
+          : `data:image/jpeg;base64,${data.result.sample}`;
+
         // Update the image in the grid and modal
         const index = localImages.indexOf(selectedImage);
         const updatedImages = [...localImages];
-        updatedImages[index] = data.result.sample;
+        updatedImages[index] = processedImage;
         setLocalImages(updatedImages);
-        setSelectedImage(data.result.sample);
+        setSelectedImage(processedImage);
         setEditImagePrompt('');
       } else {
         alert('Failed to edit image: ' + (data.error || 'Unknown error'));
@@ -140,12 +169,24 @@ export default function ResultsPage() {
   const handleDownload = async () => {
     if (!selectedImage) return;
     try {
-      const response = await fetch(selectedImage);
-      const blob = await response.blob();
+      // Convert base64 to blob
+      const base64Data = selectedImage.split(',')[1]; // Remove the data URL prefix if present
+      const byteCharacters = atob(base64Data);
+      const byteArrays = [];
+      for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+        const slice = byteCharacters.slice(offset, offset + 512);
+        const byteNumbers = new Array(slice.length);
+        for (let i = 0; i < slice.length; i++) {
+          byteNumbers[i] = slice.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        byteArrays.push(byteArray);
+      }
+      const blob = new Blob(byteArrays, { type: 'image/jpeg' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `campaign-image-${Date.now()}.png`;
+      link.download = `campaign-image-${Date.now()}.jpg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

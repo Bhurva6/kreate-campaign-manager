@@ -265,30 +265,20 @@ async function processAndUploadImages(
       }
     }
 
-    // Upload images to R2 and get public URLs
-    let imagesToUpload = data.predictions.map((pred: any) => {
-      return {
-        buffer: base64ToBuffer(pred.bytesBase64Encoded),
-        prompt: pred.prompt || prompt,
-        mimeType: pred.mimeType || "image/png",
-      };
-    });
-
-    console.log(`Uploading ${imagesToUpload.length} images to R2...`);
-
-    // If logo is provided, overlay it on the generated image
-    if (logo && logoPosition) {
+    // Process each prediction
+    const processedImages = await Promise.all(data.predictions.map(async (pred: any) => {
       try {
-        // Convert base64 logo to buffer and ensure it has transparency
-        const logoBuffer = base64ToBuffer(logo);
-        const processedLogo = await sharp(logoBuffer)
-          .ensureAlpha()  // Ensure the logo has an alpha channel
-          .toBuffer();
+        let imgBuffer = base64ToBuffer(pred.bytesBase64Encoded);
         
-        // Process each generated image
-        const processedImages = await Promise.all(imagesToUpload.map(async (img: { buffer: Buffer; prompt: string; mimeType: string }) => {
+        // If logo is provided, overlay it on the image
+        if (logo && logoPosition) {
           try {
-            const imgBuffer = img.buffer;
+            // Convert base64 logo to buffer and ensure it has transparency
+            const logoBuffer = base64ToBuffer(logo);
+            const processedLogo = await sharp(logoBuffer)
+              .ensureAlpha()  // Ensure the logo has an alpha channel
+              .toBuffer();
+            
             const image = sharp(imgBuffer);
             
             // Get image dimensions
@@ -355,7 +345,7 @@ async function processAndUploadImages(
             }
             
             // Composite the logo onto the image
-            const composited = await image
+            imgBuffer = await image
               .composite([
                 {
                   input: resizedLogo,
@@ -365,42 +355,32 @@ async function processAndUploadImages(
                 },
               ])
               .toBuffer();
-            
-            // Convert to base64 properly
-            return composited.toString('base64');
           } catch (error) {
-            console.error('Error processing individual image:', error);
-            throw error;
+            console.error('Error overlaying logo:', error);
+            // Continue with original image if logo overlay fails
           }
-        }));
-        
-        // Replace original images with processed ones
-        imagesToUpload = imagesToUpload.map((img: { buffer: Buffer; prompt: string; mimeType: string }, i: number) => ({
-          ...img,
-          buffer: base64ToBuffer(processedImages[i]),
-          mimeType: 'image/png' // Update mime type since we're converting to PNG
-        }));
+        }
+
+        // Convert final image to base64 data URL
+        return `data:${pred.mimeType || "image/png"};base64,${imgBuffer.toString('base64')}`;
       } catch (error) {
-        console.error('Error overlaying logo:', error);
-        // Continue with original images if logo overlay fails
+        console.error('Error processing image:', error);
+        throw error;
       }
-    }
+    }));
 
-    // Instead of uploading to R2, return base64 data URLs directly
-    const imageDataUrls = imagesToUpload.map((img: { buffer: Buffer; mimeType: string }) => `data:${img.mimeType};base64,${img.buffer.toString('base64')}`);
-
-    console.log(`Successfully processed ${imageDataUrls.length} images`);
+    console.log(`Successfully processed ${processedImages.length} images`);
 
     // Return images array with url property for frontend compatibility
     return NextResponse.json({ 
-      images: imageDataUrls.map((url: string) => ({ url })),
+      images: processedImages.map((url: string) => ({ url })),
       success: true 
     });
-  } catch (uploadError) {
-    console.error("Failed to upload images to R2:", uploadError);
+  } catch (error) {
+    console.error("Failed to process images:", error);
     return NextResponse.json({
       success: false,
-      error: "Failed to upload image to R2",
+      error: error instanceof Error ? error.message : "Unknown error occurred",
     });
   }
 }

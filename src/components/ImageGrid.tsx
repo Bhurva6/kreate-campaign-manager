@@ -81,7 +81,7 @@ const images = [
   {
     src: "Screenshot 2025-10-23 at 2.02.33 AM.png",
    prompt:
-      " Place the uploded image on top of all the bottles in the center of the bottles facing front which is clearly visible and correctly blended with the entire image to look very natural.",
+      "Place the uploded image top of each of the bottles in the center of all the bottles facing front which is clearly visible and correctly blended with the entire image to look very natural.",
   },
   {
     src: "Screenshot 2025-10-23 at 2.02.41 AM.png",

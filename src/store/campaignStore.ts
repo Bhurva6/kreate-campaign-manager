@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 interface CampaignStore {
   description: string;
-  imageKeys: string[];
+  imageKeys: Array<string | { url: string }>;  // Updated to handle both string and object with url
   campaignId: string;
   errors: string[];
   captions: string[];
@@ -10,7 +10,17 @@ interface CampaignStore {
   logoPosition: string;
   region: string;
   state: string;
-  setCampaignData: (description: string, imageKeys: string[], campaignId: string, errors?: string[], captions?: string[], logoBase64?: string, logoPosition?: string, region?: string, state?: string) => void;
+  setCampaignData: (
+    description: string, 
+    imageKeys: Array<string | { url: string }>, 
+    campaignId: string, 
+    errors?: string[], 
+    captions?: string[], 
+    logoBase64?: string, 
+    logoPosition?: string, 
+    region?: string, 
+    state?: string
+  ) => void;
   clearCampaignData: () => void;
 }
 

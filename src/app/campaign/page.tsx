@@ -835,20 +835,36 @@ Ensure the JSON is valid and the imagePrompts array has exactly ${numPosts} item
                             aspectRatio, 
                             campaignId, 
                             index: i,
-                            logo: wantLogo === 'yes' && logoFile ? logoBase64 : null,
-                            logoPosition: wantLogo === 'yes' && logoFile ? logoPosition : null
+                            logo: wantLogo === 'yes' && logoFile ? logoBase64 : undefined,
+                            logoPosition: wantLogo === 'yes' && logoFile ? logoPosition : undefined
                           }),
                         });
                         const imgData = await res.json();
-                        if (res.ok && imgData.key) {
-                          imageKeys.push(imgData.key);
+                        if (res.ok && imgData.success && imgData.images?.length > 0) {
+                          console.log('Image generation successful:', imgData.images[0]); // Debug log
+                          // Store the image data
+                          imageKeys.push(imgData.images[0]);
                         } else {
+                          console.error('Image generation error:', imgData); // Debug log
                           errors.push(`Image ${i + 1}: ${imgData.error || 'Unknown error'}`);
                         }
                       } catch (error) {
                         errors.push(`Image ${i + 1}: Network error - ${error instanceof Error ? error.message : 'Unknown error'}`);
                       }
                     }
+                    // Debug log before setting campaign data
+                    console.log('Setting campaign data:', {
+                      description,
+                      imageKeys,
+                      campaignId,
+                      errors,
+                      captions,
+                      logoBase64: logoBase64 ? 'present' : 'not present',
+                      logoPosition,
+                      selectedRegion,
+                      selectedState
+                    });
+                    
                     // Set data in store with campaignId, keys, and errors
                     setCampaignData(description, imageKeys, campaignId, errors, captions, logoBase64, logoPosition, selectedRegion, selectedState);
                     // Navigate to results page
