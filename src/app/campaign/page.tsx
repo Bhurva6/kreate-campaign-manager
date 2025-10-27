@@ -5,16 +5,17 @@ import Link from 'next/link';
 import { useAuth } from '../../lib/auth';
 import AuthModal from '../../components/AuthModal';
 import UserDropdown from '../../components/UserDropdown';
+import PaymentModal from '../../components/PaymentModal';
 import { useState } from 'react';
 import { useCampaignStore } from '../../store/campaignStore';
 import { useCredits } from '@/lib/credits';
 
 export default function CampaignPage() {
   const router = useRouter();
-  
-    const { imageGenerationsUsed, imageGenerationsLimit, imageEditsUsed, imageEditsLimit, isUnlimitedUser } = useCredits();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
+  const { imageGenerationsUsed, imageGenerationsLimit, imageEditsUsed, imageEditsLimit, isUnlimitedUser, canUseImageGeneration } = useCredits();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const setCampaignData = useCampaignStore(state => state.setCampaignData);
   const [companyName, setCompanyName] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
@@ -751,6 +752,12 @@ function AccountDropdown({ user }: { user: { name: string; email: string; image:
               </button>
               <button
                 onClick={async () => {
+                  // Check if user has used their free generation and isn't unlimited
+                  if (!isUnlimitedUser && imageGenerationsUsed >= 1) {
+                    setShowPaymentModal(true);
+                    return;
+                  }
+                  
                   setLoading(true);
                   const campaignId = crypto.randomUUID();
                   
@@ -895,6 +902,12 @@ Ensure the JSON is valid and the imagePrompts array has exactly ${numPosts} item
           </div>
         </div>
       )}
+
+      {/* Auth Modal */}
+      <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+      
+      {/* Payment Modal */}
+      <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} />
     </div>
   );
 }
