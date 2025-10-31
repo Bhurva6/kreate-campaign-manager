@@ -10,7 +10,7 @@ export default function CreateModelPage() {
           ← Back to Fashion
         </Link>
         <h1 className="text-3xl font-bold mb-8">Create Your Own Model</h1>
-        <p className="text-lg mb-8">This feature is coming soon! You'll be able to create custom AI models for your photoshoots.</p>
+        <p className="text-lg mb-8">This feature is coming soon! You&#39;ll be able to create custom AI models for your photoshoots.</p>
         <div className="bg-white/10 rounded-lg p-8 text-center">
           <div className="text-6xl mb-4">🎨</div>
           <h2 className="text-xl font-semibold mb-4">Custom Model Creation</h2>
