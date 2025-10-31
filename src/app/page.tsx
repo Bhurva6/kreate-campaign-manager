@@ -764,12 +764,12 @@ function LandingPageContent() {
               <span className="relative z-10">Product Photography</span>
             </Link>
             <Link
-              href="/graphics"
+              href="/fashion"
               className="group relative overflow-hidden rounded-3xl bg-cover bg-center h-32 md:h-40 flex items-center justify-center text-white font-bold text-lg transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-[#6C2F83]/50"
               style={{ backgroundImage: "url('/cherryblossoms.jpeg')" }}
             >
               <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-20 transition-all duration-300"></div>
-              <span className="relative z-10">Mockups</span>
+              <span className="relative z-10">Fashion</span>
             </Link>
             <Link
               href="/edit"
