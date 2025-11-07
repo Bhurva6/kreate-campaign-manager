@@ -78,40 +78,20 @@ export default function FashionPage() {
       </div>
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col p-8 ${showNewPhotoshoots ? 'justify-start items-start' : 'justify-center items-center'}`}>
-        {showNewPhotoshoots ? (
-          <NewPhotoshootsWizard onClose={() => setShowNewPhotoshoots(false)} />
-        ) : (
-          <>
-            <h1 className="text-white text-3xl font-bold mb-4">What are we doing today?</h1>
-            <p className="text-white/80 text-lg mb-8 text-center max-w-2xl">
-              Explore everything you can do with us
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <button
-                className="px-6 py-3 rounded-lg bg-[#6C2F83] text-white font-semibold hover:shadow-lg hover:shadow-[#3C38A4]/25 transition-all duration-300"
-                onClick={() => setShowNewPhotoshoots(true)}
-              >
-                New Photoshoots
-              </button>
-              <button className="px-6 py-3 rounded-lg bg-[#181E53] text-white font-semibold hover:bg-[#502D81] transition-all duration-300">
-                Model Swap
-              </button>
-              <button className="px-6 py-3 rounded-lg bg-[#6C2F83] text-white font-semibold hover:shadow-lg hover:shadow-[#3C38A4]/25 transition-all duration-300">
-                Background Swap
-              </button>
-              <button className="px-6 py-3 rounded-lg bg-[#181E53] text-white font-semibold hover:bg-[#502D81] transition-all duration-300">
-                Refresh Old Catalog
-              </button>
-              <button className="px-6 py-3 rounded-lg bg-[#6C2F83] text-white font-semibold hover:shadow-lg hover:shadow-[#3C38A4]/25 transition-all duration-300">
-                Marketplace Variations
-              </button>
-              <button className="px-6 py-3 rounded-lg bg-[#181E53] text-white font-semibold hover:bg-[#502D81] transition-all duration-300">
-                Bulk Generation
-              </button>
-            </div>
-          </>
-        )}
+      <div className="flex-1 flex flex-col justify-center items-center p-8">
+        <h1 className="text-white text-4xl font-bold mb-4 text-center">
+          Create stunning fashion photos with AI generated models
+        </h1>
+        <p className="text-white/80 text-lg mb-8 text-center max-w-2xl">
+          Goloco is perfect for fashion brands that value quality, speed and
+          flexibility. Bring your products to life at a fraction of the cost.
+        </p>
+        <button
+          className="px-6 py-3 rounded-lg bg-[#6C2F83] text-white font-semibold hover:shadow-lg hover:shadow-[#3C38A4]/25 transition-all duration-300"
+          onClick={() => setShowNewPhotoshoots(true)}
+        >
+          Try Now
+        </button>
       </div>
 
       {/* Authentication Modal */}

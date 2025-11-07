@@ -10,16 +10,20 @@ import { auth } from './firebase';
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  token: null,
   loading: true,
   signInWithGoogle: async () => {},
   signOut: async () => {},
+  logout: async () => {},
 });
 
 export const useAuth = () => {
@@ -32,6 +36,7 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,8 +46,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      if (user) {
+        try {
+          const idToken = await user.getIdToken();
+          setToken(idToken);
+        } catch (error) {
+          console.error('Error getting ID token:', error);
+          setToken(null);
+        }
+      } else {
+        setToken(null);
+      }
       setLoading(false);
     });
 
@@ -70,17 +86,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     try {
       await firebaseSignOut(auth);
+      setToken(null);
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
     }
   };
 
+  // Alias for logout to match dashboard expectations
+  const logout = signOut;
+
   const value = {
     user,
+    token,
     loading,
     signInWithGoogle,
     signOut,
+    logout,
   };
 
   return (
