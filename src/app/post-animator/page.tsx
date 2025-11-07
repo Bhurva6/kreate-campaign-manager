@@ -546,7 +546,7 @@ const PostAnimatorPage = () => {
                 
                 {!user && imageFile && (
                   <p className="text-sm text-center text-slate-500">
-                    Click "Animate This" to sign in and start creating
+                    Click &quot;Animate This&quot; to sign in and start creating
                   </p>
                 )}
                 
@@ -754,7 +754,7 @@ const PostAnimatorPage = () => {
             </div>
             
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Please don't close this tab while we generate your video...
+              Please don&apos;t close this tab while we generate your video...
             </p>
           </div>
         </div>
