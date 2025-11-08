@@ -26,8 +26,9 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-ibm-plex-mono)', 'monospace'],
+        sans: ['var(--font-space-grotesk)', 'var(--font-ibm-plex-mono)', 'monospace'],
         mono: ['var(--font-ibm-plex-mono)', 'monospace'],
+        'space-grotesk': ['var(--font-space-grotesk)', 'sans-serif'],
       },
       colors: {
         'theme': {
