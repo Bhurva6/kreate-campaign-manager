@@ -756,7 +756,7 @@ Upload an image, click animate, and watch AI bring it to life with cinematic mot
             fontSize: '12px',
             color: '#94a3b8'
           }}>
-            Please don't close this tab while we generate your video...
+            Please don&apos;t close this tab while we generate your video...
           </p>
           
         
